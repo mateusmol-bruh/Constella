@@ -9,12 +9,10 @@ Uma plataforma digital voltada para mulheres, utilizando um algoritmo de compati
 |   Nome do Colaborador  | Funções |
 |:----------------------:|---------|
 | Beatris Custódio       | - Analista de Requisitos |
-| Enzo Oliveira Martins  | - Programador Back-End
-- Scrum Master (2ª Sprint)|
+| Enzo Oliveira Martins  | - Programador Back-End <br> - Scrum Master (2ª Sprint) |
 | Lucca Oliveira Santana | - Administrador de Banco de Dados |
 | Mateus Della Lastra Mol | - Product Owner (1ª Sprint) |
-| Nathália Queiroga de Souza | - Designer de Wireframe (UX/UI)
-- Product Owner (2ª Sprint) |
+| Nathália Queiroga de Souza | - Designer de Wireframe (UX/UI)<br> - Product Owner (2ª Sprint) |
 | Rafael Begali de Sá | - Scrum Master (1ª Sprint) |
 
 ## 📝 Licença
