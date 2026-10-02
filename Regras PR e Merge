@@ -1,0 +1,35 @@
+Regras para utilização do Git
+
+1-Estratégia de versionamento:
+A equipe utilizará o Gitflow como estratégia de organização e gerenciamento das branches do projeto.
+
+2-Fluxo obrigatório entre branches:
+Não serão permitidos merges diretos para a branch main. Toda alteração deverá seguir obrigatoriamente o fluxo:
+feature → dev → homolog → main
+feature: desenvolvimento de novas funcionalidades, correções ou tarefas específicas;
+dev: integração das funcionalidades desenvolvidas pela equipe;
+homolog: validação e testes antes da publicação;
+main: versão estável e validada do projeto.
+
+3-Pull Requests obrigatórios:
+Toda integração entre branches deverá ser realizada por meio de Pull Request (PR).
+
+4-Revisão dos Pull Requests:
+Todos os Pull Requests deverão ser avaliados pela equipe antes da aprovação, considerando:
+se a alteração é necessária e coerente com o projeto;
+se a funcionalidade ou correção foi concluída corretamente;
+se não prejudica funcionalidades já existentes;
+se o código segue a organização e os padrões definidos pela equipe.
+
+5-Proibição de alterações diretas:
+Não deverão ser realizados commits diretamente nas branches main e homolog. As alterações devem ser desenvolvidas em branches próprias e integradas através de Pull Request.
+
+6-Branches de desenvolvimento:
+Cada atividade deverá ser desenvolvida em uma branch própria, criada a partir da dev, utilizando nomes que identifiquem claramente a tarefa.
+Exemplos:
+feature/login
+feature/cadastro-usuario
+fix/correcao-login
+
+7-Exclusão de branches:
+Após a aprovação e integração da atividade na dev, a branch utilizada para o desenvolvimento poderá ser excluída, evitando o acúmulo de branches antigas no repositório.
