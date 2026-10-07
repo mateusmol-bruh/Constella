@@ -1,0 +1,138 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+
+//Usuária
+
+model Usuaria{
+  id_usr BigInt @id @defalt(autoincrement())
+  nome_usr String @db.VarChar(255)
+  email_usr String @db.VarChar(255)
+  senha_usr String @db.VarChar(255)
+  foto_usr String? @db.VarChar(500)
+  cpf_usr String @unique @db.VarChar(14)
+  status_verificacao Boolean @defalt(false)
+}
+
+//Moderadora
+
+model Moderadora{
+  id_mod BigInt @id @defalt(autoincrement())
+  nome_mod String @db.VarChar(255)
+  email_mod String @db.VarChar(255)
+  senha_mod String @db.VarChar(255)
+}
+
+//Interesses
+
+model Interesses{
+  id_intr BigInt @id @defalt(autoincrement())
+  nome_intr String @db.VarChar(255)
+}
+
+//Assinatura
+
+model Assinatura{
+  id_ass BigInt @id @defalt(autoincrement())
+  forma_pagto String @db.VarChar(50)
+  valor Decimal? @db.Decimal(10, 2)
+}
+
+//Conteúdo Pro
+
+model ConteudoPro{
+  id_cont_pro BigInt @id @defalt(autoincrement())
+  titulo_cont_pro String @db.VarChar(255)
+  desc_cont_pro String? @db.Text
+  mat_text_cont_pro String? @db.LongText
+  anexos_cont_pro Int?
+  duracao_cont_pro BigInt? @defalt(0)
+  data_pub_cont_pro DateTime @db.DateTime(0)
+
+  @@map("Conteudo_pro")
+}
+
+//Conteúdo
+
+model Conteudo{
+  id_cont BigInt @id @defalt(autoincrement())
+  titulo_cont String @db.VarChar(255)
+  desc_cont String? @db.Text
+  mat_text_content String @db.LongText
+  duracao_cont Int?
+  data_pub DateTime @db.Date
+}
+
+//Forum
+
+model Forum{
+  id_for BigInt @id @defalt(autoincrement())
+  titulo_for String @db.VarChar(255)
+  desc_for String? @db.VarChar(255)
+  capa_for String? @db.string(255)
+  dt_criacao DateTime @default(now()) @db.Timestamp(0)
+}
+
+//Chat
+
+model Chat{
+  id_chat BigInt @id @defalt(autoincrement())
+  dt_inicio DateTime @default(now()) @db.Timestamp(0)
+}
+
+//Denuncia
+
+model Denuncia{
+  id_den BigInt @id @defalt(autoincrement())
+  motivo_den String @db.VarChar(255)
+  status String? @default("PENDENTE") @db.VarChar(50)
+  dt_denuncia DateTime @defalt(now()) @DB.Timestamp(0)
+}
+
+//Relatório De Moderação
+
+model RelatorioModeracao{
+  id_relat BigInt @id @default(autoincrement())
+  acao String @db.VarChar(100)
+  dt_acao DateTime @db.DateTime(0)
+  descricao String @map("desc") @db.Text
+
+  @@map("relatorio_moderacao")
+}
+
+//Postagem
+
+model Postagem{
+  id_post BigInt @id @default(autoincrement())
+  dt_post DateTime @default(now()) @db.DateTime(0)
+  cont_post String @db.Text
+  img_post String? @db.VarChar(500)
+
+}
+
+//Conexão
+
+model Conexao{
+  id_conexao BigInt @id @default(autoincrement())
+  status_conexao String? @default("PENDENTE") @db.VarChar(50)
+  dt_solicitacao DateTime @defalt(now()) @db.Timestamp(0)
+}
+
+//Mensagem
+
+model Mensagem{
+  id_msg BigInt @id @default(autoincrement())
+  const_msg String @db.Text
+  dt_envio DateTime @default(now()) @db.Timestamp(0)
+}
