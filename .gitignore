@@ -1,10 +1,17 @@
-node_modules
-# Keep environment variables out of version control
-.env
+# Dependencias
+node_modules/
+backend/node_modules/
 
+# Variaveis de ambiente
+.env
+.env.*
+!.env.example
+backend/.env
+
+# Arquivos gerados pelo Prisma
 /generated/prisma
 
-
+# Ferramentas auxiliares
 .agents/
 .claude/
 .windsurf/
