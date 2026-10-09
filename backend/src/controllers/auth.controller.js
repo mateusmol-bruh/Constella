@@ -29,13 +29,13 @@ async function login(req, res) {
     }
 
     return res.status(200).json(resultado);
-  } catch (erro) {
-    console.error("Erro interno no login");
+  } catch (error) {
+  console.error("Erro interno no login:", error);
 
-    return res.status(500).json({
-      mensagem: "Erro interno do servidor"
-    });
-  }
+  return res.status(500).json({
+    mensagem: "Erro interno do servidor"
+  });
+}
 }
 
 module.exports = { login };
