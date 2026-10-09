@@ -1,0 +1,243 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model assinatura {
+  id_ass      BigInt  @id @default(autoincrement())
+  forma_pagto String  @db.VarChar(50)
+  valor       Decimal @db.Decimal(10, 2)
+  id_usr      BigInt  @unique
+  usuaria     usuaria @relation(fields: [id_usr], references: [id_usr], onDelete: NoAction, onUpdate: NoAction, map: "fk_assinatura_usuario")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model chat {
+  id_chat                         BigInt     @id @default(autoincrement())
+  dt_inicio                       DateTime   @default(now()) @db.Timestamp(6)
+  id_usr_01                       BigInt
+  id_usr_02                       BigInt
+  usuaria_chat_id_usr_01Tousuaria usuaria    @relation("chat_id_usr_01Tousuaria", fields: [id_usr_01], references: [id_usr], onDelete: NoAction, onUpdate: NoAction, map: "fk_chat_usr_01")
+  usuaria_chat_id_usr_02Tousuaria usuaria    @relation("chat_id_usr_02Tousuaria", fields: [id_usr_02], references: [id_usr], onDelete: NoAction, onUpdate: NoAction, map: "fk_chat_usr_02")
+  mensagem                        mensagem[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model conexao {
+  id_conexao                               BigInt   @id @default(autoincrement())
+  status_conexao                           String   @default("PENDENTE") @db.VarChar(50)
+  dt_solicitacao                           DateTime @default(now()) @db.Timestamp(6)
+  id_user_solicit                          BigInt
+  id_user_receb                            BigInt
+  usuaria_conexao_id_user_recebTousuaria   usuaria  @relation("conexao_id_user_recebTousuaria", fields: [id_user_receb], references: [id_usr], onDelete: NoAction, onUpdate: NoAction, map: "fk_conexao_recebedor")
+  usuaria_conexao_id_user_solicitTousuaria usuaria  @relation("conexao_id_user_solicitTousuaria", fields: [id_user_solicit], references: [id_usr], onDelete: NoAction, onUpdate: NoAction, map: "fk_conexao_solicitante")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model conteudo {
+  id_cont             BigInt                @id @default(autoincrement())
+  titulo_cont         String                @db.VarChar(255)
+  desc_cont           String?
+  mat_text_content    String
+  duracao_cont        Int?
+  data_pub            DateTime              @db.Date
+  id_mod              BigInt
+  moderadora          moderadora            @relation(fields: [id_mod], references: [id_mod], onDelete: NoAction, onUpdate: NoAction, map: "fk_conteudo_moderadora")
+  conteudo_interesses conteudo_interesses[]
+  usuaria_conteudo    usuaria_conteudo[]
+}
+
+model conteudo_interesses {
+  id_cont    BigInt
+  id_intr    BigInt
+  conteudo   conteudo   @relation(fields: [id_cont], references: [id_cont], onDelete: Cascade, onUpdate: NoAction, map: "fk_conteudo_interesses_conteudo")
+  interesses interesses @relation(fields: [id_intr], references: [id_intr], onDelete: Cascade, onUpdate: NoAction, map: "fk_conteudo_interesses_interesse")
+
+  @@id([id_cont, id_intr])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model conteudo_pro {
+  id_cont_pro          BigInt                 @id @default(autoincrement())
+  titulo_cont_pro      String                 @db.VarChar(255)
+  desc_cont_pro        String?
+  mat_text_cont_pro    String?
+  anexos_cont_pro      Int?
+  duracao_cont_pro     BigInt?                @default(0)
+  data_pub_cont_pro    DateTime               @db.Timestamp(6)
+  usuaria_conteudo_pro usuaria_conteudo_pro[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model denuncia {
+  id_den             BigInt              @id @default(autoincrement())
+  motivo_den         String              @db.VarChar(255)
+  status             String              @default("PENDENTE") @db.VarChar(50)
+  dt_denuncia        DateTime            @default(now()) @db.Timestamp(6)
+  id_mod             BigInt
+  id_usr_denunciante BigInt
+  usuaria            usuaria             @relation(fields: [id_usr_denunciante], references: [id_usr], onDelete: NoAction, onUpdate: NoAction, map: "fk_denuncia_denunciante")
+  moderadora         moderadora          @relation(fields: [id_mod], references: [id_mod], onDelete: NoAction, onUpdate: NoAction, map: "fk_denuncia_moderadora")
+  denuncia_mensagem  denuncia_mensagem[]
+  denuncia_postagem  denuncia_postagem[]
+  denuncia_usuaria   denuncia_usuaria[]
+}
+
+model denuncia_mensagem {
+  id_msg   BigInt
+  id_den   BigInt
+  denuncia denuncia @relation(fields: [id_den], references: [id_den], onDelete: Cascade, onUpdate: NoAction, map: "fk_denuncia_mensagem_denuncia")
+  mensagem mensagem @relation(fields: [id_msg], references: [id_msg], onDelete: NoAction, onUpdate: NoAction, map: "fk_denuncia_mensagem_mensagem")
+
+  @@id([id_den, id_msg])
+}
+
+model denuncia_postagem {
+  id_post  BigInt
+  id_den   BigInt
+  denuncia denuncia @relation(fields: [id_den], references: [id_den], onDelete: Cascade, onUpdate: NoAction, map: "fk_denuncia_postagem_denuncia")
+  postagem postagem @relation(fields: [id_post], references: [id_post], onDelete: NoAction, onUpdate: NoAction, map: "fk_denuncia_postagem_postagem")
+
+  @@id([id_den, id_post])
+}
+
+model denuncia_usuaria {
+  id_usr_denunciada BigInt
+  id_den            BigInt
+  denuncia          denuncia @relation(fields: [id_den], references: [id_den], onDelete: Cascade, onUpdate: NoAction, map: "fk_denuncia_usuaria_denuncia")
+  usuaria           usuaria  @relation(fields: [id_usr_denunciada], references: [id_usr], onDelete: NoAction, onUpdate: NoAction, map: "fk_denuncia_usuaria_usuario")
+
+  @@id([id_den, id_usr_denunciada])
+}
+
+model forum {
+  id_for          BigInt          @id @default(autoincrement())
+  titulo_for      String          @db.VarChar(255)
+  desc_for        String?         @db.VarChar(255)
+  capa_for        String?         @db.VarChar(255)
+  dt_criacao      DateTime?       @default(now()) @db.Timestamp(6)
+  id_mod          BigInt
+  id_usr_criadora BigInt
+  usuaria         usuaria         @relation(fields: [id_usr_criadora], references: [id_usr], onDelete: NoAction, onUpdate: NoAction, map: "fk_forum_criadora")
+  moderadora      moderadora      @relation(fields: [id_mod], references: [id_mod], onDelete: NoAction, onUpdate: NoAction, map: "fk_forum_moderadora")
+  postagem        postagem[]
+  usuaria_forum   usuaria_forum[]
+}
+
+model interesses {
+  id_intr             BigInt                @id @default(autoincrement())
+  nome_intr           String                @unique @db.VarChar(100)
+  conteudo_interesses conteudo_interesses[]
+  usuaria_interesses  usuaria_interesses[]
+}
+
+model mensagem {
+  id_msg            BigInt              @id @default(autoincrement())
+  cont_msg          String
+  dt_envio          DateTime            @default(now()) @db.Timestamp(6)
+  id_chat           BigInt
+  id_usr_emissor    BigInt
+  denuncia_mensagem denuncia_mensagem[]
+  chat              chat                @relation(fields: [id_chat], references: [id_chat], onDelete: NoAction, onUpdate: NoAction, map: "fk_mensagem_chat")
+  usuaria           usuaria             @relation(fields: [id_usr_emissor], references: [id_usr], onDelete: NoAction, onUpdate: NoAction, map: "fk_mensagem_emissor")
+}
+
+model moderadora {
+  id_mod              BigInt                @id @default(autoincrement())
+  nome_mod            String                @db.VarChar(255)
+  email_mod           String                @unique @db.VarChar(255)
+  senha_mod           String                @db.VarChar(255)
+  conteudo            conteudo[]
+  denuncia            denuncia[]
+  forum               forum[]
+  relatorio_moderacao relatorio_moderacao[]
+}
+
+model postagem {
+  id_post           BigInt              @id @default(autoincrement())
+  dt_post           DateTime            @default(now()) @db.Timestamp(6)
+  cont_post         String
+  img_post          String?             @db.VarChar(500)
+  id_usr            BigInt
+  id_for            BigInt
+  denuncia_postagem denuncia_postagem[]
+  forum             forum               @relation(fields: [id_for], references: [id_for], onDelete: NoAction, onUpdate: NoAction, map: "fk_postagem_forum")
+  usuaria           usuaria             @relation(fields: [id_usr], references: [id_usr], onDelete: NoAction, onUpdate: NoAction, map: "fk_postagem_usuario")
+}
+
+model relatorio_moderacao {
+  id_relat   BigInt     @id @default(autoincrement())
+  id_mod     BigInt
+  acao       String     @db.VarChar(100)
+  dt_acao    DateTime   @db.Timestamp(6)
+  desc       String
+  moderadora moderadora @relation(fields: [id_mod], references: [id_mod], onDelete: NoAction, onUpdate: NoAction, map: "fk_relatorio_moderadora")
+}
+
+model usuaria {
+  id_usr                                   BigInt                 @id @default(autoincrement())
+  nome_usr                                 String                 @db.VarChar(255)
+  email_usr                                String                 @unique @db.VarChar(255)
+  senha_usr                                String                 @db.VarChar(255)
+  foto_usr                                 String?                @db.VarChar(500)
+  cpf_usr                                  String                 @unique @db.VarChar(14)
+  status_verificacao                       Boolean                @default(false)
+  assinatura                               assinatura?
+  chat_chat_id_usr_01Tousuaria             chat[]                 @relation("chat_id_usr_01Tousuaria")
+  chat_chat_id_usr_02Tousuaria             chat[]                 @relation("chat_id_usr_02Tousuaria")
+  conexao_conexao_id_user_recebTousuaria   conexao[]              @relation("conexao_id_user_recebTousuaria")
+  conexao_conexao_id_user_solicitTousuaria conexao[]              @relation("conexao_id_user_solicitTousuaria")
+  denuncia                                 denuncia[]
+  denuncia_usuaria                         denuncia_usuaria[]
+  forum                                    forum[]
+  mensagem                                 mensagem[]
+  postagem                                 postagem[]
+  usuaria_conteudo                         usuaria_conteudo[]
+  usuaria_conteudo_pro                     usuaria_conteudo_pro[]
+  usuaria_forum                            usuaria_forum[]
+  usuaria_interesses                       usuaria_interesses[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model usuaria_conteudo {
+  id_usr         BigInt
+  id_cont        BigInt
+  dt_acesso      DateTime @default(now()) @db.Timestamp(6)
+  progresso_cont Decimal? @db.Decimal(5, 2)
+  conteudo       conteudo @relation(fields: [id_cont], references: [id_cont], onDelete: Cascade, onUpdate: NoAction, map: "fk_usuaria_conteudo_conteudo")
+  usuaria        usuaria  @relation(fields: [id_usr], references: [id_usr], onDelete: Cascade, onUpdate: NoAction, map: "fk_usuaria_conteudo_usuario")
+
+  @@id([id_usr, id_cont])
+}
+
+model usuaria_conteudo_pro {
+  id_usr       BigInt
+  id_cont_pro  BigInt
+  conteudo_pro conteudo_pro @relation(fields: [id_cont_pro], references: [id_cont_pro], onDelete: Cascade, onUpdate: NoAction, map: "fk_usuaria_conteudo_pro_conteudo")
+  usuaria      usuaria      @relation(fields: [id_usr], references: [id_usr], onDelete: Cascade, onUpdate: NoAction, map: "fk_usuaria_conteudo_pro_usuario")
+
+  @@id([id_usr, id_cont_pro])
+}
+
+model usuaria_forum {
+  id_for  BigInt
+  id_usr  BigInt
+  forum   forum   @relation(fields: [id_for], references: [id_for], onDelete: Cascade, onUpdate: NoAction, map: "fk_usuaria_forum_forum")
+  usuaria usuaria @relation(fields: [id_usr], references: [id_usr], onDelete: Cascade, onUpdate: NoAction, map: "fk_usuaria_forum_usuario")
+
+  @@id([id_for, id_usr])
+}
+
+model usuaria_interesses {
+  id_usr     BigInt
+  id_intr    BigInt
+  interesses interesses @relation(fields: [id_intr], references: [id_intr], onDelete: Cascade, onUpdate: NoAction, map: "fk_usuaria_interesses_interesse")
+  usuaria    usuaria    @relation(fields: [id_usr], references: [id_usr], onDelete: Cascade, onUpdate: NoAction, map: "fk_usuaria_interesses_usuario")
+
+  @@id([id_usr, id_intr])
+}
