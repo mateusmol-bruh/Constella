@@ -12,6 +12,8 @@ const perfilRoutes =
 const interesseRoutes =
   require("./src/routes/interesse.routes");
 
+const conexaoRoutes = require("./src/routes/conexao.routes");
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -32,6 +34,10 @@ app.use(
   interesseRoutes
 );
 
+app.use(
+  "/api/conexoes", conexaoRoutes
+);
+
 // Rota inicial para verificar o servidor
 app.get("/", (req, res) => {
   res.status(200).json({
@@ -43,3 +49,4 @@ app.get("/", (req, res) => {
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 });
+
