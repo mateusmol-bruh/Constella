@@ -6,6 +6,12 @@ const cors = require("cors");
 
 const authRoutes = require("./src/routes/auth.routes");
 
+const perfilRoutes =
+  require("./src/routes/perfil.routes");
+
+const interesseRoutes =
+  require("./src/routes/interesse.routes");
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -15,6 +21,16 @@ app.use(express.json());
 
 // Rotas
 app.use("/api/auth", authRoutes);
+
+app.use(
+  "/api/perfil",
+  perfilRoutes
+);
+
+app.use(
+  "/api/interesses",
+  interesseRoutes
+);
 
 // Rota inicial para verificar o servidor
 app.get("/", (req, res) => {
