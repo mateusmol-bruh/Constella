@@ -81,7 +81,7 @@ async function cadastrar(req, res) {
     }
 
     //Chamar o Service para cadastrar
-    const usuaria = await cadastrarUsuaria({
+    const resultado = await cadastrarUsuaria({
       nome: nomeLimpo,
       email: emailLimpo,
       senha,
@@ -91,12 +91,18 @@ async function cadastrar(req, res) {
     //Retornar sucesso
     return res.status(201).json({
       mensagem: "Usuária cadastrada com sucesso!",
+
+      token: resultado.token,
+
       usuaria: {
-        id_usr: usuaria.id_usr.toString(),
-        nome_usr: usuaria.nome_usr,
-        email_usr: usuaria.email_usr,
-        status_verificacao: usuaria.status_verificacao
-      }
+        id: resultado.usuaria.id_usr.toString(),
+        nome: resultado.usuaria.nome_usr,
+        email: resultado.usuaria.email_usr,
+        status_verificacao:
+          resultado.usuaria.status_verificacao
+      },
+
+      proxima_etapa: "interesses"
     });
 
   } catch (error) {
