@@ -14,6 +14,8 @@ const interesseRoutes =
 
 const conexaoRoutes = require("./src/routes/conexao.routes");
 
+const chatRoutes = require("./src/routes/chat.routes");
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -37,6 +39,8 @@ app.use(
 app.use(
   "/api/conexoes", conexaoRoutes
 );
+
+app.use("/api/chats", chatRoutes);
 
 // Rota inicial para verificar o servidor
 app.get("/", (req, res) => {
