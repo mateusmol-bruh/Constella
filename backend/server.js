@@ -6,15 +6,34 @@ const cors = require("cors");
 
 const authRoutes = require("./src/routes/auth.routes");
 
-const perfilRoutes =
-  require("./src/routes/perfil.routes");
+const perfilRoutes = require("./src/routes/perfil.routes");
 
-const interesseRoutes =
-  require("./src/routes/interesse.routes");
+const interesseRoutes = require("./src/routes/interesse.routes");
 
 const conexaoRoutes = require("./src/routes/conexao.routes");
 
 const chatRoutes = require("./src/routes/chat.routes");
+
+const usuarioRoutes = require("./src/routes/usuario.routes");
+
+const forumRoutes = require("./src/routes/forum.routes");
+
+const postagemRoutes = require("./src/routes/postagem.routes");
+
+const denunciaRoutes = require("./src/routes/denuncia.routes");
+
+const moderacaoRoutes = require("./src/routes/moderacao.routes");
+
+const conteudoRoutes = require("./src/routes/conteudo.routes");
+
+const proRoutes = require("./src/routes/pro.routes");
+
+const assinaturaRoutes = require("./src/routes/assinatura.routes");
+
+const recomendacaoRoutes =
+  require(
+    "./src/routes/recomendacao.routes"
+  );
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -41,6 +60,51 @@ app.use(
 );
 
 app.use("/api/chats", chatRoutes);
+
+app.use(
+  "/api/usuarios",
+  usuarioRoutes
+);
+
+app.use(
+  "/api/foruns",
+  forumRoutes
+);
+
+app.use(
+  "/api/postagens",
+  postagemRoutes
+);
+
+app.use(
+  "/api/denuncias",
+  denunciaRoutes
+);
+
+app.use(
+  "/api/moderacao",
+  moderacaoRoutes
+);
+
+app.use(
+  "/api/conteudos",
+  conteudoRoutes
+);
+
+app.use(
+  "/api/pro",
+  proRoutes
+);
+
+app.use(
+  "/api/assinatura",
+  assinaturaRoutes
+);
+
+app.use(
+  "/api/recomendacoes",
+  recomendacaoRoutes
+);
 
 // Rota inicial para verificar o servidor
 app.get("/", (req, res) => {
