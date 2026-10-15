@@ -92,6 +92,13 @@ async function atualizarInteresses(
     }
   }
 
+  if (idsBigInt.length === 0) {
+  await prisma.usuaria_interesses.deleteMany({
+    where: {
+      id_usr: idUsr
+    }
+  });
+} else {
   await prisma.$transaction([
     prisma.usuaria_interesses.deleteMany({
       where: {
@@ -108,6 +115,7 @@ async function atualizarInteresses(
       )
     })
   ]);
+}
 
   return listarInteressesDaUsuaria(
     idUsuario
