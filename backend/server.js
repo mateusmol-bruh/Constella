@@ -35,12 +35,25 @@ const recomendacaoRoutes =
     "./src/routes/recomendacao.routes"
   );
 
+const notFound = require("./src/middlewares/notFound.middleware");
+
+const tratarErroGlobal = require("./src/middlewares/error.middleware");
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middlewares
+app.disable("x-powered-by");
+
 app.use(cors());
-app.use(express.json());
+
+app.use(
+  express.json({
+    limit: "1mb"
+  })
+);
+
+//remove o header que denuncia Express e evita payload JSON absurdamente grande.
 
 // Rotas
 app.use("/api/auth", authRoutes);
@@ -112,6 +125,12 @@ app.get("/", (req, res) => {
     mensagem: "API Constella funcionando!"
   });
 });
+
+// Rota inexistente
+app.use(notFound);
+
+// Tratamento global de erros
+app.use(tratarErroGlobal);
 
 // Inicialização do servidor
 app.listen(PORT, () => {
