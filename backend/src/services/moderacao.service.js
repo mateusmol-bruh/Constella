@@ -7,6 +7,7 @@ const bcrypt =
 const jwt =
   require("jsonwebtoken");
 
+
 function erroHttp(
   statusCode,
   mensagem
@@ -19,6 +20,7 @@ function erroHttp(
 
   return erro;
 }
+
 
 function validarId(valor) {
   if (
@@ -35,6 +37,18 @@ function validarId(valor) {
   return BigInt(valor);
 }
 
+
+function converterBigInt(valor) {
+  if (
+    typeof valor === "bigint"
+  ) {
+    return valor.toString();
+  }
+
+  return valor;
+}
+
+
 /*
  * LOGIN DA MODERADORA
  */
@@ -43,15 +57,14 @@ async function loginModeradora(
   senha
 ) {
   const moderadora =
-    await prisma.moderadora
-      .findUnique({
-        where: {
-          email_mod:
-            email
-              .trim()
-              .toLowerCase()
-        }
-      });
+    await prisma.moderadora.findUnique({
+      where: {
+        email_mod:
+          email
+            .trim()
+            .toLowerCase()
+      }
+    });
 
   if (!moderadora) {
     return null;
@@ -71,9 +84,7 @@ async function loginModeradora(
     jwt.sign(
       {
         sub:
-          moderadora
-            .id_mod
-            .toString(),
+          moderadora.id_mod.toString(),
 
         tipo:
           "moderadora"
@@ -82,14 +93,9 @@ async function loginModeradora(
       process.env.JWT_SECRET,
 
       {
-        expiresIn:
-          "1h",
-
-        issuer:
-          "constella",
-
-        audience:
-          "constella-app"
+        expiresIn: "1h",
+        issuer: "constella",
+        audience: "constella-app"
       }
     );
 
@@ -98,9 +104,7 @@ async function loginModeradora(
 
     moderadora: {
       id:
-        moderadora
-          .id_mod
-          .toString(),
+        moderadora.id_mod.toString(),
 
       nome:
         moderadora.nome_mod,
@@ -110,6 +114,7 @@ async function loginModeradora(
     }
   };
 }
+
 
 /*
  * LISTAR DENÚNCIAS
@@ -139,54 +144,57 @@ async function listarDenuncias(
   }
 
   const denuncias =
-    await prisma.denuncia
-      .findMany({
-        where,
+    await prisma.denuncia.findMany({
+      where,
 
-        include: {
-          usuaria: {
-            select: {
-              id_usr: true,
-              nome_usr: true,
-              email_usr: true
-            }
-          },
+      include: {
+        usuaria: {
+          select: {
+            id_usr: true,
+            nome_usr: true,
+            email_usr: true
+          }
+        },
 
-          denuncia_usuaria: {
-            include: {
-              usuaria: {
-                select: {
-                  id_usr: true,
-                  nome_usr: true
-                }
+        denuncia_usuaria: {
+          include: {
+            usuaria: {
+              select: {
+                id_usr: true,
+                nome_usr: true
               }
-            }
-          },
-
-          denuncia_postagem: {
-            include: {
-              postagem: true
-            }
-          },
-
-          denuncia_mensagem: {
-            include: {
-              mensagem: true
             }
           }
         },
 
-        orderBy: {
-          dt_denuncia:
-            "desc"
+        denuncia_postagem: {
+          include: {
+            postagem: true
+          }
+        },
+
+        denuncia_mensagem: {
+          include: {
+            mensagem: true
+          }
         }
-      });
+      },
+
+      orderBy: {
+        dt_denuncia:
+          "desc"
+      }
+    });
 
   return denuncias.map(
     formatarDenunciaModeracao
   );
 }
 
+
+/*
+ * FORMATAR DENÚNCIA
+ */
 function formatarDenunciaModeracao(
   denuncia
 ) {
@@ -308,6 +316,7 @@ function formatarDenunciaModeracao(
   };
 }
 
+
 /*
  * BUSCAR DENÚNCIA
  */
@@ -318,41 +327,40 @@ async function buscarDenuncia(
     validarId(id);
 
   const denuncias =
-    await prisma.denuncia
-      .findMany({
-        where: {
-          id_den:
-            idDen
+    await prisma.denuncia.findMany({
+      where: {
+        id_den:
+          idDen
+      },
+
+      include: {
+        usuaria: {
+          select: {
+            id_usr: true,
+            nome_usr: true,
+            email_usr: true
+          }
         },
 
-        include: {
-          usuaria: {
-            select: {
-              id_usr: true,
-              nome_usr: true,
-              email_usr: true
-            }
-          },
+        denuncia_usuaria: {
+          include: {
+            usuaria: true
+          }
+        },
 
-          denuncia_usuaria: {
-            include: {
-              usuaria: true
-            }
-          },
+        denuncia_postagem: {
+          include: {
+            postagem: true
+          }
+        },
 
-          denuncia_postagem: {
-            include: {
-              postagem: true
-            }
-          },
-
-          denuncia_mensagem: {
-            include: {
-              mensagem: true
-            }
+        denuncia_mensagem: {
+          include: {
+            mensagem: true
           }
         }
-      });
+      }
+    });
 
   if (
     !denuncias.length
@@ -368,8 +376,9 @@ async function buscarDenuncia(
   );
 }
 
+
 /*
- * ALTERAR STATUS DA DENÚNCIA
+ * ATUALIZAR STATUS DA DENÚNCIA
  */
 async function atualizarStatus(
   idModeradora,
@@ -405,13 +414,12 @@ async function atualizarStatus(
   }
 
   const denuncia =
-    await prisma.denuncia
-      .findUnique({
-        where: {
-          id_den:
-            idDen
-        }
-      });
+    await prisma.denuncia.findUnique({
+      where: {
+        id_den:
+          idDen
+      }
+    });
 
   if (!denuncia) {
     throw erroHttp(
@@ -421,46 +429,42 @@ async function atualizarStatus(
   }
 
   const atualizada =
-    await prisma
-      .$transaction(
-        async (tx) => {
-          const resultado =
-            await tx
-              .denuncia
-              .update({
-                where: {
-                  id_den:
-                    idDen
-                },
+    await prisma.$transaction(
+      async (tx) => {
+        const resultado =
+          await tx.denuncia.update({
+            where: {
+              id_den:
+                idDen
+            },
 
-                data: {
-                  status,
-                  id_mod:
-                    idMod
-                }
-              });
+            data: {
+              status,
 
-          await tx
-            .relatorio_moderacao
-            .create({
-              data: {
-                id_mod:
-                  idMod,
+              id_mod:
+                idMod
+            }
+          });
 
-                acao:
-                  "ALTERACAO_STATUS_DENUNCIA",
+        await tx.relatorio_moderacao.create({
+          data: {
+            id_mod:
+              idMod,
 
-                dt_acao:
-                  new Date(),
+            acao:
+              "ALTERACAO_STATUS_DENUNCIA",
 
-                desc:
-                  `Denúncia ${idDen.toString()} alterada para ${status}.`
-              }
-            });
+            dt_acao:
+              new Date(),
 
-          return resultado;
-        }
-      );
+            desc:
+              `Denúncia ${idDen.toString()} alterada para ${status}.`
+          }
+        });
+
+        return resultado;
+      }
+    );
 
   return {
     id:
@@ -469,12 +473,14 @@ async function atualizarStatus(
         .toString(),
 
     status:
-      atualizada.status
+      atualizada
+        .status
   };
 }
 
+
 /*
- * RELATÓRIOS DA MODERADORA
+ * LISTAR RELATÓRIOS
  */
 async function listarRelatorios(
   idModeradora
@@ -521,6 +527,7 @@ async function listarRelatorios(
   );
 }
 
+
 /*
  * CRIAR CONTEÚDO GRATUITO
  */
@@ -541,8 +548,7 @@ async function criarConteudo(
   } = dados;
 
   if (
-    typeof titulo !==
-      "string" ||
+    typeof titulo !== "string" ||
     !titulo.trim()
   ) {
     throw erroHttp(
@@ -552,8 +558,7 @@ async function criarConteudo(
   }
 
   if (
-    titulo.trim().length >
-      255
+    titulo.trim().length > 255
   ) {
     throw erroHttp(
       400,
@@ -562,27 +567,22 @@ async function criarConteudo(
   }
 
   if (
-    typeof texto !==
-      "string" ||
+    typeof descricao !== "string" ||
+    !descricao.trim()
+  ) {
+    throw erroHttp(
+      400,
+      "Descrição é obrigatória."
+    );
+  }
+
+  if (
+    typeof texto !== "string" ||
     !texto.trim()
   ) {
     throw erroHttp(
       400,
       "Texto do conteúdo é obrigatório."
-    );
-  }
-
-  if (
-    descricao !==
-      undefined &&
-    descricao !==
-      null &&
-    typeof descricao !==
-      "string"
-  ) {
-    throw erroHttp(
-      400,
-      "Descrição inválida."
     );
   }
 
@@ -604,59 +604,55 @@ async function criarConteudo(
   }
 
   const conteudo =
-    await prisma
-      .$transaction(
-        async (tx) => {
-          const novo =
-            await tx
-              .conteudo
-              .create({
-                data: {
-                  titulo_cont:
-                    titulo
-                      .trim(),
+    await prisma.$transaction(
+      async (tx) => {
+        const novo =
+          await tx.conteudo.create({
+            data: {
+              titulo_cont:
+                titulo
+                  .trim(),
 
-                  desc_cont:
-                    descricao
-                      ?.trim() ||
-                    null,
+              desc_cont:
+                descricao
+                  .trim(),
 
-                  mat_text_cont:
-                    texto
-                      .trim(),
+              mat_text_content:
+                texto
+                  .trim(),
 
-                  duracao_cont:
-                    duracaoNumero,
+              duracao_cont:
+                duracaoNumero,
 
-                  data_pub:
-                    new Date(),
+              data_pub:
+                new Date(),
 
-                  id_mod:
-                    idMod
-                }
-              });
+              id_mod:
+                idMod
+            }
+          });
 
-          await tx
-            .relatorio_moderacao
-            .create({
-              data: {
-                id_mod:
-                  idMod,
+        await tx
+          .relatorio_moderacao
+          .create({
+            data: {
+              id_mod:
+                idMod,
 
-                acao:
-                  "CRIACAO_CONTEUDO",
+              acao:
+                "CRIACAO_CONTEUDO",
 
-                dt_acao:
-                  new Date(),
+              dt_acao:
+                new Date(),
 
-                desc:
-                  `Conteúdo ${novo.id_cont.toString()} criado.`
-              }
-            });
+              desc:
+                `Conteúdo ${novo.id_cont.toString()} criado.`
+            }
+          });
 
-          return novo;
-        }
-      );
+        return novo;
+      }
+    );
 
   return {
     id:
@@ -674,17 +670,20 @@ async function criarConteudo(
 
     texto:
       conteudo
-        .mat_text_cont,
+        .mat_text_content,
 
     duracao:
-      conteudo
-        .duracao_cont,
+      converterBigInt(
+        conteudo
+          .duracao_cont
+      ),
 
     dataPublicacao:
       conteudo
         .data_pub
   };
 }
+
 
 /*
  * CRIAR CONTEÚDO PRO
@@ -706,8 +705,7 @@ async function criarConteudoPro(
   } = dados;
 
   if (
-    typeof titulo !==
-      "string" ||
+    typeof titulo !== "string" ||
     !titulo.trim()
   ) {
     throw erroHttp(
@@ -717,8 +715,7 @@ async function criarConteudoPro(
   }
 
   if (
-    titulo.trim().length >
-      255
+    titulo.trim().length > 255
   ) {
     throw erroHttp(
       400,
@@ -727,30 +724,22 @@ async function criarConteudoPro(
   }
 
   if (
-    descricao !==
-      undefined &&
-    descricao !==
-      null &&
-    typeof descricao !==
-      "string"
+    typeof descricao !== "string" ||
+    !descricao.trim()
   ) {
     throw erroHttp(
       400,
-      "Descrição inválida."
+      "Descrição é obrigatória."
     );
   }
 
   if (
-    texto !==
-      undefined &&
-    texto !==
-      null &&
-    typeof texto !==
-      "string"
+    typeof texto !== "string" ||
+    !texto.trim()
   ) {
     throw erroHttp(
       400,
-      "Texto inválido."
+      "Texto do conteúdo é obrigatório."
     );
   }
 
@@ -763,66 +752,63 @@ async function criarConteudoPro(
     !Number.isInteger(
       duracaoNumero
     ) ||
-    duracaoNumero < 0
+    duracaoNumero < 1
   ) {
     throw erroHttp(
       400,
-      "Duração inválida."
+      "Duração deve ser um número inteiro maior que zero."
     );
   }
 
   const conteudo =
-    await prisma
-      .$transaction(
-        async (tx) => {
-          const novo =
-            await tx
-              .conteudo_pro
-              .create({
-                data: {
-                  titulo_cont_pro:
-                    titulo
-                      .trim(),
-
-                  desc_cont_pro:
-                    descricao
-                      ?.trim() ||
-                    null,
-
-                  mat_text_cont_pro:
-                    texto
-                      ?.trim() ||
-                    null,
-
-                  duracao_cont_pro:
-                    duracaoNumero,
-
-                  data_pub_cont_pro:
-                    new Date()
-                }
-              });
-
+    await prisma.$transaction(
+      async (tx) => {
+        const novo =
           await tx
-            .relatorio_moderacao
+            .conteudo_pro
             .create({
               data: {
-                id_mod:
-                  idMod,
+                titulo_cont_pro:
+                  titulo
+                    .trim(),
 
-                acao:
-                  "CRIACAO_CONTEUDO_PRO",
+                desc_cont_pro:
+                  descricao
+                    .trim(),
 
-                dt_acao:
-                  new Date(),
+                mat_text_cont_pro:
+                  texto
+                    .trim(),
 
-                desc:
-                  `Conteúdo Pro ${novo.id_cont_pro.toString()} criado.`
+                duracao_cont_pro:
+                  duracaoNumero,
+
+                data_pub_cont_pro:
+                  new Date()
               }
             });
 
-          return novo;
-        }
-      );
+        await tx
+          .relatorio_moderacao
+          .create({
+            data: {
+              id_mod:
+                idMod,
+
+              acao:
+                "CRIACAO_CONTEUDO_PRO",
+
+              dt_acao:
+                new Date(),
+
+              desc:
+                `Conteúdo Pro ${novo.id_cont_pro.toString()} criado.`
+            }
+          });
+
+        return novo;
+      }
+    );
 
   return {
     id:
@@ -843,14 +829,17 @@ async function criarConteudoPro(
         .mat_text_cont_pro,
 
     duracao:
-      conteudo
-        .duracao_cont_pro,
+      converterBigInt(
+        conteudo
+          .duracao_cont_pro
+      ),
 
     dataPublicacao:
       conteudo
         .data_pub_cont_pro
   };
 }
+
 
 module.exports = {
   loginModeradora,
