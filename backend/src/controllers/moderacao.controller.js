@@ -57,7 +57,10 @@ async function login(req, res) {
       .json(resultado);
 
   } catch (error) {
-    return tratarErro(res, error);
+    return tratarErro(
+      res,
+      error
+    );
   }
 }
 
@@ -72,8 +75,12 @@ async function listar(req, res) {
     return res.status(200).json({
       denuncias
     });
+
   } catch (error) {
-    return tratarErro(res, error);
+    return tratarErro(
+      res,
+      error
+    );
   }
 }
 
@@ -88,8 +95,12 @@ async function buscar(req, res) {
     return res.status(200).json({
       denuncia
     });
+
   } catch (error) {
-    return tratarErro(res, error);
+    return tratarErro(
+      res,
+      error
+    );
   }
 }
 
@@ -114,12 +125,19 @@ async function atualizarStatus(
         "Status atualizado com sucesso.",
       denuncia
     });
+
   } catch (error) {
-    return tratarErro(res, error);
+    return tratarErro(
+      res,
+      error
+    );
   }
 }
 
-async function relatorios(req, res) {
+async function relatorios(
+  req,
+  res
+) {
   try {
     const lista =
       await moderacaoService
@@ -130,8 +148,64 @@ async function relatorios(req, res) {
     return res.status(200).json({
       relatorios: lista
     });
+
   } catch (error) {
-    return tratarErro(res, error);
+    return tratarErro(
+      res,
+      error
+    );
+  }
+}
+
+async function cadastrarConteudo(
+  req,
+  res
+) {
+  try {
+    const conteudo =
+      await moderacaoService
+        .criarConteudo(
+          req.moderadoraId,
+          req.body || {}
+        );
+
+    return res.status(201).json({
+      mensagem:
+        "Conteúdo criado com sucesso.",
+      conteudo
+    });
+
+  } catch (error) {
+    return tratarErro(
+      res,
+      error
+    );
+  }
+}
+
+async function cadastrarConteudoPro(
+  req,
+  res
+) {
+  try {
+    const conteudo =
+      await moderacaoService
+        .criarConteudoPro(
+          req.moderadoraId,
+          req.body || {}
+        );
+
+    return res.status(201).json({
+      mensagem:
+        "Conteúdo Pro criado com sucesso.",
+      conteudo
+    });
+
+  } catch (error) {
+    return tratarErro(
+      res,
+      error
+    );
   }
 }
 
@@ -140,5 +214,7 @@ module.exports = {
   listar,
   buscar,
   atualizarStatus,
-  relatorios
+  relatorios,
+  cadastrarConteudo,
+  cadastrarConteudoPro
 };
