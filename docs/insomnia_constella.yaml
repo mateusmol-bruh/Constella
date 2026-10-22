@@ -1,24 +1,24 @@
-type: collection.insomnia.rest/5.0
+type: spec.insomnia.rest/5.0
 schema_version: "5.1"
-name: Constella API
+name: Constella API 1.0.0
 meta:
-  id: wrk_a473f3b20af54030b7bfa7ad24d5d200
-  created: 1792149201058
-  modified: 1792149201058
+  id: wrk_76ec1fe128a041e4b56b372b2d6d9cd8
+  created: 1792068809518
+  modified: 1792068809518
   description: ""
 collection:
   - name: Autenticação
     meta:
-      id: fld_4bf2ecea2ff04f619d30471a3aba755b
+      id: fld_5888b6e384414dc0a159c6c48edc0020
       created: 1792068809552
-      modified: 1792149206943
-      sortKey: -1792149206864
+      modified: 1792068809552
+      sortKey: -1792068809552
       description: ""
     children:
       - url: "{{ _."
         name: Verificar se a API está online
         meta:
-          id: req_33fcd102fe2341dcb6522412793dc03a
+          id: req_22a863e8f52244b1941df14f3f5a5f36
           created: 1792068809612
           modified: 1792074398649
           isPrivate: false
@@ -36,7 +36,7 @@ collection:
       - url: "{{ _.base_url }}/api/auth/cadastro"
         name: Cadastrar usuária
         meta:
-          id: req_2b6ffe32196445f48fb102317ec6aac3
+          id: req_5c9d434a7c484c6a89faaa75422eba18
           created: 1792068809615
           modified: 1792072884755
           isPrivate: false
@@ -67,7 +67,7 @@ collection:
       - url: "{{ _.base_url }}/api/auth/login"
         name: Login da usuária
         meta:
-          id: req_389161d1191e45f1a5f205b19da49682
+          id: req_9b993fb853564669a813ae7efd76bc7e
           created: 1792068809617
           modified: 1792070803755
           isPrivate: false
@@ -95,16 +95,16 @@ collection:
           rebuildPath: true
   - name: Perfil
     meta:
-      id: fld_b7e4173d2f084d63ba848703261b3441
+      id: fld_7ee680888ab346f8982782be2c0d38f2
       created: 1792068809563
-      modified: 1792149208612
-      sortKey: -1792149206964
+      modified: 1792068809563
+      sortKey: -1792068809563
       description: ""
     children:
       - url: "{{ _.base_url }}/api/perfil"
         name: Obter meu perfil
         meta:
-          id: req_f1b3158fac7b4d2c9df17327b2a03c6f
+          id: req_aada999499e34c19a454cd4622b0d561
           created: 1792068809619
           modified: 1792071755444
           isPrivate: false
@@ -125,7 +125,7 @@ collection:
       - url: "{{ _.base_url }}/api/perfil"
         name: Atualizar meu perfil
         meta:
-          id: req_ed2ddb6b0866446ba4351572334cd1d3
+          id: req_debb1349325e47749a25fd420ac9504b
           created: 1792068809621
           modified: 1792071865725
           isPrivate: false
@@ -156,16 +156,16 @@ collection:
           rebuildPath: true
   - name: Interesses
     meta:
-      id: fld_8fec986ff5f1436ca7ecdf0d7d58cebd
+      id: fld_47e5609ee5cc48338b7bb1bfc25c941a
       created: 1792068809578
-      modified: 1792149210237
-      sortKey: -1792149207064
+      modified: 1792068809578
+      sortKey: -1792068809578
       description: ""
     children:
       - url: "{{ _.base_url }}/api/interesses"
         name: Listar interesses disponíveis
         meta:
-          id: req_2fa26d6a3f114e038ca20e44f6be1733
+          id: req_16c483c41e5343839fc146770e84dfe0
           created: 1792068809624
           modified: 1792068809624
           isPrivate: false
@@ -187,7 +187,7 @@ collection:
       - url: "{{ _.base_url }}/api/interesses/meus"
         name: Listar meus interesses
         meta:
-          id: req_f3e9995479ee4ed084f08319cf1b2e3d
+          id: req_4624874389c34da28e17d5f22cfebbd1
           created: 1792068809626
           modified: 1792068809626
           isPrivate: false
@@ -209,7 +209,7 @@ collection:
       - url: "{{ _.base_url }}/api/interesses/meus"
         name: Substituir meus interesses
         meta:
-          id: req_4a5a276bf1584b419d959df484726658
+          id: req_b93939791016413098fe268f38a72c39
           created: 1792068809628
           modified: 1792071889269
           isPrivate: false
@@ -242,16 +242,16 @@ collection:
           rebuildPath: true
   - name: Usuárias
     meta:
-      id: fld_a744678b6ede435b8097f3306fbdab27
+      id: fld_bfafc52068bd4e76a38e217ed9c240e8
       created: 1792068809581
-      modified: 1792149211642
-      sortKey: -1792149207164
+      modified: 1792068809581
+      sortKey: -1792068809581
       description: ""
     children:
       - url: "{{ _.base_url }}/api/usuarios"
         name: Listar/buscar outras usuárias
         meta:
-          id: req_2d76dd3bdcc04d4d82f0ec046be44242
+          id: req_7f08d020da7a4b14aba3c045d175a37e
           created: 1792068809630
           modified: 1792068809630
           isPrivate: false
@@ -277,7 +277,7 @@ collection:
       - url: "{{ _.base_url }}/api/usuarios?busca=Ana"
         name: Buscar perfil de outra usuária
         meta:
-          id: req_8418b7afac794e4a94d765e2e08076ae
+          id: req_40bc8ac3c04a48e793b1f55cc4c31253
           created: 1792068809631
           modified: 1792073130196
           isPrivate: false
@@ -298,16 +298,16 @@ collection:
           rebuildPath: true
   - name: Conexões
     meta:
-      id: fld_916bb18342ca4b8eb2e38a832646a565
+      id: fld_1749c1c7fc104f77b79779b8f68c7be7
       created: 1792068809584
-      modified: 1792149213341
-      sortKey: -1792149207264
+      modified: 1792068809584
+      sortKey: -1792068809584
       description: ""
     children:
       - url: "{{ _.base_url }}/api/conexoes"
         name: Listar conexões aceitas
         meta:
-          id: req_8954f5931e6b46d19df42f39c4fc341e
+          id: req_550aa24abb4440028fb425441547a545
           created: 1792068809633
           modified: 1792068809633
           isPrivate: false
@@ -329,7 +329,7 @@ collection:
       - url: "{{ _.base_url }}/api/conexoes/recebidas"
         name: Listar solicitações recebidas
         meta:
-          id: req_240956575fec47fb97b1b3c140c15127
+          id: req_214f28d443d64278bda33eefc9f58b59
           created: 1792068809635
           modified: 1792068809635
           isPrivate: false
@@ -351,7 +351,7 @@ collection:
       - url: "{{ _.base_url }}/api/conexoes/enviadas"
         name: Listar solicitações enviadas
         meta:
-          id: req_a64f59ad29344d48bdc141990bfbea4d
+          id: req_de5c049842834f1e97dc6a7e54bb9fd7
           created: 1792068809637
           modified: 1792068809637
           isPrivate: false
@@ -373,7 +373,7 @@ collection:
       - url: "{{ _.base_url }}/api/conexoes/:id"
         name: Enviar solicitação de conexão
         meta:
-          id: req_ffb1342be31244018dff021871d2cec3
+          id: req_4662bb24aa064321a1b92009ff61a4dd
           created: 1792068809639
           modified: 1792073649633
           isPrivate: false
@@ -404,7 +404,7 @@ collection:
       - url: "{{ _.base_url }}/api/conexoes/:id/aceitar"
         name: Aceitar solicitação de conexão
         meta:
-          id: req_83f670cd593a418b92c4a4b5b22932ed
+          id: req_33096005ff0d489797267b0727d80d62
           created: 1792068809642
           modified: 1792068809642
           isPrivate: false
@@ -426,7 +426,7 @@ collection:
       - url: "{{ _.base_url }}/api/conexoes/:id/recusar"
         name: Recusar solicitação de conexão
         meta:
-          id: req_2600c31ddd88479d90f39dfde9785660
+          id: req_1497ee96201b42628be15bae88f0e6b3
           created: 1792068809644
           modified: 1792068809644
           isPrivate: false
@@ -447,16 +447,16 @@ collection:
           rebuildPath: true
   - name: Chats
     meta:
-      id: fld_9beab9260b384999a2a3cca776ef2cb9
+      id: fld_204832331082401687021f096a6eb0d8
       created: 1792068809587
-      modified: 1792149214512
-      sortKey: -1792149207364
+      modified: 1792068809587
+      sortKey: -1792068809587
       description: ""
     children:
       - url: "{{ _.base_url }}/api/chats"
         name: Listar meus chats
         meta:
-          id: req_336f9bab4bc14dd1bfdc0983236e4f7e
+          id: req_dbbb83db2068449d8c48db12efed1167
           created: 1792068809646
           modified: 1792068809646
           isPrivate: false
@@ -478,7 +478,7 @@ collection:
       - url: "{{ _.base_url }}/api/chats"
         name: Criar ou buscar chat
         meta:
-          id: req_e4b57961692f475db0d1df25c958fb3f
+          id: req_80f8de2103ec468bb8e8e79e1cac1812
           created: 1792068809648
           modified: 1792075058917
           isPrivate: false
@@ -510,7 +510,7 @@ collection:
       - url: "{{ _.base_url }}/api/chats/:id"
         name: Buscar chat por ID
         meta:
-          id: req_717a53bdd8e440678abdea900a37e2fb
+          id: req_730f4fa36f5a4a04b8a0fd7c10377b8e
           created: 1792068809650
           modified: 1792068809650
           isPrivate: false
@@ -532,7 +532,7 @@ collection:
       - url: "{{ _.base_url }}/api/chats/:id/mensagens"
         name: Listar mensagens do chat
         meta:
-          id: req_357c464a18584865ad03e23a08a0e056
+          id: req_268460eae6a74ce59cadf4bc8d4f5683
           created: 1792068809652
           modified: 1792068809652
           isPrivate: false
@@ -561,7 +561,7 @@ collection:
       - url: "{{ _.base_url }}/api/chats/:id/mensagens"
         name: Enviar mensagem
         meta:
-          id: req_4c8a35a60d7045718f6f816c0dcd7ddd
+          id: req_d4a2bc0509b74952b827a926d7c34b67
           created: 1792068809655
           modified: 1792068809655
           isPrivate: false
@@ -593,7 +593,7 @@ collection:
       - url: "{{ _.base_url }}/api/chats/:id/mensagens/:idMensagem"
         name: Excluir mensagem
         meta:
-          id: req_9bfeef45cf4c42a9a9dfef087b63ce53
+          id: req_a1adfe05f14144a5abdc1b0aae133b72
           created: 1792068809658
           modified: 1792068809658
           isPrivate: false
@@ -614,16 +614,16 @@ collection:
           rebuildPath: true
   - name: Fóruns
     meta:
-      id: fld_73ee9f59419343e6a1fb3e1a7d6580c2
+      id: fld_cc9514a79094429e877f1b25431937e2
       created: 1792068809590
-      modified: 1792149215973
-      sortKey: -1792149207464
+      modified: 1792068809590
+      sortKey: -1792068809590
       description: ""
     children:
       - url: "{{ _.base_url }}/api/foruns"
         name: Listar fóruns
         meta:
-          id: req_916a02a671af466384ff283817e6f2b4
+          id: req_043a00593d6041f69a23d2a6ade11e99
           created: 1792068809660
           modified: 1792068809660
           isPrivate: false
@@ -645,7 +645,7 @@ collection:
       - url: "{{ _.base_url }}/api/foruns"
         name: Criar fórum
         meta:
-          id: req_8ba282db590e4d5abe737d04449be2d2
+          id: req_076d686fe1b64dfdbb430504a6e0b21b
           created: 1792068809662
           modified: 1792068809662
           isPrivate: false
@@ -679,7 +679,7 @@ collection:
       - url: "{{ _.base_url }}/api/foruns/meus"
         name: Listar fóruns dos quais participo
         meta:
-          id: req_5aa8ff4085fe4e5aa89546df500c225a
+          id: req_41fc9bffe24a47ac85739328f756b462
           created: 1792068809664
           modified: 1792068809664
           isPrivate: false
@@ -701,7 +701,7 @@ collection:
       - url: "{{ _.base_url }}/api/foruns/:id"
         name: Buscar fórum
         meta:
-          id: req_0b5cb2e10f104fc8b10091ae5f543bd0
+          id: req_498d7a7cdb004254b95306ddddd5ff7f
           created: 1792068809666
           modified: 1792068809666
           isPrivate: false
@@ -723,7 +723,7 @@ collection:
       - url: "{{ _.base_url }}/api/foruns/:id"
         name: Editar fórum
         meta:
-          id: req_00965dfbc2ff420b9436b433cca72f78
+          id: req_7238f53204af4b95bb14d8b390c91ee9
           created: 1792068809668
           modified: 1792068809668
           isPrivate: false
@@ -757,7 +757,7 @@ collection:
       - url: "{{ _.base_url }}/api/foruns/:id"
         name: Excluir fórum
         meta:
-          id: req_3e3d53038ef04f8ca0bde1b685a881cf
+          id: req_33963c333b9941dc839f393b651034eb
           created: 1792068809669
           modified: 1792068809669
           isPrivate: false
@@ -779,7 +779,7 @@ collection:
       - url: "{{ _.base_url }}/api/foruns/:id/entrar"
         name: Entrar em fórum
         meta:
-          id: req_02d49f6e075e4f61a5f1934df4949733
+          id: req_dca58294465e47368c9759839d29e4d3
           created: 1792068809671
           modified: 1792068809671
           isPrivate: false
@@ -801,7 +801,7 @@ collection:
       - url: "{{ _.base_url }}/api/foruns/:id/sair"
         name: Sair de fórum
         meta:
-          id: req_3820e02e99ac4e289b5b7041e79888a2
+          id: req_9e437e48fcc7426b8846643225c07845
           created: 1792068809674
           modified: 1792068809674
           isPrivate: false
@@ -822,16 +822,16 @@ collection:
           rebuildPath: true
   - name: Postagens
     meta:
-      id: fld_774322e423e646d7ae23d6976852a541
+      id: fld_755189d9b3bf464ebfe60d90f8645d8a
       created: 1792068809593
-      modified: 1792149217053
-      sortKey: -1792149207564
+      modified: 1792068809593
+      sortKey: -1792068809593
       description: ""
     children:
       - url: "{{ _.base_url }}/api/foruns/:id/postagens"
         name: Listar postagens do fórum
         meta:
-          id: req_dcfdb9aa450e4ea98c4c940aab0f4a6e
+          id: req_2990c60366204f3992fcb945831fa824
           created: 1792068809676
           modified: 1792068809676
           isPrivate: false
@@ -853,7 +853,7 @@ collection:
       - url: "{{ _.base_url }}/api/foruns/:id/postagens"
         name: Criar postagem no fórum
         meta:
-          id: req_3e0e2295a2e648949cc29b58d1fc4840
+          id: req_9d1c9584d8ea44fe9bec76ab72a2ad00
           created: 1792068809678
           modified: 1792068809678
           isPrivate: false
@@ -886,7 +886,7 @@ collection:
       - url: "{{ _.base_url }}/api/postagens/:id"
         name: Editar postagem
         meta:
-          id: req_c3232fd197b14646863f887c21f383f1
+          id: req_e24db8f597e14f389bd2414a93018f35
           created: 1792068809680
           modified: 1792068809680
           isPrivate: false
@@ -919,7 +919,7 @@ collection:
       - url: "{{ _.base_url }}/api/postagens/:id"
         name: Excluir postagem
         meta:
-          id: req_1e555310709b43098bd7cf5e8bde0284
+          id: req_3e56481f576f4b4b8dc7dd3878d5e3c7
           created: 1792068809682
           modified: 1792085406816
           isPrivate: false
@@ -940,16 +940,16 @@ collection:
           rebuildPath: true
   - name: Denúncias
     meta:
-      id: fld_64c446a30f56499b8fcbd70ed202b0c1
+      id: fld_bf06be826a094542a98a5fb16effed90
       created: 1792068809596
-      modified: 1792149218113
-      sortKey: -1792149207664
+      modified: 1792068809596
+      sortKey: -1792068809596
       description: ""
     children:
       - url: "{{ _.base_url }}/api/denuncias/usuarias/:id"
         name: Denunciar usuária
         meta:
-          id: req_a2035f970ef5401f827fb9db41933133
+          id: req_acde9a8dbdca461999ba86fb84904233
           created: 1792068809685
           modified: 1792068809685
           isPrivate: false
@@ -981,7 +981,7 @@ collection:
       - url: "{{ _.base_url }}/api/denuncias/postagens/:id"
         name: Denunciar postagem
         meta:
-          id: req_abd42b21a9fe4e5eb2d016e1049dda9d
+          id: req_543c8aba2fa241e58b9e46cbe28386a9
           created: 1792068809687
           modified: 1792068809687
           isPrivate: false
@@ -1013,7 +1013,7 @@ collection:
       - url: "{{ _.base_url }}/api/denuncias/mensagens/:id"
         name: Denunciar mensagem
         meta:
-          id: req_351d6f7de20248cd9455cad015e24ba9
+          id: req_29e905e031824711b87c2225b23cf32c
           created: 1792068809689
           modified: 1792068809689
           isPrivate: false
@@ -1045,7 +1045,7 @@ collection:
       - url: "{{ _.base_url }}/api/denuncias/minhas"
         name: Listar minhas denúncias
         meta:
-          id: req_925bfdd8af41435fb933ca873f275843
+          id: req_efc64c504e814824ba59376d79ec0a51
           created: 1792068809691
           modified: 1792068809691
           isPrivate: false
@@ -1066,16 +1066,16 @@ collection:
           rebuildPath: true
   - name: Moderação
     meta:
-      id: fld_0a0ef1bf75244e68b12824154c56a4a7
+      id: fld_315ddbbe7e864aff9a2718826695cf06
       created: 1792068809599
-      modified: 1792149219163
-      sortKey: -1792149207764
+      modified: 1792068809599
+      sortKey: -1792068809599
       description: ""
     children:
       - url: "{{ _.base_url }}/api/moderacao/login"
         name: Login da moderadora
         meta:
-          id: req_11a0b98b4e9a4020b2e2b9684cf7d138
+          id: req_a07e265b8063471096099f6866e95c88
           created: 1792068809694
           modified: 1792068809694
           isPrivate: false
@@ -1104,7 +1104,7 @@ collection:
       - url: "{{ _.base_url }}/api/moderacao/denuncias"
         name: Listar denúncias para moderação
         meta:
-          id: req_9881b535899949658c2e6699e75a356e
+          id: req_3c18ef116f024e799ab4456e32485e3c
           created: 1792068809696
           modified: 1792068809696
           isPrivate: false
@@ -1130,7 +1130,7 @@ collection:
       - url: "{{ _.base_url }}/api/moderacao/denuncias/:id"
         name: Buscar denúncia
         meta:
-          id: req_904a89eb2f954b19a59b2fc857881854
+          id: req_8e0701e69c7a4995aeb672cb7d1bbb15
           created: 1792068809698
           modified: 1792068809698
           isPrivate: false
@@ -1152,7 +1152,7 @@ collection:
       - url: "{{ _.base_url }}/api/moderacao/denuncias/:id/status"
         name: Atualizar status da denúncia
         meta:
-          id: req_ae00d68c62684e51b53817fca8eccd9e
+          id: req_da5a8543d93a4a6eae491754da8a1c08
           created: 1792068809700
           modified: 1792068809700
           isPrivate: false
@@ -1184,7 +1184,7 @@ collection:
       - url: "{{ _.base_url }}/api/moderacao/relatorios"
         name: Listar relatórios da moderadora
         meta:
-          id: req_34d84a6c79d34232ab48c3d7c8519384
+          id: req_76c9c2f270204e12a25bfb80421d5d22
           created: 1792068809702
           modified: 1792070559582
           isPrivate: false
@@ -1205,16 +1205,16 @@ collection:
           rebuildPath: true
   - name: Conteúdos
     meta:
-      id: fld_d86cde2b88db4a49b196b8d9e05b7178
+      id: fld_1f9f20d9c1604011b2f70c41fc8d44e6
       created: 1792068809601
-      modified: 1792149220347
-      sortKey: -1792149207864
+      modified: 1792068809601
+      sortKey: -1792068809601
       description: ""
     children:
       - url: "{{ _.base_url }}/api/conteudos"
         name: Listar conteúdos
         meta:
-          id: req_6c6939937ebc41bb9ee86fe43377d7d5
+          id: req_a179043cbf2b443ca0fb1d401c0fc777
           created: 1792068809704
           modified: 1792068809704
           isPrivate: false
@@ -1236,7 +1236,7 @@ collection:
       - url: "{{ _.base_url }}/api/conteudos/:id"
         name: Buscar conteúdo
         meta:
-          id: req_23c2c99eef2542d696016c8c1cb94174
+          id: req_305124a2d3e845469dc6c43eb1063aa4
           created: 1792068809706
           modified: 1792068809706
           isPrivate: false
@@ -1258,7 +1258,7 @@ collection:
       - url: "{{ _.base_url }}/api/conteudos/:id/acesso"
         name: Registrar acesso ao conteúdo
         meta:
-          id: req_5dbc3602faef4d9bb62513de7ef55cb5
+          id: req_9f04b84aecf5466fb29716eb651a37e6
           created: 1792068809709
           modified: 1792068809709
           isPrivate: false
@@ -1280,7 +1280,7 @@ collection:
       - url: "{{ _.base_url }}/api/conteudos/:id/progresso"
         name: Atualizar progresso do conteúdo
         meta:
-          id: req_017e7ee519cf403ba5320201f80e63fe
+          id: req_63df142e09c44865ad3d21c3ea65b707
           created: 1792068809711
           modified: 1792068809711
           isPrivate: false
@@ -1311,16 +1311,16 @@ collection:
           rebuildPath: true
   - name: Pro
     meta:
-      id: fld_8180fafc9464458ea6dfea7ca4cbe0c6
+      id: fld_4c03d7d6cd82470c9fd0e1b9473c55fb
       created: 1792068809604
-      modified: 1792149222232
-      sortKey: -1792149207964
+      modified: 1792068809604
+      sortKey: -1792068809604
       description: ""
     children:
       - url: "{{ _.base_url }}/api/pro"
         name: Verificar meu status Pro
         meta:
-          id: req_0ee6300f74e74b558bf317ef1f7cc945
+          id: req_a4e27a9044c64dabbbd6541287ff3141
           created: 1792068809713
           modified: 1792068809713
           isPrivate: false
@@ -1342,7 +1342,7 @@ collection:
       - url: "{{ _.base_url }}/api/pro/conteudos"
         name: Listar conteúdos Pro
         meta:
-          id: req_acf28d37bff7499c8e2e1ff16ec60f36
+          id: req_432a7456783b4935ab22ed14d10ca788
           created: 1792068809715
           modified: 1792068809715
           isPrivate: false
@@ -1364,7 +1364,7 @@ collection:
       - url: "{{ _.base_url }}/api/pro/conteudos/:id"
         name: Buscar conteúdo Pro
         meta:
-          id: req_f48332e1e7be4e609a58749b06acc584
+          id: req_8646538e13e048adaecefe6f8ec586cd
           created: 1792068809718
           modified: 1792068809718
           isPrivate: false
@@ -1385,16 +1385,16 @@ collection:
           rebuildPath: true
   - name: Assinatura
     meta:
-      id: fld_eff0a3e6021340b2a656d9f30abb42eb
+      id: fld_8320266f35874b6d9684654f9bb9641a
       created: 1792068809607
-      modified: 1792149224153
-      sortKey: -1792149208064
+      modified: 1792068809607
+      sortKey: -1792068809607
       description: ""
     children:
       - url: "{{ _.base_url }}/api/assinatura"
         name: Consultar minha assinatura
         meta:
-          id: req_bf0126ec820b4694add86c88529d0db7
+          id: req_3c766839223441939ab990d885f111b1
           created: 1792068809720
           modified: 1792068809720
           isPrivate: false
@@ -1416,7 +1416,7 @@ collection:
       - url: "{{ _.base_url }}/api/assinatura"
         name: Criar assinatura
         meta:
-          id: req_00d13fb8750b47aabcd73cb5f90a294d
+          id: req_13e8662aab7a44bdb1e65736f0e34db8
           created: 1792068809722
           modified: 1792068809722
           isPrivate: false
@@ -1449,7 +1449,7 @@ collection:
       - url: "{{ _.base_url }}/api/assinatura"
         name: Cancelar assinatura
         meta:
-          id: req_08ff0eae68734264917f3d627764e188
+          id: req_ea3554c5091b42e3a43f466af410ad4e
           created: 1792068809725
           modified: 1792068809725
           isPrivate: false
@@ -1470,16 +1470,16 @@ collection:
           rebuildPath: true
   - name: Recomendações
     meta:
-      id: fld_26517a18c4b74c65aa843759707a40ec
+      id: fld_05b244cf193347e0bb55cb2b882edb27
       created: 1792068809609
-      modified: 1792149225463
-      sortKey: -1792149208164
+      modified: 1792068809609
+      sortKey: -1792068809609
       description: ""
     children:
       - url: "{{ _.base_url }}/api/recomendacoes/usuarios"
         name: Recomendar usuárias
         meta:
-          id: req_9d70ec64f48447e8a8560d27496843c0
+          id: req_56fa482d1b824c2fbb1da291105a4b89
           created: 1792068809727
           modified: 1792068809727
           isPrivate: false
@@ -1502,7 +1502,7 @@ collection:
       - url: "{{ _.base_url }}/api/recomendacoes/foruns"
         name: Recomendar fóruns
         meta:
-          id: req_7cb260fab616444e896ad218d900c906
+          id: req_ce8e603d22e145d4befb318cf888ba99
           created: 1792068809729
           modified: 1792068809729
           isPrivate: false
@@ -1525,7 +1525,7 @@ collection:
       - url: "{{ _.base_url }}/api/recomendacoes/conteudos"
         name: Recomendar conteúdos
         meta:
-          id: req_01f4f7bd652c40c787656702c0da06d4
+          id: req_6a10c330d6d942e49a9b5b38e98752b7
           created: 1792068809731
           modified: 1792068809731
           isPrivate: false
@@ -1547,13 +1547,2053 @@ collection:
 cookieJar:
   name: Default Jar
   meta:
-    id: jar_4e3ca4f07377ea4bd8351bb3a9811a0627e596e5
-    created: 1792149201065
-    modified: 1792149201065
+    id: jar_8c5a7237f9d12614fd59443b66cc9860137c87f6
+    created: 1792068809936
+    modified: 1792068809936
 environments:
-  name: Base Environment
+  name: Base environment
   meta:
-    id: env_4e3ca4f07377ea4bd8351bb3a9811a0627e596e5
-    created: 1792149201061
-    modified: 1792149201061
+    id: env_ff080d9af8204cbe82ccf14aedcd364a
+    created: 1792068809527
+    modified: 1792068809527
     isPrivate: false
+  data:
+    base_url: "{{ _.scheme }}://{{ _.host }}{{ _.base_path }}"
+  subEnvironments:
+    - name: OpenAPI env localhost:3000
+      meta:
+        id: env_4139905b911142fbb5a90315f6432def
+        created: 1792068809532
+        modified: 1792071842251
+        isPrivate: false
+        sortKey: 1792068809532
+      data:
+        scheme: http
+        base_path: ""
+        host: localhost:3000
+        bearerToken: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMCIsInRpcG8iOiJ1c3VhcmlhIiwiaWF0IjoxNzkyMDcwOTkwLCJleHAiOjE3OTIwNzQ1OTAsImF1ZCI6ImNvbnN0ZWxsYS1hcHAiLCJpc3MiOiJjb25zdGVsbGEifQ.GqREnTjB0OKk9WEI8UdGpb2wsL3Fk2OQM8kcuiBWT8c
+        moderadoraToken: ""
+spec:
+  contents:
+    openapi: 3.0.3
+    info:
+      title: Constella API
+      version: 1.0.0
+      description: >-
+        Documentação/importação da API backend do projeto Constella.
+
+
+        Base local: http://localhost:3000
+
+
+        A maioria das rotas usa JWT Bearer de usuária. As rotas de
+        /api/moderacao, exceto /login, usam o JWT de moderadora.
+    servers:
+      - url: http://localhost:3000
+        description: Servidor local
+    tags:
+      - name: Autenticação
+      - name: Perfil
+      - name: Interesses
+      - name: Usuárias
+      - name: Conexões
+      - name: Chats
+      - name: Fóruns
+      - name: Postagens
+      - name: Denúncias
+      - name: Moderação
+      - name: Conteúdos
+      - name: Pro
+      - name: Assinatura
+      - name: Recomendações
+    paths:
+      /:
+        get:
+          summary: Verificar se a API está online
+          tags:
+            - Autenticação
+          responses:
+            "200":
+              description: API online
+              content:
+                application/json:
+                  example:
+                    mensagem: API Constella funcionando!
+      /api/auth/cadastro:
+        post:
+          summary: Cadastrar usuária
+          tags:
+            - Autenticação
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  type: object
+                  required:
+                    - nome
+                    - email
+                    - senha
+                    - cpf
+                  properties:
+                    nome:
+                      type: string
+                      maxLength: 255
+                    email:
+                      type: string
+                      format: email
+                      maxLength: 255
+                    senha:
+                      type: string
+                      minLength: 8
+                    cpf:
+                      type: string
+                      description: CPF com 11 dígitos ou formatado
+                example:
+                  nome: Maria Silva
+                  email: maria@email.com
+                  senha: Senha@123
+                  cpf: "52998224725"
+          responses:
+            "201":
+              description: Usuária cadastrada
+              content:
+                application/json:
+                  example:
+                    mensagem: Usuária cadastrada com sucesso!
+                    token: JWT_AQUI
+                    usuaria:
+                      id: "1"
+                      nome: Maria Silva
+                      email: maria@email.com
+                      status_verificacao: false
+                    proxima_etapa: interesses
+            "400":
+              description: Dados inválidos
+            "409":
+              description: E-mail ou CPF já cadastrado
+            "429":
+              description: Muitas tentativas
+            "500":
+              description: Erro interno
+      /api/auth/login:
+        post:
+          summary: Login da usuária
+          tags:
+            - Autenticação
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  type: object
+                  required:
+                    - email
+                    - senha
+                  properties:
+                    email:
+                      type: string
+                      format: email
+                    senha:
+                      type: string
+                example:
+                  email: maria@email.com
+                  senha: Senha@123
+          responses:
+            "200":
+              description: Login realizado
+              content:
+                application/json:
+                  example:
+                    mensagem: Login realizado com sucesso
+                    token: JWT_AQUI
+                    usuaria:
+                      id: "1"
+                      nome: Maria Silva
+                      email: maria@email.com
+            "400":
+              description: Campos obrigatórios ausentes
+            "401":
+              description: Credenciais inválidas
+            "429":
+              description: Muitas tentativas
+            "500":
+              description: Erro interno
+      /api/perfil:
+        get:
+          summary: Obter meu perfil
+          tags:
+            - Perfil
+          responses:
+            "200":
+              description: Sucesso
+            "400":
+              description: Requisição inválida
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "401":
+              description: Não autenticado
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "500":
+              description: Erro interno
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+        put:
+          summary: Atualizar meu perfil
+          tags:
+            - Perfil
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    nome:
+                      type: string
+                      maxLength: 255
+                    email:
+                      type: string
+                      format: email
+                      maxLength: 255
+                    foto:
+                      type: string
+                      nullable: true
+                      maxLength: 500
+                  minProperties: 1
+                example:
+                  nome: Maria Atualizada
+                  foto: https://exemplo.com/foto.jpg
+          responses:
+            "200":
+              description: Sucesso
+            "400":
+              description: Requisição inválida
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "401":
+              description: Não autenticado
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "500":
+              description: Erro interno
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+      /api/interesses:
+        get:
+          summary: Listar interesses disponíveis
+          tags:
+            - Interesses
+          responses:
+            "200":
+              description: Sucesso
+            "400":
+              description: Requisição inválida
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "401":
+              description: Não autenticado
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "500":
+              description: Erro interno
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+      /api/interesses/meus:
+        get:
+          summary: Listar meus interesses
+          tags:
+            - Interesses
+          responses:
+            "200":
+              description: Sucesso
+            "400":
+              description: Requisição inválida
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "401":
+              description: Não autenticado
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "500":
+              description: Erro interno
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+        put:
+          summary: Substituir meus interesses
+          tags:
+            - Interesses
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  type: object
+                  required:
+                    - interesses
+                  properties:
+                    interesses:
+                      type: array
+                      items:
+                        type: integer
+                        format: int64
+                        minimum: 1
+                example:
+                  interesses:
+                    - 1
+                    - 2
+                    - 3
+          responses:
+            "200":
+              description: Sucesso
+            "400":
+              description: Requisição inválida
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "401":
+              description: Não autenticado
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "500":
+              description: Erro interno
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+      /api/usuarios:
+        get:
+          summary: Listar/buscar outras usuárias
+          tags:
+            - Usuárias
+          parameters:
+            - name: busca
+              in: query
+              required: false
+              description: Busca parcial pelo nome
+              schema:
+                type: string
+              example: Ana
+          responses:
+            "200":
+              description: Sucesso
+            "400":
+              description: Requisição inválida
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "401":
+              description: Não autenticado
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "500":
+              description: Erro interno
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+      /api/usuarios/{id}:
+        get:
+          summary: Buscar perfil de outra usuária
+          tags:
+            - Usuárias
+          parameters:
+            - name: id
+              in: path
+              required: true
+              description: ID da usuária
+              schema:
+                type: integer
+                format: int64
+                minimum: 1
+              example: 1
+          responses:
+            "200":
+              description: Sucesso
+            "400":
+              description: Requisição inválida
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "401":
+              description: Não autenticado
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "500":
+              description: Erro interno
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+      /api/conexoes:
+        get:
+          summary: Listar conexões aceitas
+          tags:
+            - Conexões
+          responses:
+            "200":
+              description: Sucesso
+            "400":
+              description: Requisição inválida
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "401":
+              description: Não autenticado
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "500":
+              description: Erro interno
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+      /api/conexoes/recebidas:
+        get:
+          summary: Listar solicitações recebidas
+          tags:
+            - Conexões
+          responses:
+            "200":
+              description: Sucesso
+            "400":
+              description: Requisição inválida
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "401":
+              description: Não autenticado
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "500":
+              description: Erro interno
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+      /api/conexoes/enviadas:
+        get:
+          summary: Listar solicitações enviadas
+          tags:
+            - Conexões
+          responses:
+            "200":
+              description: Sucesso
+            "400":
+              description: Requisição inválida
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "401":
+              description: Não autenticado
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "500":
+              description: Erro interno
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+      /api/conexoes/{id}:
+        post:
+          summary: Enviar solicitação de conexão
+          tags:
+            - Conexões
+          parameters:
+            - name: id
+              in: path
+              required: true
+              description: ID da usuária destinatária
+              schema:
+                type: integer
+                format: int64
+                minimum: 1
+              example: 1
+          responses:
+            "201":
+              description: Solicitação enviada
+            "400":
+              description: Solicitação inválida
+            "401":
+              description: Não autenticado
+            "404":
+              description: Usuária não encontrada
+            "409":
+              description: Conexão/solicitação já existente
+            "500":
+              description: Erro interno
+      /api/conexoes/{id}/aceitar:
+        patch:
+          summary: Aceitar solicitação de conexão
+          tags:
+            - Conexões
+          parameters:
+            - name: id
+              in: path
+              required: true
+              description: ID da conexão
+              schema:
+                type: integer
+                format: int64
+                minimum: 1
+              example: 1
+          responses:
+            "200":
+              description: Sucesso
+            "400":
+              description: Requisição inválida
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "401":
+              description: Não autenticado
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "500":
+              description: Erro interno
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+      /api/conexoes/{id}/recusar:
+        patch:
+          summary: Recusar solicitação de conexão
+          tags:
+            - Conexões
+          parameters:
+            - name: id
+              in: path
+              required: true
+              description: ID da conexão
+              schema:
+                type: integer
+                format: int64
+                minimum: 1
+              example: 1
+          responses:
+            "200":
+              description: Sucesso
+            "400":
+              description: Requisição inválida
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "401":
+              description: Não autenticado
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "500":
+              description: Erro interno
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+      /api/chats:
+        get:
+          summary: Listar meus chats
+          tags:
+            - Chats
+          responses:
+            "200":
+              description: Sucesso
+            "400":
+              description: Requisição inválida
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "401":
+              description: Não autenticado
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "500":
+              description: Erro interno
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+        post:
+          summary: Criar ou buscar chat
+          tags:
+            - Chats
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  type: object
+                  required:
+                    - id_destinataria
+                  properties:
+                    id_destinataria:
+                      type: integer
+                      format: int64
+                      minimum: 1
+                example:
+                  id_destinataria: 2
+          responses:
+            "200":
+              description: Sucesso
+            "400":
+              description: Requisição inválida
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "401":
+              description: Não autenticado
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "500":
+              description: Erro interno
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+      /api/chats/{id}:
+        get:
+          summary: Buscar chat por ID
+          tags:
+            - Chats
+          parameters:
+            - name: id
+              in: path
+              required: true
+              description: ID do chat
+              schema:
+                type: integer
+                format: int64
+                minimum: 1
+              example: 1
+          responses:
+            "200":
+              description: Sucesso
+            "400":
+              description: Requisição inválida
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "401":
+              description: Não autenticado
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "500":
+              description: Erro interno
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+      /api/chats/{id}/mensagens:
+        get:
+          summary: Listar mensagens do chat
+          tags:
+            - Chats
+          parameters:
+            - name: id
+              in: path
+              required: true
+              description: ID do chat
+              schema:
+                type: integer
+                format: int64
+                minimum: 1
+              example: 1
+            - name: pagina
+              in: query
+              required: false
+              schema:
+                type: integer
+                minimum: 1
+                default: 1
+            - name: limite
+              in: query
+              required: false
+              schema:
+                type: integer
+                minimum: 1
+                maximum: 50
+                default: 50
+          responses:
+            "200":
+              description: Sucesso
+            "400":
+              description: Requisição inválida
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "401":
+              description: Não autenticado
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "500":
+              description: Erro interno
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+        post:
+          summary: Enviar mensagem
+          tags:
+            - Chats
+          parameters:
+            - name: id
+              in: path
+              required: true
+              description: ID do chat
+              schema:
+                type: integer
+                format: int64
+                minimum: 1
+              example: 1
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  type: object
+                  required:
+                    - conteudo
+                  properties:
+                    conteudo:
+                      type: string
+                      minLength: 1
+                      maxLength: 1000
+                example:
+                  conteudo: Oi! Tudo bem?
+          responses:
+            "201":
+              description: Mensagem enviada
+            "400":
+              description: Mensagem inválida
+            "401":
+              description: Não autenticado
+            "403":
+              description: Sem acesso ao chat
+            "404":
+              description: Chat não encontrado
+            "500":
+              description: Erro interno
+      /api/chats/{id}/mensagens/{idMensagem}:
+        delete:
+          summary: Excluir mensagem
+          tags:
+            - Chats
+          parameters:
+            - name: id
+              in: path
+              required: true
+              description: ID do chat
+              schema:
+                type: integer
+                format: int64
+                minimum: 1
+              example: 1
+            - name: idMensagem
+              in: path
+              required: true
+              description: ID da mensagem
+              schema:
+                type: integer
+                format: int64
+                minimum: 1
+              example: 1
+          responses:
+            "200":
+              description: Sucesso
+            "400":
+              description: Requisição inválida
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "401":
+              description: Não autenticado
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "500":
+              description: Erro interno
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+      /api/foruns:
+        get:
+          summary: Listar fóruns
+          tags:
+            - Fóruns
+          responses:
+            "200":
+              description: Sucesso
+            "400":
+              description: Requisição inválida
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "401":
+              description: Não autenticado
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "500":
+              description: Erro interno
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+        post:
+          summary: Criar fórum
+          tags:
+            - Fóruns
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  type: object
+                  required:
+                    - titulo
+                  properties:
+                    titulo:
+                      type: string
+                      maxLength: 255
+                    descricao:
+                      type: string
+                      nullable: true
+                      maxLength: 255
+                    capa:
+                      type: string
+                      nullable: true
+                      maxLength: 255
+                example:
+                  titulo: Mulheres na Tecnologia
+                  descricao: Espaço para trocar experiências.
+          responses:
+            "201":
+              description: Fórum criado
+            "400":
+              description: Dados inválidos
+            "401":
+              description: Não autenticado
+            "500":
+              description: Erro interno / nenhuma moderadora cadastrada
+      /api/foruns/meus:
+        get:
+          summary: Listar fóruns dos quais participo
+          tags:
+            - Fóruns
+          responses:
+            "200":
+              description: Sucesso
+            "400":
+              description: Requisição inválida
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "401":
+              description: Não autenticado
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "500":
+              description: Erro interno
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+      /api/foruns/{id}:
+        get:
+          summary: Buscar fórum
+          tags:
+            - Fóruns
+          parameters:
+            - name: id
+              in: path
+              required: true
+              description: ID do fórum
+              schema:
+                type: integer
+                format: int64
+                minimum: 1
+              example: 1
+          responses:
+            "200":
+              description: Sucesso
+            "400":
+              description: Requisição inválida
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "401":
+              description: Não autenticado
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "500":
+              description: Erro interno
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+        put:
+          summary: Editar fórum
+          tags:
+            - Fóruns
+          parameters:
+            - name: id
+              in: path
+              required: true
+              description: ID do fórum
+              schema:
+                type: integer
+                format: int64
+                minimum: 1
+              example: 1
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    titulo:
+                      type: string
+                      maxLength: 255
+                    descricao:
+                      type: string
+                      nullable: true
+                      maxLength: 255
+                    capa:
+                      type: string
+                      nullable: true
+                      maxLength: 255
+                  minProperties: 1
+                example:
+                  descricao: Descrição atualizada
+          responses:
+            "200":
+              description: Sucesso
+            "400":
+              description: Requisição inválida
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "401":
+              description: Não autenticado
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "500":
+              description: Erro interno
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+        delete:
+          summary: Excluir fórum
+          tags:
+            - Fóruns
+          parameters:
+            - name: id
+              in: path
+              required: true
+              description: ID do fórum
+              schema:
+                type: integer
+                format: int64
+                minimum: 1
+              example: 1
+          responses:
+            "200":
+              description: Sucesso
+            "400":
+              description: Requisição inválida
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "401":
+              description: Não autenticado
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "500":
+              description: Erro interno
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+      /api/foruns/{id}/entrar:
+        post:
+          summary: Entrar em fórum
+          tags:
+            - Fóruns
+          parameters:
+            - name: id
+              in: path
+              required: true
+              description: ID do fórum
+              schema:
+                type: integer
+                format: int64
+                minimum: 1
+              example: 1
+          responses:
+            "201":
+              description: Entrada realizada
+            "400":
+              description: ID inválido
+            "401":
+              description: Não autenticado
+            "404":
+              description: Fórum não encontrado
+            "409":
+              description: Já participa do fórum
+            "500":
+              description: Erro interno
+      /api/foruns/{id}/sair:
+        delete:
+          summary: Sair de fórum
+          tags:
+            - Fóruns
+          parameters:
+            - name: id
+              in: path
+              required: true
+              description: ID do fórum
+              schema:
+                type: integer
+                format: int64
+                minimum: 1
+              example: 1
+          responses:
+            "200":
+              description: Sucesso
+            "400":
+              description: Requisição inválida
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "401":
+              description: Não autenticado
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "500":
+              description: Erro interno
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+      /api/foruns/{id}/postagens:
+        get:
+          summary: Listar postagens do fórum
+          tags:
+            - Postagens
+          parameters:
+            - name: id
+              in: path
+              required: true
+              description: ID do fórum
+              schema:
+                type: integer
+                format: int64
+                minimum: 1
+              example: 1
+          responses:
+            "200":
+              description: Sucesso
+            "400":
+              description: Requisição inválida
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "401":
+              description: Não autenticado
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "500":
+              description: Erro interno
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+        post:
+          summary: Criar postagem no fórum
+          tags:
+            - Postagens
+          parameters:
+            - name: id
+              in: path
+              required: true
+              description: ID do fórum
+              schema:
+                type: integer
+                format: int64
+                minimum: 1
+              example: 1
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  type: object
+                  required:
+                    - conteudo
+                  properties:
+                    conteudo:
+                      type: string
+                      minLength: 1
+                    imagem:
+                      type: string
+                      nullable: true
+                      maxLength: 500
+                example:
+                  conteudo: Minha primeira postagem!
+          responses:
+            "201":
+              description: Postagem criada
+            "400":
+              description: Dados inválidos
+            "401":
+              description: Não autenticado
+            "403":
+              description: É necessário participar do fórum
+            "404":
+              description: Fórum não encontrado
+            "500":
+              description: Erro interno
+      /api/postagens/{id}:
+        put:
+          summary: Editar postagem
+          tags:
+            - Postagens
+          parameters:
+            - name: id
+              in: path
+              required: true
+              description: ID da postagem
+              schema:
+                type: integer
+                format: int64
+                minimum: 1
+              example: 1
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    conteudo:
+                      type: string
+                      minLength: 1
+                    imagem:
+                      type: string
+                      nullable: true
+                      maxLength: 500
+                  minProperties: 1
+                example:
+                  conteudo: Texto atualizado.
+          responses:
+            "200":
+              description: Sucesso
+            "400":
+              description: Requisição inválida
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "401":
+              description: Não autenticado
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "500":
+              description: Erro interno
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+        delete:
+          summary: Excluir postagem
+          tags:
+            - Postagens
+          parameters:
+            - name: id
+              in: path
+              required: true
+              description: ID da postagem
+              schema:
+                type: integer
+                format: int64
+                minimum: 1
+              example: 1
+          responses:
+            "200":
+              description: Sucesso
+            "400":
+              description: Requisição inválida
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "401":
+              description: Não autenticado
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "500":
+              description: Erro interno
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+      /api/denuncias/usuarias/{id}:
+        post:
+          summary: Denunciar usuária
+          tags:
+            - Denúncias
+          parameters:
+            - name: id
+              in: path
+              required: true
+              description: ID da usuária denunciada
+              schema:
+                type: integer
+                format: int64
+                minimum: 1
+              example: 1
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  type: object
+                  required:
+                    - motivo
+                  properties:
+                    motivo:
+                      type: string
+                      minLength: 1
+                      maxLength: 255
+                example:
+                  motivo: Conteúdo/comportamento inadequado.
+          responses:
+            "201":
+              description: Denúncia registrada
+            "400":
+              description: Denúncia inválida
+            "401":
+              description: Não autenticado
+            "403":
+              description: Acesso proibido
+            "404":
+              description: Alvo não encontrado
+            "500":
+              description: Erro interno
+      /api/denuncias/postagens/{id}:
+        post:
+          summary: Denunciar postagem
+          tags:
+            - Denúncias
+          parameters:
+            - name: id
+              in: path
+              required: true
+              description: ID da postagem denunciada
+              schema:
+                type: integer
+                format: int64
+                minimum: 1
+              example: 1
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  type: object
+                  required:
+                    - motivo
+                  properties:
+                    motivo:
+                      type: string
+                      minLength: 1
+                      maxLength: 255
+                example:
+                  motivo: Conteúdo/comportamento inadequado.
+          responses:
+            "201":
+              description: Denúncia registrada
+            "400":
+              description: Denúncia inválida
+            "401":
+              description: Não autenticado
+            "403":
+              description: Acesso proibido
+            "404":
+              description: Alvo não encontrado
+            "500":
+              description: Erro interno
+      /api/denuncias/mensagens/{id}:
+        post:
+          summary: Denunciar mensagem
+          tags:
+            - Denúncias
+          parameters:
+            - name: id
+              in: path
+              required: true
+              description: ID da mensagem denunciada
+              schema:
+                type: integer
+                format: int64
+                minimum: 1
+              example: 1
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  type: object
+                  required:
+                    - motivo
+                  properties:
+                    motivo:
+                      type: string
+                      minLength: 1
+                      maxLength: 255
+                example:
+                  motivo: Conteúdo/comportamento inadequado.
+          responses:
+            "201":
+              description: Denúncia registrada
+            "400":
+              description: Denúncia inválida
+            "401":
+              description: Não autenticado
+            "403":
+              description: Acesso proibido
+            "404":
+              description: Alvo não encontrado
+            "500":
+              description: Erro interno
+      /api/denuncias/minhas:
+        get:
+          summary: Listar minhas denúncias
+          tags:
+            - Denúncias
+          responses:
+            "200":
+              description: Sucesso
+            "400":
+              description: Requisição inválida
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "401":
+              description: Não autenticado
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "500":
+              description: Erro interno
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+      /api/moderacao/login:
+        post:
+          summary: Login da moderadora
+          tags:
+            - Moderação
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  type: object
+                  required:
+                    - email
+                    - senha
+                  properties:
+                    email:
+                      type: string
+                      format: email
+                    senha:
+                      type: string
+                example:
+                  email: ana@constella.dev
+                  senha: Senha@123
+          responses:
+            "200":
+              description: Login realizado
+            "400":
+              description: Campos obrigatórios ausentes
+            "401":
+              description: Credenciais inválidas
+            "500":
+              description: Erro interno
+      /api/moderacao/denuncias:
+        get:
+          summary: Listar denúncias para moderação
+          tags:
+            - Moderação
+          parameters:
+            - name: status
+              in: query
+              required: false
+              schema:
+                type: string
+                enum:
+                  - PENDENTE
+                  - EM_ANALISE
+                  - RESOLVIDA
+                  - REJEITADA
+              example: PENDENTE
+          responses:
+            "200":
+              description: Sucesso
+            "400":
+              description: Requisição inválida
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "401":
+              description: Não autenticado
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "500":
+              description: Erro interno
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+      /api/moderacao/denuncias/{id}:
+        get:
+          summary: Buscar denúncia
+          tags:
+            - Moderação
+          parameters:
+            - name: id
+              in: path
+              required: true
+              description: ID da denúncia
+              schema:
+                type: integer
+                format: int64
+                minimum: 1
+              example: 1
+          responses:
+            "200":
+              description: Sucesso
+            "400":
+              description: Requisição inválida
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "401":
+              description: Não autenticado
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "500":
+              description: Erro interno
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+      /api/moderacao/denuncias/{id}/status:
+        patch:
+          summary: Atualizar status da denúncia
+          tags:
+            - Moderação
+          parameters:
+            - name: id
+              in: path
+              required: true
+              description: ID da denúncia
+              schema:
+                type: integer
+                format: int64
+                minimum: 1
+              example: 1
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  type: object
+                  required:
+                    - status
+                  properties:
+                    status:
+                      type: string
+                      enum:
+                        - PENDENTE
+                        - EM_ANALISE
+                        - RESOLVIDA
+                        - REJEITADA
+                example:
+                  status: EM_ANALISE
+          responses:
+            "200":
+              description: Sucesso
+            "400":
+              description: Requisição inválida
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "401":
+              description: Não autenticado
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "500":
+              description: Erro interno
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+      /api/moderacao/relatorios:
+        get:
+          summary: Listar relatórios da moderadora
+          tags:
+            - Moderação
+          responses:
+            "200":
+              description: Sucesso
+            "400":
+              description: Requisição inválida
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "401":
+              description: Não autenticado
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "500":
+              description: Erro interno
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+      /api/conteudos:
+        get:
+          summary: Listar conteúdos
+          tags:
+            - Conteúdos
+          responses:
+            "200":
+              description: Sucesso
+            "400":
+              description: Requisição inválida
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "401":
+              description: Não autenticado
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "500":
+              description: Erro interno
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+      /api/conteudos/{id}:
+        get:
+          summary: Buscar conteúdo
+          tags:
+            - Conteúdos
+          parameters:
+            - name: id
+              in: path
+              required: true
+              description: ID do conteúdo
+              schema:
+                type: integer
+                format: int64
+                minimum: 1
+              example: 1
+          responses:
+            "200":
+              description: Sucesso
+            "400":
+              description: Requisição inválida
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "401":
+              description: Não autenticado
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "500":
+              description: Erro interno
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+      /api/conteudos/{id}/acesso:
+        post:
+          summary: Registrar acesso ao conteúdo
+          tags:
+            - Conteúdos
+          parameters:
+            - name: id
+              in: path
+              required: true
+              description: ID do conteúdo
+              schema:
+                type: integer
+                format: int64
+                minimum: 1
+              example: 1
+          responses:
+            "200":
+              description: Sucesso
+            "400":
+              description: Requisição inválida
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "401":
+              description: Não autenticado
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "500":
+              description: Erro interno
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+      /api/conteudos/{id}/progresso:
+        patch:
+          summary: Atualizar progresso do conteúdo
+          tags:
+            - Conteúdos
+          parameters:
+            - name: id
+              in: path
+              required: true
+              description: ID do conteúdo
+              schema:
+                type: integer
+                format: int64
+                minimum: 1
+              example: 1
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  type: object
+                  required:
+                    - progresso
+                  properties:
+                    progresso:
+                      type: number
+                      minimum: 0
+                      maximum: 100
+                example:
+                  progresso: 50
+          responses:
+            "200":
+              description: Sucesso
+            "400":
+              description: Requisição inválida
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "401":
+              description: Não autenticado
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "500":
+              description: Erro interno
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+      /api/pro:
+        get:
+          summary: Verificar meu status Pro
+          tags:
+            - Pro
+          responses:
+            "200":
+              description: Sucesso
+            "400":
+              description: Requisição inválida
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "401":
+              description: Não autenticado
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "500":
+              description: Erro interno
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+      /api/pro/conteudos:
+        get:
+          summary: Listar conteúdos Pro
+          tags:
+            - Pro
+          description: Exige autenticação de usuária e assinatura existente.
+          responses:
+            "200":
+              description: Sucesso
+            "400":
+              description: Requisição inválida
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "401":
+              description: Não autenticado
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "500":
+              description: Erro interno
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+      /api/pro/conteudos/{id}:
+        get:
+          summary: Buscar conteúdo Pro
+          tags:
+            - Pro
+          description: Exige autenticação de usuária e assinatura existente.
+          parameters:
+            - name: id
+              in: path
+              required: true
+              description: ID do conteúdo Pro
+              schema:
+                type: integer
+                format: int64
+                minimum: 1
+              example: 1
+          responses:
+            "200":
+              description: Sucesso
+            "400":
+              description: Requisição inválida
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "401":
+              description: Não autenticado
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "500":
+              description: Erro interno
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+      /api/assinatura:
+        get:
+          summary: Consultar minha assinatura
+          tags:
+            - Assinatura
+          responses:
+            "200":
+              description: Sucesso
+            "400":
+              description: Requisição inválida
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "401":
+              description: Não autenticado
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "500":
+              description: Erro interno
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+        post:
+          summary: Criar assinatura
+          tags:
+            - Assinatura
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  type: object
+                  required:
+                    - forma_pagamento
+                    - valor
+                  properties:
+                    forma_pagamento:
+                      type: string
+                      maxLength: 50
+                    valor:
+                      type: number
+                      minimum: 0
+                example:
+                  forma_pagamento: CARTAO
+                  valor: 19.9
+          responses:
+            "201":
+              description: Assinatura criada
+            "400":
+              description: Dados inválidos
+            "401":
+              description: Não autenticado
+            "409":
+              description: Usuária já possui assinatura
+            "500":
+              description: Erro interno
+        delete:
+          summary: Cancelar assinatura
+          tags:
+            - Assinatura
+          responses:
+            "200":
+              description: Sucesso
+            "400":
+              description: Requisição inválida
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "401":
+              description: Não autenticado
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "500":
+              description: Erro interno
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+      /api/recomendacoes/usuarios:
+        get:
+          summary: Recomendar usuárias
+          tags:
+            - Recomendações
+          description: Ordena por compatibilidade de interesses usando similaridade de
+            Jaccard.
+          responses:
+            "200":
+              description: Sucesso
+            "400":
+              description: Requisição inválida
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "401":
+              description: Não autenticado
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "500":
+              description: Erro interno
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+      /api/recomendacoes/foruns:
+        get:
+          summary: Recomendar fóruns
+          tags:
+            - Recomendações
+          description: Considera interesses encontrados no título/descrição do fórum e
+            popularidade.
+          responses:
+            "200":
+              description: Sucesso
+            "400":
+              description: Requisição inválida
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "401":
+              description: Não autenticado
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "500":
+              description: Erro interno
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+      /api/recomendacoes/conteudos:
+        get:
+          summary: Recomendar conteúdos
+          tags:
+            - Recomendações
+          description: Ordena conteúdos pela quantidade de interesses compatíveis.
+          responses:
+            "200":
+              description: Sucesso
+            "400":
+              description: Requisição inválida
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "401":
+              description: Não autenticado
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+            "500":
+              description: Erro interno
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Erro"
+    components:
+      securitySchemes:
+        BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+          description: Token JWT da usuária retornado por cadastro/login.
+        ModeradoraBearer:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+          description: Token JWT retornado por /api/moderacao/login.
+      schemas:
+        Erro:
+          type: object
+          properties:
+            mensagem:
+              type: string
+          example:
+            mensagem: Erro ao processar a requisição.
+  meta:
+    id: spc_8155eb2650e44cf1951d6a878c74fbd8
+    created: 1792068809521
+    modified: 1792068825007

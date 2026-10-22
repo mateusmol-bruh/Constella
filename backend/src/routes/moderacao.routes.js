@@ -14,15 +14,29 @@ const moderacaoController =
 const router =
   express.Router();
 
+/*
+ * LOGIN DA MODERADORA
+ *
+ * Esta rota precisa ficar antes
+ * do middleware porque ainda
+ * não existe token.
+ */
 router.post(
   "/login",
   moderacaoController.login
 );
 
+/*
+ * A partir daqui todas as rotas
+ * exigem JWT de moderadora.
+ */
 router.use(
   autenticarModeradora
 );
 
+/*
+ * DENÚNCIAS
+ */
 router.get(
   "/denuncias",
   moderacaoController.listar
@@ -38,9 +52,25 @@ router.patch(
   moderacaoController.atualizarStatus
 );
 
+/*
+ * RELATÓRIOS
+ */
 router.get(
   "/relatorios",
   moderacaoController.relatorios
+);
+
+/*
+ * CONTEÚDOS
+ */
+router.post(
+  "/conteudos",
+  moderacaoController.cadastrarConteudo
+);
+
+router.post(
+  "/conteudos/pro",
+  moderacaoController.cadastrarConteudoPro
 );
 
 module.exports = router;
