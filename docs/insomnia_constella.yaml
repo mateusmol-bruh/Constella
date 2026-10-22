@@ -1,0 +1,1559 @@
+type: collection.insomnia.rest/5.0
+schema_version: "5.1"
+name: Constella API
+meta:
+  id: wrk_a473f3b20af54030b7bfa7ad24d5d200
+  created: 1792149201058
+  modified: 1792149201058
+  description: ""
+collection:
+  - name: Autenticação
+    meta:
+      id: fld_4bf2ecea2ff04f619d30471a3aba755b
+      created: 1792068809552
+      modified: 1792149206943
+      sortKey: -1792149206864
+      description: ""
+    children:
+      - url: "{{ _."
+        name: Verificar se a API está online
+        meta:
+          id: req_33fcd102fe2341dcb6522412793dc03a
+          created: 1792068809612
+          modified: 1792074398649
+          isPrivate: false
+          description: ""
+          sortKey: -1792068809612
+        method: GET
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/auth/cadastro"
+        name: Cadastrar usuária
+        meta:
+          id: req_2b6ffe32196445f48fb102317ec6aac3
+          created: 1792068809615
+          modified: 1792072884755
+          isPrivate: false
+          description: ""
+          sortKey: -1792068809615
+        method: POST
+        body:
+          mimeType: application/json
+          text: |-
+            {
+            		"nome": "Ana",
+              "email": "ana@example.com",
+              "senha": "ana12345",
+              "cpf": "45806396851"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+            disabled: false
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/auth/login"
+        name: Login da usuária
+        meta:
+          id: req_389161d1191e45f1a5f205b19da49682
+          created: 1792068809617
+          modified: 1792070803755
+          isPrivate: false
+          description: ""
+          sortKey: -1792068809617
+        method: POST
+        body:
+          mimeType: application/json
+          text: |-
+            {
+              "email": "teste@example.com",
+              "senha": "teste12345"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+            disabled: false
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+  - name: Perfil
+    meta:
+      id: fld_b7e4173d2f084d63ba848703261b3441
+      created: 1792068809563
+      modified: 1792149208612
+      sortKey: -1792149206964
+      description: ""
+    children:
+      - url: "{{ _.base_url }}/api/perfil"
+        name: Obter meu perfil
+        meta:
+          id: req_f1b3158fac7b4d2c9df17327b2a03c6f
+          created: 1792068809619
+          modified: 1792071755444
+          isPrivate: false
+          description: ""
+          sortKey: -1792068809619
+        method: GET
+        authentication:
+          type: bearer
+          token: "{{ _.bearerToken }}"
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/perfil"
+        name: Atualizar meu perfil
+        meta:
+          id: req_ed2ddb6b0866446ba4351572334cd1d3
+          created: 1792068809621
+          modified: 1792071865725
+          isPrivate: false
+          description: ""
+          sortKey: -1792068809621
+        method: PUT
+        body:
+          mimeType: application/json
+          text: |-
+            {
+              "nome": "Nathalia"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+            disabled: false
+        authentication:
+          type: bearer
+          token: "{{ _.bearerToken }}"
+          prefix: ""
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+  - name: Interesses
+    meta:
+      id: fld_8fec986ff5f1436ca7ecdf0d7d58cebd
+      created: 1792068809578
+      modified: 1792149210237
+      sortKey: -1792149207064
+      description: ""
+    children:
+      - url: "{{ _.base_url }}/api/interesses"
+        name: Listar interesses disponíveis
+        meta:
+          id: req_2fa26d6a3f114e038ca20e44f6be1733
+          created: 1792068809624
+          modified: 1792068809624
+          isPrivate: false
+          description: ""
+          sortKey: -1792068809624
+        method: GET
+        authentication:
+          type: bearer
+          token: "{{ _.bearerToken }}"
+          prefix: ""
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/interesses/meus"
+        name: Listar meus interesses
+        meta:
+          id: req_f3e9995479ee4ed084f08319cf1b2e3d
+          created: 1792068809626
+          modified: 1792068809626
+          isPrivate: false
+          description: ""
+          sortKey: -1792068809626
+        method: GET
+        authentication:
+          type: bearer
+          token: "{{ _.bearerToken }}"
+          prefix: ""
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/interesses/meus"
+        name: Substituir meus interesses
+        meta:
+          id: req_4a5a276bf1584b419d959df484726658
+          created: 1792068809628
+          modified: 1792071889269
+          isPrivate: false
+          description: ""
+          sortKey: -1792068809628
+        method: PUT
+        body:
+          mimeType: application/json
+          text: |-
+            {
+              "interesses": [
+                1,2,3
+              ]
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+            disabled: false
+        authentication:
+          type: bearer
+          token: "{{ _.bearerToken }}"
+          prefix: ""
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+  - name: Usuárias
+    meta:
+      id: fld_a744678b6ede435b8097f3306fbdab27
+      created: 1792068809581
+      modified: 1792149211642
+      sortKey: -1792149207164
+      description: ""
+    children:
+      - url: "{{ _.base_url }}/api/usuarios"
+        name: Listar/buscar outras usuárias
+        meta:
+          id: req_2d76dd3bdcc04d4d82f0ec046be44242
+          created: 1792068809630
+          modified: 1792068809630
+          isPrivate: false
+          description: ""
+          sortKey: -1792068809630
+        method: GET
+        parameters:
+          - name: busca
+            value: string
+            disabled: true
+        authentication:
+          type: bearer
+          token: "{{ _.bearerToken }}"
+          prefix: ""
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/usuarios?busca=Ana"
+        name: Buscar perfil de outra usuária
+        meta:
+          id: req_8418b7afac794e4a94d765e2e08076ae
+          created: 1792068809631
+          modified: 1792073130196
+          isPrivate: false
+          description: ""
+          sortKey: -1792068809631
+        method: GET
+        authentication:
+          type: bearer
+          token: "{{ _.bearerToken }}"
+          prefix: ""
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+  - name: Conexões
+    meta:
+      id: fld_916bb18342ca4b8eb2e38a832646a565
+      created: 1792068809584
+      modified: 1792149213341
+      sortKey: -1792149207264
+      description: ""
+    children:
+      - url: "{{ _.base_url }}/api/conexoes"
+        name: Listar conexões aceitas
+        meta:
+          id: req_8954f5931e6b46d19df42f39c4fc341e
+          created: 1792068809633
+          modified: 1792068809633
+          isPrivate: false
+          description: ""
+          sortKey: -1792068809633
+        method: GET
+        authentication:
+          type: bearer
+          token: "{{ _.bearerToken }}"
+          prefix: ""
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/conexoes/recebidas"
+        name: Listar solicitações recebidas
+        meta:
+          id: req_240956575fec47fb97b1b3c140c15127
+          created: 1792068809635
+          modified: 1792068809635
+          isPrivate: false
+          description: ""
+          sortKey: -1792068809635
+        method: GET
+        authentication:
+          type: bearer
+          token: "{{ _.bearerToken }}"
+          prefix: ""
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/conexoes/enviadas"
+        name: Listar solicitações enviadas
+        meta:
+          id: req_a64f59ad29344d48bdc141990bfbea4d
+          created: 1792068809637
+          modified: 1792068809637
+          isPrivate: false
+          description: ""
+          sortKey: -1792068809637
+        method: GET
+        authentication:
+          type: bearer
+          token: "{{ _.bearerToken }}"
+          prefix: ""
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/conexoes/:id"
+        name: Enviar solicitação de conexão
+        meta:
+          id: req_ffb1342be31244018dff021871d2cec3
+          created: 1792068809639
+          modified: 1792073649633
+          isPrivate: false
+          description: ""
+          sortKey: -1792068809639
+        method: POST
+        body:
+          mimeType: application/json
+          text: ""
+        headers:
+          - name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{{ _.bearerToken }}"
+          prefix: ""
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+        pathParameters:
+          - name: id
+            value: "1"
+      - url: "{{ _.base_url }}/api/conexoes/:id/aceitar"
+        name: Aceitar solicitação de conexão
+        meta:
+          id: req_83f670cd593a418b92c4a4b5b22932ed
+          created: 1792068809642
+          modified: 1792068809642
+          isPrivate: false
+          description: ""
+          sortKey: -1792068809642
+        method: PATCH
+        authentication:
+          type: bearer
+          token: "{{ _.bearerToken }}"
+          prefix: ""
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/conexoes/:id/recusar"
+        name: Recusar solicitação de conexão
+        meta:
+          id: req_2600c31ddd88479d90f39dfde9785660
+          created: 1792068809644
+          modified: 1792068809644
+          isPrivate: false
+          description: ""
+          sortKey: -1792068809644
+        method: PATCH
+        authentication:
+          type: bearer
+          token: "{{ _.bearerToken }}"
+          prefix: ""
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+  - name: Chats
+    meta:
+      id: fld_9beab9260b384999a2a3cca776ef2cb9
+      created: 1792068809587
+      modified: 1792149214512
+      sortKey: -1792149207364
+      description: ""
+    children:
+      - url: "{{ _.base_url }}/api/chats"
+        name: Listar meus chats
+        meta:
+          id: req_336f9bab4bc14dd1bfdc0983236e4f7e
+          created: 1792068809646
+          modified: 1792068809646
+          isPrivate: false
+          description: ""
+          sortKey: -1792068809646
+        method: GET
+        authentication:
+          type: bearer
+          token: "{{ _.bearerToken }}"
+          prefix: ""
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/chats"
+        name: Criar ou buscar chat
+        meta:
+          id: req_e4b57961692f475db0d1df25c958fb3f
+          created: 1792068809648
+          modified: 1792075058917
+          isPrivate: false
+          description: ""
+          sortKey: -1792068809648
+        method: POST
+        body:
+          mimeType: application/json
+          text: |-
+            {
+              "id_destinataria": 0
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+            disabled: false
+        authentication:
+          type: bearer
+          token: "{{ _.bearerToken }}"
+          prefix: ""
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/chats/:id"
+        name: Buscar chat por ID
+        meta:
+          id: req_717a53bdd8e440678abdea900a37e2fb
+          created: 1792068809650
+          modified: 1792068809650
+          isPrivate: false
+          description: ""
+          sortKey: -1792068809650
+        method: GET
+        authentication:
+          type: bearer
+          token: "{{ _.bearerToken }}"
+          prefix: ""
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/chats/:id/mensagens"
+        name: Listar mensagens do chat
+        meta:
+          id: req_357c464a18584865ad03e23a08a0e056
+          created: 1792068809652
+          modified: 1792068809652
+          isPrivate: false
+          description: ""
+          sortKey: -1792068809652
+        method: GET
+        parameters:
+          - name: pagina
+            value: "1"
+            disabled: true
+          - name: limite
+            value: "50"
+            disabled: true
+        authentication:
+          type: bearer
+          token: "{{ _.bearerToken }}"
+          prefix: ""
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/chats/:id/mensagens"
+        name: Enviar mensagem
+        meta:
+          id: req_4c8a35a60d7045718f6f816c0dcd7ddd
+          created: 1792068809655
+          modified: 1792068809655
+          isPrivate: false
+          description: ""
+          sortKey: -1792068809655
+        method: POST
+        body:
+          mimeType: application/json
+          text: |-
+            {
+              "conteudo": "string"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+            disabled: false
+        authentication:
+          type: bearer
+          token: "{{ _.bearerToken }}"
+          prefix: ""
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/chats/:id/mensagens/:idMensagem"
+        name: Excluir mensagem
+        meta:
+          id: req_9bfeef45cf4c42a9a9dfef087b63ce53
+          created: 1792068809658
+          modified: 1792068809658
+          isPrivate: false
+          description: ""
+          sortKey: -1792068809658
+        method: DELETE
+        authentication:
+          type: bearer
+          token: "{{ _.bearerToken }}"
+          prefix: ""
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+  - name: Fóruns
+    meta:
+      id: fld_73ee9f59419343e6a1fb3e1a7d6580c2
+      created: 1792068809590
+      modified: 1792149215973
+      sortKey: -1792149207464
+      description: ""
+    children:
+      - url: "{{ _.base_url }}/api/foruns"
+        name: Listar fóruns
+        meta:
+          id: req_916a02a671af466384ff283817e6f2b4
+          created: 1792068809660
+          modified: 1792068809660
+          isPrivate: false
+          description: ""
+          sortKey: -1792068809660
+        method: GET
+        authentication:
+          type: bearer
+          token: "{{ _.bearerToken }}"
+          prefix: ""
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/foruns"
+        name: Criar fórum
+        meta:
+          id: req_8ba282db590e4d5abe737d04449be2d2
+          created: 1792068809662
+          modified: 1792068809662
+          isPrivate: false
+          description: ""
+          sortKey: -1792068809662
+        method: POST
+        body:
+          mimeType: application/json
+          text: |-
+            {
+              "titulo": "string",
+              "descricao": "string",
+              "capa": "string"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+            disabled: false
+        authentication:
+          type: bearer
+          token: "{{ _.bearerToken }}"
+          prefix: ""
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/foruns/meus"
+        name: Listar fóruns dos quais participo
+        meta:
+          id: req_5aa8ff4085fe4e5aa89546df500c225a
+          created: 1792068809664
+          modified: 1792068809664
+          isPrivate: false
+          description: ""
+          sortKey: -1792068809664
+        method: GET
+        authentication:
+          type: bearer
+          token: "{{ _.bearerToken }}"
+          prefix: ""
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/foruns/:id"
+        name: Buscar fórum
+        meta:
+          id: req_0b5cb2e10f104fc8b10091ae5f543bd0
+          created: 1792068809666
+          modified: 1792068809666
+          isPrivate: false
+          description: ""
+          sortKey: -1792068809666
+        method: GET
+        authentication:
+          type: bearer
+          token: "{{ _.bearerToken }}"
+          prefix: ""
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/foruns/:id"
+        name: Editar fórum
+        meta:
+          id: req_00965dfbc2ff420b9436b433cca72f78
+          created: 1792068809668
+          modified: 1792068809668
+          isPrivate: false
+          description: ""
+          sortKey: -1792068809668
+        method: PUT
+        body:
+          mimeType: application/json
+          text: |-
+            {
+              "titulo": "string",
+              "descricao": "string",
+              "capa": "string"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+            disabled: false
+        authentication:
+          type: bearer
+          token: "{{ _.bearerToken }}"
+          prefix: ""
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/foruns/:id"
+        name: Excluir fórum
+        meta:
+          id: req_3e3d53038ef04f8ca0bde1b685a881cf
+          created: 1792068809669
+          modified: 1792068809669
+          isPrivate: false
+          description: ""
+          sortKey: -1792068809669
+        method: DELETE
+        authentication:
+          type: bearer
+          token: "{{ _.bearerToken }}"
+          prefix: ""
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/foruns/:id/entrar"
+        name: Entrar em fórum
+        meta:
+          id: req_02d49f6e075e4f61a5f1934df4949733
+          created: 1792068809671
+          modified: 1792068809671
+          isPrivate: false
+          description: ""
+          sortKey: -1792068809671
+        method: POST
+        authentication:
+          type: bearer
+          token: "{{ _.bearerToken }}"
+          prefix: ""
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/foruns/:id/sair"
+        name: Sair de fórum
+        meta:
+          id: req_3820e02e99ac4e289b5b7041e79888a2
+          created: 1792068809674
+          modified: 1792068809674
+          isPrivate: false
+          description: ""
+          sortKey: -1792068809674
+        method: DELETE
+        authentication:
+          type: bearer
+          token: "{{ _.bearerToken }}"
+          prefix: ""
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+  - name: Postagens
+    meta:
+      id: fld_774322e423e646d7ae23d6976852a541
+      created: 1792068809593
+      modified: 1792149217053
+      sortKey: -1792149207564
+      description: ""
+    children:
+      - url: "{{ _.base_url }}/api/foruns/:id/postagens"
+        name: Listar postagens do fórum
+        meta:
+          id: req_dcfdb9aa450e4ea98c4c940aab0f4a6e
+          created: 1792068809676
+          modified: 1792068809676
+          isPrivate: false
+          description: ""
+          sortKey: -1792068809676
+        method: GET
+        authentication:
+          type: bearer
+          token: "{{ _.bearerToken }}"
+          prefix: ""
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/foruns/:id/postagens"
+        name: Criar postagem no fórum
+        meta:
+          id: req_3e0e2295a2e648949cc29b58d1fc4840
+          created: 1792068809678
+          modified: 1792068809678
+          isPrivate: false
+          description: ""
+          sortKey: -1792068809678
+        method: POST
+        body:
+          mimeType: application/json
+          text: |-
+            {
+              "conteudo": "string",
+              "imagem": "string"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+            disabled: false
+        authentication:
+          type: bearer
+          token: "{{ _.bearerToken }}"
+          prefix: ""
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/postagens/:id"
+        name: Editar postagem
+        meta:
+          id: req_c3232fd197b14646863f887c21f383f1
+          created: 1792068809680
+          modified: 1792068809680
+          isPrivate: false
+          description: ""
+          sortKey: -1792068809680
+        method: PUT
+        body:
+          mimeType: application/json
+          text: |-
+            {
+              "conteudo": "string",
+              "imagem": "string"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+            disabled: false
+        authentication:
+          type: bearer
+          token: "{{ _.bearerToken }}"
+          prefix: ""
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/postagens/:id"
+        name: Excluir postagem
+        meta:
+          id: req_1e555310709b43098bd7cf5e8bde0284
+          created: 1792068809682
+          modified: 1792085406816
+          isPrivate: false
+          description: ""
+          sortKey: -1792068809682
+        method: DELETE
+        authentication:
+          type: bearer
+          token: "{{ _.bearerToken }}"
+          prefix: ""
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+  - name: Denúncias
+    meta:
+      id: fld_64c446a30f56499b8fcbd70ed202b0c1
+      created: 1792068809596
+      modified: 1792149218113
+      sortKey: -1792149207664
+      description: ""
+    children:
+      - url: "{{ _.base_url }}/api/denuncias/usuarias/:id"
+        name: Denunciar usuária
+        meta:
+          id: req_a2035f970ef5401f827fb9db41933133
+          created: 1792068809685
+          modified: 1792068809685
+          isPrivate: false
+          description: ""
+          sortKey: -1792068809685
+        method: POST
+        body:
+          mimeType: application/json
+          text: |-
+            {
+              "motivo": "string"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+            disabled: false
+        authentication:
+          type: bearer
+          token: "{{ _.bearerToken }}"
+          prefix: ""
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/denuncias/postagens/:id"
+        name: Denunciar postagem
+        meta:
+          id: req_abd42b21a9fe4e5eb2d016e1049dda9d
+          created: 1792068809687
+          modified: 1792068809687
+          isPrivate: false
+          description: ""
+          sortKey: -1792068809687
+        method: POST
+        body:
+          mimeType: application/json
+          text: |-
+            {
+              "motivo": "string"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+            disabled: false
+        authentication:
+          type: bearer
+          token: "{{ _.bearerToken }}"
+          prefix: ""
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/denuncias/mensagens/:id"
+        name: Denunciar mensagem
+        meta:
+          id: req_351d6f7de20248cd9455cad015e24ba9
+          created: 1792068809689
+          modified: 1792068809689
+          isPrivate: false
+          description: ""
+          sortKey: -1792068809689
+        method: POST
+        body:
+          mimeType: application/json
+          text: |-
+            {
+              "motivo": "string"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+            disabled: false
+        authentication:
+          type: bearer
+          token: "{{ _.bearerToken }}"
+          prefix: ""
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/denuncias/minhas"
+        name: Listar minhas denúncias
+        meta:
+          id: req_925bfdd8af41435fb933ca873f275843
+          created: 1792068809691
+          modified: 1792068809691
+          isPrivate: false
+          description: ""
+          sortKey: -1792068809691
+        method: GET
+        authentication:
+          type: bearer
+          token: "{{ _.bearerToken }}"
+          prefix: ""
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+  - name: Moderação
+    meta:
+      id: fld_0a0ef1bf75244e68b12824154c56a4a7
+      created: 1792068809599
+      modified: 1792149219163
+      sortKey: -1792149207764
+      description: ""
+    children:
+      - url: "{{ _.base_url }}/api/moderacao/login"
+        name: Login da moderadora
+        meta:
+          id: req_11a0b98b4e9a4020b2e2b9684cf7d138
+          created: 1792068809694
+          modified: 1792068809694
+          isPrivate: false
+          description: ""
+          sortKey: -1792068809694
+        method: POST
+        body:
+          mimeType: application/json
+          text: |-
+            {
+              "email": "user@example.com",
+              "senha": "string"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+            disabled: false
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/moderacao/denuncias"
+        name: Listar denúncias para moderação
+        meta:
+          id: req_9881b535899949658c2e6699e75a356e
+          created: 1792068809696
+          modified: 1792068809696
+          isPrivate: false
+          description: ""
+          sortKey: -1792068809696
+        method: GET
+        parameters:
+          - name: status
+            value: string
+            disabled: true
+        authentication:
+          type: bearer
+          token: "{{ _.bearerToken }}"
+          prefix: ""
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/moderacao/denuncias/:id"
+        name: Buscar denúncia
+        meta:
+          id: req_904a89eb2f954b19a59b2fc857881854
+          created: 1792068809698
+          modified: 1792068809698
+          isPrivate: false
+          description: ""
+          sortKey: -1792068809698
+        method: GET
+        authentication:
+          type: bearer
+          token: "{{ _.bearerToken }}"
+          prefix: ""
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/moderacao/denuncias/:id/status"
+        name: Atualizar status da denúncia
+        meta:
+          id: req_ae00d68c62684e51b53817fca8eccd9e
+          created: 1792068809700
+          modified: 1792068809700
+          isPrivate: false
+          description: ""
+          sortKey: -1792068809700
+        method: PATCH
+        body:
+          mimeType: application/json
+          text: |-
+            {
+              "status": "string"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+            disabled: false
+        authentication:
+          type: bearer
+          token: "{{ _.bearerToken }}"
+          prefix: ""
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/moderacao/relatorios"
+        name: Listar relatórios da moderadora
+        meta:
+          id: req_34d84a6c79d34232ab48c3d7c8519384
+          created: 1792068809702
+          modified: 1792070559582
+          isPrivate: false
+          description: ""
+          sortKey: -1792068809702
+        method: GET
+        authentication:
+          type: bearer
+          token: "{{ _.bearerToken }}"
+          prefix: ""
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+  - name: Conteúdos
+    meta:
+      id: fld_d86cde2b88db4a49b196b8d9e05b7178
+      created: 1792068809601
+      modified: 1792149220347
+      sortKey: -1792149207864
+      description: ""
+    children:
+      - url: "{{ _.base_url }}/api/conteudos"
+        name: Listar conteúdos
+        meta:
+          id: req_6c6939937ebc41bb9ee86fe43377d7d5
+          created: 1792068809704
+          modified: 1792068809704
+          isPrivate: false
+          description: ""
+          sortKey: -1792068809704
+        method: GET
+        authentication:
+          type: bearer
+          token: "{{ _.bearerToken }}"
+          prefix: ""
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/conteudos/:id"
+        name: Buscar conteúdo
+        meta:
+          id: req_23c2c99eef2542d696016c8c1cb94174
+          created: 1792068809706
+          modified: 1792068809706
+          isPrivate: false
+          description: ""
+          sortKey: -1792068809706
+        method: GET
+        authentication:
+          type: bearer
+          token: "{{ _.bearerToken }}"
+          prefix: ""
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/conteudos/:id/acesso"
+        name: Registrar acesso ao conteúdo
+        meta:
+          id: req_5dbc3602faef4d9bb62513de7ef55cb5
+          created: 1792068809709
+          modified: 1792068809709
+          isPrivate: false
+          description: ""
+          sortKey: -1792068809709
+        method: POST
+        authentication:
+          type: bearer
+          token: "{{ _.bearerToken }}"
+          prefix: ""
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/conteudos/:id/progresso"
+        name: Atualizar progresso do conteúdo
+        meta:
+          id: req_017e7ee519cf403ba5320201f80e63fe
+          created: 1792068809711
+          modified: 1792068809711
+          isPrivate: false
+          description: ""
+          sortKey: -1792068809711
+        method: PATCH
+        body:
+          mimeType: application/json
+          text: |-
+            {
+              "progresso": 0
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+            disabled: false
+        authentication:
+          type: bearer
+          token: "{{ _.bearerToken }}"
+          prefix: ""
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+  - name: Pro
+    meta:
+      id: fld_8180fafc9464458ea6dfea7ca4cbe0c6
+      created: 1792068809604
+      modified: 1792149222232
+      sortKey: -1792149207964
+      description: ""
+    children:
+      - url: "{{ _.base_url }}/api/pro"
+        name: Verificar meu status Pro
+        meta:
+          id: req_0ee6300f74e74b558bf317ef1f7cc945
+          created: 1792068809713
+          modified: 1792068809713
+          isPrivate: false
+          description: ""
+          sortKey: -1792068809713
+        method: GET
+        authentication:
+          type: bearer
+          token: "{{ _.bearerToken }}"
+          prefix: ""
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/pro/conteudos"
+        name: Listar conteúdos Pro
+        meta:
+          id: req_acf28d37bff7499c8e2e1ff16ec60f36
+          created: 1792068809715
+          modified: 1792068809715
+          isPrivate: false
+          description: Exige autenticação de usuária e assinatura existente.
+          sortKey: -1792068809715
+        method: GET
+        authentication:
+          type: bearer
+          token: "{{ _.bearerToken }}"
+          prefix: ""
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/pro/conteudos/:id"
+        name: Buscar conteúdo Pro
+        meta:
+          id: req_f48332e1e7be4e609a58749b06acc584
+          created: 1792068809718
+          modified: 1792068809718
+          isPrivate: false
+          description: Exige autenticação de usuária e assinatura existente.
+          sortKey: -1792068809718
+        method: GET
+        authentication:
+          type: bearer
+          token: "{{ _.bearerToken }}"
+          prefix: ""
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+  - name: Assinatura
+    meta:
+      id: fld_eff0a3e6021340b2a656d9f30abb42eb
+      created: 1792068809607
+      modified: 1792149224153
+      sortKey: -1792149208064
+      description: ""
+    children:
+      - url: "{{ _.base_url }}/api/assinatura"
+        name: Consultar minha assinatura
+        meta:
+          id: req_bf0126ec820b4694add86c88529d0db7
+          created: 1792068809720
+          modified: 1792068809720
+          isPrivate: false
+          description: ""
+          sortKey: -1792068809720
+        method: GET
+        authentication:
+          type: bearer
+          token: "{{ _.bearerToken }}"
+          prefix: ""
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/assinatura"
+        name: Criar assinatura
+        meta:
+          id: req_00d13fb8750b47aabcd73cb5f90a294d
+          created: 1792068809722
+          modified: 1792068809722
+          isPrivate: false
+          description: ""
+          sortKey: -1792068809722
+        method: POST
+        body:
+          mimeType: application/json
+          text: |-
+            {
+              "forma_pagamento": "string",
+              "valor": 0
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+            disabled: false
+        authentication:
+          type: bearer
+          token: "{{ _.bearerToken }}"
+          prefix: ""
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/assinatura"
+        name: Cancelar assinatura
+        meta:
+          id: req_08ff0eae68734264917f3d627764e188
+          created: 1792068809725
+          modified: 1792068809725
+          isPrivate: false
+          description: ""
+          sortKey: -1792068809725
+        method: DELETE
+        authentication:
+          type: bearer
+          token: "{{ _.bearerToken }}"
+          prefix: ""
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+  - name: Recomendações
+    meta:
+      id: fld_26517a18c4b74c65aa843759707a40ec
+      created: 1792068809609
+      modified: 1792149225463
+      sortKey: -1792149208164
+      description: ""
+    children:
+      - url: "{{ _.base_url }}/api/recomendacoes/usuarios"
+        name: Recomendar usuárias
+        meta:
+          id: req_9d70ec64f48447e8a8560d27496843c0
+          created: 1792068809727
+          modified: 1792068809727
+          isPrivate: false
+          description: Ordena por compatibilidade de interesses usando similaridade de
+            Jaccard.
+          sortKey: -1792068809727
+        method: GET
+        authentication:
+          type: bearer
+          token: "{{ _.bearerToken }}"
+          prefix: ""
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/recomendacoes/foruns"
+        name: Recomendar fóruns
+        meta:
+          id: req_7cb260fab616444e896ad218d900c906
+          created: 1792068809729
+          modified: 1792068809729
+          isPrivate: false
+          description: Considera interesses encontrados no título/descrição do fórum e
+            popularidade.
+          sortKey: -1792068809729
+        method: GET
+        authentication:
+          type: bearer
+          token: "{{ _.bearerToken }}"
+          prefix: ""
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/recomendacoes/conteudos"
+        name: Recomendar conteúdos
+        meta:
+          id: req_01f4f7bd652c40c787656702c0da06d4
+          created: 1792068809731
+          modified: 1792068809731
+          isPrivate: false
+          description: Ordena conteúdos pela quantidade de interesses compatíveis.
+          sortKey: -1792068809731
+        method: GET
+        authentication:
+          type: bearer
+          token: "{{ _.bearerToken }}"
+          prefix: ""
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+cookieJar:
+  name: Default Jar
+  meta:
+    id: jar_4e3ca4f07377ea4bd8351bb3a9811a0627e596e5
+    created: 1792149201065
+    modified: 1792149201065
+environments:
+  name: Base Environment
+  meta:
+    id: env_4e3ca4f07377ea4bd8351bb3a9811a0627e596e5
+    created: 1792149201061
+    modified: 1792149201061
+    isPrivate: false
