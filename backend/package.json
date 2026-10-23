@@ -5,6 +5,7 @@
   "main": "server.js",
   "scripts": {
     "dev": "nodemon server.js",
+    "demo": "node scripts/start-demo.cjs",
     "start": "node server.js",
     "test": "node --test tests/*.test.js",
     "prisma:validate": "prisma validate --config ./prisma7.config.ts",

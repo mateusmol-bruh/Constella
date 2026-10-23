@@ -1,5 +1,6 @@
 ﻿const prisma = require("../config/prisma");
 
+const { demoEnabled, demoSession } = require('./pro-demo.service');
 function erroHttp(statusCode, mensagem) {
   const erro = new Error(mensagem);
   erro.statusCode = statusCode;
@@ -18,6 +19,18 @@ function validarId(valor) {
 // transação validada, provedor ou vigência e nunca comprova acesso Pro.
 async function buscarStatusAssinatura(idUsuario) {
   const idUsr = validarId(idUsuario);
+  const demoExpiry = demoSession(idUsuario);
+  if (demoExpiry) {
+    const account = await prisma.usuaria.findUnique({ where:{ id_usr:idUsr }, select:{ id_usr:true } });
+    if (!account) throw erroHttp(401, 'Entre novamente para acessar a demonstração.');
+    return {
+      pro:true, ativo:true, status:'ativa', demonstracao:true, demonstracao_disponivel:true,
+      demonstracao_expira_em:demoExpiry, registro_legado:false, assinatura:null, plano:null,
+      provedor_disponivel:false, motivo:'DEMONSTRACAO_DESENVOLVIMENTO',
+      mensagem:'PRO de demonstração: acesso temporário ao catálogo exclusivo, sem cobrança ou assinatura paga. Encerra ao reiniciar o servidor ou após uma hora.',
+      beneficios:['Acesso demonstrativo aos conteúdos exclusivos do catálogo Pro.'],
+    };
+  }
   const registro = await prisma.assinatura.findUnique({
     where: { id_usr: idUsr },
     select: { id_ass: true }
@@ -25,6 +38,8 @@ async function buscarStatusAssinatura(idUsuario) {
 
   return {
     pro: false,
+    demonstracao: false,
+    demonstracao_disponivel: demoEnabled(),
     ativo: false,
     status: registro ? "pendente_validacao" : "inativa",
     registro_legado: Boolean(registro),

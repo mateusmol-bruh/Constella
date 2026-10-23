@@ -10,8 +10,9 @@ const path = (id: string) => encodeURIComponent(id);
 export const communityService = {
   async profile() { return profile((await api.get<ProfileDTO>('/api/perfil')).data); },
   async editProfile(dados: { nome: string; email: string; apresentacao?: string; foto?: string | null }) {
-    const { data } = await api.put<{ perfil: ProfileDTO }>('/api/perfil', dados);
-    return profile(data.perfil);
+    await api.put('/api/perfil', dados);
+    // PUT retorna apenas os campos alterados; GET inclui os interesses da conta.
+    return communityService.profile();
   },
   async interests() { return (await api.get<InterestDTO[]>('/api/interesses')).data.map(interest); },
   async myInterests() { return (await api.get<{ interesses: InterestDTO[] }>('/api/interesses/meus')).data.interesses.map(interest); },

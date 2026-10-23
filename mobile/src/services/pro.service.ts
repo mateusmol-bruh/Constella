@@ -5,6 +5,7 @@ import type { ProCatalogItem, ProContent, ProStatus } from '../types/pro';
 // Não há criação de assinatura nem envio de valor/estado pelo aplicativo.
 export const proService = {
   async status() { return (await api.get<ProStatus>('/api/pro')).data; },
+  async demo(ativar: boolean) { return (await api.post<ProStatus>('/api/pro/demonstracao', { ativar })).data; },
   async catalog() { return (await api.get<{ conteudos: ProCatalogItem[] }>('/api/pro/catalogo')).data.conteudos; },
   async content(id: string) {
     return (await api.get<{ conteudo: ProContent }>(`/api/pro/conteudos/${encodeURIComponent(id)}`)).data.conteudo;

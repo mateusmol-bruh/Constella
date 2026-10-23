@@ -14,6 +14,7 @@ async function exigirPro(req, res, next) {
     }
 
     req.assinatura = status.assinatura;
+    if (status.demonstracao) res.set('X-Constella-Demo', 'true');
     return next();
   } catch (error) {
     return res.status(error.statusCode || 503).json({

@@ -16,6 +16,7 @@ const router = express.Router();
 
 // Todas as rotas exigem autenticação.
 router.use(autenticar);
+router.post("/:id/leitura", require("../controllers/leitura.controller").chat);
 
 // Criar ou buscar conversa existente
 router.post("/", criarChat);

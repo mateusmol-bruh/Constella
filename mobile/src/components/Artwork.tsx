@@ -3,15 +3,16 @@ import { Image, StyleSheet, View } from 'react-native';
 import Svg, { Circle, Ellipse, Path, Rect } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors } from '../styles/theme';
+import { mediaUrl } from '../utils/media';
 
 export function Avatar({ nome, foto, size = 54 }: { nome: string; foto?: string | null; size?: number }) {
-  const [failed, setFailed] = React.useState(false);
-  React.useEffect(() => setFailed(false), [foto]);
+  const [failedPhoto, setFailedPhoto] = React.useState<string | null>();
+  const failed = failedPhoto === foto;
   const seed = [...nome].reduce((sum, letter) => sum + letter.charCodeAt(0), 0);
   const skin = ['#E7A676', '#A96240', '#F2C6A0'][seed % 3];
   const hair = ['#28213D', '#553746', '#BF7148'][seed % 3];
   return <View accessible accessibilityRole="image" accessibilityLabel={nome} style={{ width: size, height: size, borderRadius: size / 2, overflow: 'hidden', backgroundColor: colors.lavender }}>
-    {foto && !failed ? <Image source={{ uri: foto }} style={StyleSheet.absoluteFill} onError={() => setFailed(true)} /> :
+    {foto && !failed ? <Image key={mediaUrl(foto)} source={{ uri: mediaUrl(foto) }} style={StyleSheet.absoluteFill} onError={() => setFailedPhoto(foto)} /> :
       <Svg width="100%" height="100%" viewBox="0 0 80 80">
         <Circle cx="40" cy="40" r="40" fill={['#BD9AE6', '#A9C5D8', '#EAB3D5'][seed % 3]} />
         <Path d="M15 68C10 35 18 8 39 9S72 28 66 70Z" fill={hair} />

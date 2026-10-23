@@ -16,7 +16,10 @@ function load(relative, dependencies) {
   isolated._compile(fs.readFileSync(filename, 'utf8'), filename);
   return isolated.exports;
 }
-const service = (name, prisma) => load(`services/${name}.service.js`, { '../config/prisma': prisma });
+const service = (name, prisma) => {
+  prisma.$transaction ??= action => action(prisma);
+  return load(`services/${name}.service.js`, { '../config/prisma': prisma, './notificacao.service': { enabled: () => false, enfileirar: async () => {} } });
+};
 const forbidden = () => assert.fail('Operação Prisma não autorizada foi chamada.');
 const status = code => error => error.statusCode === code;
 const post = {
@@ -180,6 +183,7 @@ test('mensagem privada com denúncia relacionada retorna conflito sem apagar a d
 
 test('entrada simultânea no mesmo fórum retorna conflito de participação', async () => {
   const prisma = forumPrisma(false);
+  prisma.postagem.findFirst = async () => null;
   prisma.usuaria_forum.create = async () => { throw Object.assign(new Error('Unique'), { code: 'P2002' }); };
   await assert.rejects(service('forum', prisma).entrarForum('1', '3'), status(409));
 });
@@ -194,7 +198,7 @@ test('denúncia de mensagem privada recusa participantes externos', async () => 
 test('controlador de envio usa identidade autenticada ignorando o corpo forjado', async () => {
   const controller = load('controllers/chat.controller.js', {
     '../services/chat.service': {
-      enviarMensagem: async (...args) => { assert.deepEqual(args, ['1', '4', 'Olá']); return { id_msg: '8' }; },
+      enviarMensagem: async (...args) => { assert.deepEqual(args, ['1', '4', 'Olá', null]); return { id_msg: '8' }; },
     },
   });
   const res = { status(code) { assert.equal(code, 201); return this; }, json(body) { assert.equal(body.dados.id_msg, '8'); } };

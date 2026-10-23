@@ -10,9 +10,11 @@ import ProtectedCTA from '../components/ProtectedCTA';
 import { colors, ui } from '../styles/theme';
 import type { ScreenProps } from '../types/navigation';
 import { hasProAccess } from '../utils/pro';
+import { usePro } from '../constexts/ProContext';
 
 export default function DetalheProScreen({ navigation, route }: ScreenProps<'DetalhePro'>) {
   const { isGuest } = useAuth();
+  const pro = usePro();
   const [openError, setOpenError] = useState('');
   const resource = useResource(async signal => {
     if (isGuest) {
@@ -20,13 +22,14 @@ export default function DetalheProScreen({ navigation, route }: ScreenProps<'Det
       return { kind: 'guest' as const, item: presentation.catalogo.find(item => item.id === route.params.id) };
     }
     const status = await proService.status();
+    pro.setData(status);
     if (!hasProAccess(status)) {
       const catalog = await proService.catalog();
       return { kind: 'locked' as const, status, item: catalog.find(item => item.id === route.params.id) };
     }
     // Mesmo após a consulta de status, a rota de material valida a permissão.
-    return { kind: 'content' as const, item: await proService.content(route.params.id) };
-  });
+    return { kind: 'content' as const, demo: !!status.demonstracao, item: await proService.content(route.params.id) };
+  }, true, 15000);
   const data = resource.error || resource.loading ? undefined : resource.data;
 
   async function openMaterial(url: string) {
@@ -52,6 +55,7 @@ export default function DetalheProScreen({ navigation, route }: ScreenProps<'Det
       <Button title="Conhecer o Constella Pro" onPress={() => navigation.navigate('ConstellaPro')} />
     </View>}
     {data?.kind === 'content' && <View style={ui.card}>
+      <Text style={ui.subtitle}>{data.demo ? 'PRO · Demonstração' : 'Exclusivo PRO'}</Text>
       <Text style={ui.title}>{data.item.titulo}</Text>
       <Text style={ui.body}>{data.item.descricao}</Text>
       {data.item.material && /^https?:\/\/[^\s]+$/i.test(data.item.material)

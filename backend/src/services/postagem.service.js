@@ -201,10 +201,10 @@ async function criarPostagem(
       ? dados.imagem.trim()
       : null;
 
-  if (!conteudo) {
+  if ((!conteudo && !imagem) || conteudo.length > 1000) {
     throw erroHttp(
       400,
-      "O conteúdo da postagem é obrigatório."
+      "Envie texto de até 1000 caracteres e/ou uma imagem válida."
     );
   }
 
@@ -218,8 +218,9 @@ async function criarPostagem(
     );
   }
 
-  const postagem =
-    await prisma.postagem.create({
+  if (imagem) await require("./anexo.service").validarAnexo(imagem,idUsr);
+  const postagem = await prisma.$transaction(async tx => {
+    const saved = await tx.postagem.create({
       data: {
         cont_post: conteudo,
         img_post: imagem,
@@ -238,9 +239,13 @@ async function criarPostagem(
       }
     });
 
-  return formatarPostagem(
-    postagem
-  );
+    if (require('./notificacao.service').enabled()) {
+      const members = await tx.usuaria_forum.findMany({ where: { id_for: idFor, id_usr: { not: idUsr } }, select: { id_usr: true } });
+      await require('./notificacao.service').enfileirar(tx, { chave: `postagem:${saved.id_post}`, tipo: 'forum', recurso: idFor, autor: idUsr, destinatarias: members.map(member => member.id_usr), foto: !!imagem });
+    }
+    return saved;
+  });
+  return formatarPostagem(postagem);
 }
 
 async function editarPostagem(
@@ -319,6 +324,7 @@ async function editarPostagem(
       );
     }
 
+    if (dados.imagem) await require("./anexo.service").validarAnexo(dados.imagem,idUsr);
     atualizacao.img_post =
       dados.imagem === null
         ? null

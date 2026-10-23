@@ -1,7 +1,7 @@
 import React from 'react';
-import Svg, { Circle, Path, Rect } from 'react-native-svg';
+import Svg, { Path } from 'react-native-svg';
 import { colors } from '../styles/theme';
-export type IconName = 'home' | 'chat' | 'forum' | 'content' | 'heart' | 'profile' | 'search' | 'mail' | 'lock' | 'eye' | 'eyeOff' | 'back' | 'send' | 'plus' | 'close' | 'logout' | 'check' | 'shield' | 'camera';
+export type IconName = 'home' | 'chat' | 'forum' | 'content' | 'heart' | 'profile' | 'search' | 'mail' | 'lock' | 'eye' | 'eyeOff' | 'back' | 'send' | 'plus' | 'close' | 'logout' | 'check' | 'shield' | 'camera' | 'refresh' | 'trash' | 'edit' | 'flag';
 const paths: Record<IconName, string> = {
   home: 'M3 11 12 3l9 8M5 10v11h5v-7h4v7h5V10',
   chat: 'M21 11a9 9 0 0 1-9 9H4l-2 2V11a9 9 0 0 1 19 0Z',
@@ -21,6 +21,10 @@ const paths: Record<IconName, string> = {
   check: 'M4 12l5 5L20 6',
   shield: 'M12 2 3 6v6c0 6 9 10 9 10s9-4 9-10V6l-9-4Zm0 5v10M7 12h10',
   camera: 'M3 7h5l2-3h4l2 3h5v14H3V7Zm13 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z',
+  refresh: 'M20 7v5h-5M4 17v-5h5M20 12a8 8 0 0 0-14-5M4 12a8 8 0 0 0 14 5',
+  trash: 'M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7',
+  edit: 'M16 3l5 5-12 12-6 1 1-6L16 3Zm-2 2 5 5',
+  flag: 'M5 22V3h14l-3 5 3 5H5',
 };
 export function Icon({ name, size = 24, color = colors.ink }: { name: IconName; size?: number; color?: string }) {
   return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round"><Path d={paths[name]} /></Svg>;

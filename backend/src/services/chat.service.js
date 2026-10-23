@@ -72,6 +72,7 @@ function formatarMensagem(mensagem) {
     id_chat: mensagem.id_chat.toString(),
     id_usr_emissor: mensagem.id_usr_emissor.toString(),
     conteudo: mensagem.cont_msg,
+    imagem: mensagem.imagem_msg,
     dt_envio: mensagem.dt_envio
   };
 }
@@ -113,6 +114,7 @@ async function criarOuBuscarChat(idUsuario, idDestinataria) {
   const idB = validarId(idDestinataria, "Destinatária");
 
   await verificarConexao(idA, idB);
+  await require("./bloqueio.service").permitir(idA,idB);
 
   // Ordenação padronizada dos participantes.
   const [primeiro, segundo] =
@@ -197,6 +199,7 @@ async function listarChats(idUsuario) {
 
     resultado.push({
       ...formatarChat(chat),
+      ...await resumoChat(chat,idUsr),
       destinataria: participante
         ? {
             id: participante.id_usr.toString(),
@@ -207,7 +210,7 @@ async function listarChats(idUsuario) {
     });
   }
 
-  return resultado;
+  return resultado.sort((a,b)=>new Date(b.ultima_mensagem?.dt_envio || b.dt_inicio)-new Date(a.ultima_mensagem?.dt_envio || a.dt_inicio));
 }
 
 // GET /api/chats/:id
@@ -217,7 +220,9 @@ async function buscarChat(idUsuario, idChat) {
 
   const chat = await verificarAcessoChat(idConversa, idUsr);
 
-  return formatarChat(chat);
+  const other=chat.id_usr_01===idUsr?chat.id_usr_02:chat.id_usr_01;
+  const person=await prisma.usuaria.findUnique({where:{id_usr:other},select:{id_usr:true,nome_usr:true,foto_usr:true}});
+  return {...formatarChat(chat),...await require("./bloqueio.service").status(idUsr,other),destinataria:person?{id:person.id_usr.toString(),nome:person.nome_usr,foto:person.foto_usr}:null};
 }
 
 // GET /api/chats/:id/mensagens
@@ -250,20 +255,26 @@ async function listarMensagens(
 }
 
 // POST /api/chats/:id/mensagens
-async function enviarMensagem(idUsuario, idChat, conteudo) {
+async function enviarMensagem(idUsuario, idChat, conteudo, imagem = null) {
   const idUsr = validarId(idUsuario);
   const idConversa = validarId(idChat, "Chat");
 
-  await verificarAcessoChat(idConversa, idUsr);
-
-  const mensagem = await prisma.mensagem.create({
+  const chat=await verificarAcessoChat(idConversa,idUsr);
+  await require("./bloqueio.service").permitir(idUsr,chat.id_usr_01===idUsr?chat.id_usr_02:chat.id_usr_01);
+  if (imagem) await require("./anexo.service").validarAnexo(imagem,idUsr);
+  const mensagem = await prisma.$transaction(async tx => {
+    const saved = await tx.mensagem.create({
     data: {
       id_chat: idConversa,
       id_usr_emissor: idUsr,
-      cont_msg: conteudo
+      cont_msg: conteudo,
+      imagem_msg: imagem
     }
+    });
+    await require('./notificacao.service').enfileirar(tx, { chave: `mensagem:${saved.id_msg}`, tipo: 'chat', recurso: idConversa, autor: idUsr,
+      destinatarias: [chat.id_usr_01 === idUsr ? chat.id_usr_02 : chat.id_usr_01], foto: !!imagem });
+    return saved;
   });
-
   return formatarMensagem(mensagem);
 }
 
@@ -332,3 +343,12 @@ module.exports = {
   enviarMensagem,
   excluirMensagem
 };
+
+async function resumoChat(chat,user) {
+ const leitura=await prisma.chat_leitura.findUnique({where:{id_chat_id_usr:{id_chat:chat.id_chat,id_usr:user}}});
+ const [last,unread]=await Promise.all([
+  prisma.mensagem.findFirst({where:{id_chat:chat.id_chat},orderBy:[{dt_envio:'desc'},{id_msg:'desc'}]}),
+  prisma.mensagem.count({where:{id_chat:chat.id_chat,id_usr_emissor:{not:user},id_msg:{gt:leitura?.ultima_mensagem ?? 0n}}})
+ ]);
+ return {ultima_mensagem:last?formatarMensagem(last):null,nao_lidas:unread};
+}

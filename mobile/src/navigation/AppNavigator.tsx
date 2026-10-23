@@ -27,6 +27,7 @@ import ConstellaProScreen from '../screens/ConstellaProScreen';
 import DetalheProScreen from '../screens/DetalheProScreen';
 import ProtectedCTA from '../components/ProtectedCTA';
 import GuestHomeScreen from '../screens/GuestHomeScreen';
+import RecuperarSenhaScreen from '../screens/RecuperarSenhaScreen';
 
 export type { RootStackParamList } from '../types/navigation';
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -61,6 +62,7 @@ export default function AppNavigator() {
     <Stack.Screen name="Login" component={LoginScreen} />
     <Stack.Screen name="Splash" component={SplashScreen} options={{ gestureEnabled: false }} />
     <Stack.Screen name="Cadastro" component={CadastroScreen} />
+    <Stack.Screen name="RecuperarSenha" component={RecuperarSenhaScreen} />
     {(user || isGuest) && <Stack.Group navigationKey={user?.id ?? 'guest'}>
       <Stack.Screen name="Main" component={MainTabs} options={{ gestureEnabled: false }} />
       <Stack.Screen name="ContaNecessaria" component={AccountRequiredScreen} />

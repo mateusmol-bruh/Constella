@@ -11,6 +11,7 @@ tests
 contracts
 proposals
 coverage
+uploads
 *.log
 npm-debug.log*
 Dockerfile*

@@ -1,6 +1,7 @@
 import type { ProStatus } from '../types/pro';
 
-export function proStatusLabel(status: Pick<ProStatus, 'ativo' | 'status'>): string {
+export function proStatusLabel(status: Pick<ProStatus, 'ativo' | 'status'> & Pick<Partial<ProStatus>, 'demonstracao'>): string {
+  if (status.demonstracao && status.ativo) return 'PRO · Demonstração';
   if (status.status === 'ativa') return status.ativo ? 'Assinatura ativa' : 'Acesso aguardando validação';
   if (status.status === 'pendente_validacao') return 'Aguardando validação';
   if (status.status === 'expirada') return 'Assinatura expirada';

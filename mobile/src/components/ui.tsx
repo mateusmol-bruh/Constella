@@ -1,9 +1,10 @@
 import React, { useState, type ReactNode } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type TextInputProps } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions, type TextInputProps } from 'react-native';
 import { useIsFocused } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import { screenGutter } from '../utils/layout';
 import { SpaceBackground } from './SpaceBackground';
 import { Icon, type IconName } from './Icon';
 import { useAuth } from '../constexts/AuthContext';
@@ -14,7 +15,8 @@ export function Screen({ children, scroll = true, centered = false, paper = fals
 }) {
   const { isGuest } = useAuth();
   const focused = useIsFocused();
-  const content = <View style={[styles.content, centered && styles.centered]}>{children}</View>;
+  const { width } = useWindowDimensions();
+  const content = <View style={[styles.content, centered && styles.centered, { paddingHorizontal: screenGutter(width) }]}>{children}</View>;
   return <SpaceBackground waves={waves}>
     {focused && <StatusBar style={paper ? 'dark' : 'light'} />}
     <SafeAreaView style={[styles.fill, paper && { backgroundColor: colors.paper }]} edges={bottomSafe ? ['top', 'left', 'right', 'bottom'] : ['top', 'left', 'right']}>
@@ -32,7 +34,7 @@ export function Button({ title, onPress, loading = false, disabled = false, vari
   const body = <View style={[styles.buttonContent, small && styles.smallButton]}>
     {loading ? <ActivityIndicator color={variant === 'primary' ? colors.paper : colors.ink} /> : <>
       {icon && <Icon name={icon} size={20} color={variant === 'primary' ? colors.paper : colors.ink} />}
-      <Text style={[styles.buttonText, variant !== 'primary' && { color: colors.ink }, small && { fontSize: 13 }]}>{title}</Text>
+      <Text style={[styles.buttonText, { flexShrink: 1 }, variant !== 'primary' && { color: colors.ink }, small && { fontSize: 13 }]}>{title}</Text>
     </>}
   </View>;
   return <Pressable accessibilityRole="button" accessibilityLabel={title} accessibilityState={{ disabled: inactive, busy: loading }} disabled={inactive} onPress={onPress} style={({ pressed }) => [styles.button, variant === 'secondary' && { backgroundColor: colors.paper }, { opacity: inactive ? 0.5 : pressed ? 0.75 : 1 }]}>
@@ -54,11 +56,12 @@ export function Field({ label, error, icon, password = false, light = false, ...
   </View>;
 }
 export function SearchField({ value, onChangeText, placeholder }: { value: string; onChangeText: (value: string) => void; placeholder: string }) {
-  return <View style={styles.search}><Icon name="search" size={21} /><TextInput value={value} onChangeText={onChangeText} placeholder={placeholder} accessibilityLabel={placeholder} placeholderTextColor="#66538C" style={styles.searchInput} autoCorrect={false} /><View>{!!value && <Pressable accessibilityRole="button" accessibilityLabel="Limpar busca" onPress={() => onChangeText('')} hitSlop={8}><Icon name="close" size={18} /></Pressable>}</View></View>;
+  const [focused, setFocused] = useState(false);
+  return <View style={[styles.search, focused && { borderColor: colors.orchid, backgroundColor: colors.white }]}><Icon name="search" size={19} color={focused ? colors.purple : "#8A75A3"} /><TextInput value={value} onChangeText={onChangeText} onFocus={() => setFocused(true)} onBlur={() => setFocused(false)} placeholder={placeholder} accessibilityLabel={placeholder} placeholderTextColor="#66538C" style={styles.searchInput} autoCapitalize="none" returnKeyType="search" autoCorrect={false} /><View>{!!value && <Pressable accessibilityRole="button" accessibilityLabel="Limpar busca" onPress={() => onChangeText('')} style={{ minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' }}><Icon name="close" size={18} /></Pressable>}</View></View>;
 }
 export function Header({ title, onBack, dark = false, right }: { title: string; onBack?: () => void; dark?: boolean; right?: ReactNode }) {
   return <View style={[ui.row, { marginBottom: space.sm }]}>
-    {onBack && <Pressable accessibilityRole="button" accessibilityLabel="Voltar" onPress={onBack} hitSlop={10} style={{ paddingVertical: 10 }}><Icon name="back" color={dark ? colors.ink : colors.paper} /></Pressable>}
+    {onBack && <Pressable accessibilityRole="button" accessibilityLabel="Voltar" onPress={onBack} hitSlop={10} style={{ minWidth: 44, minHeight: 44, justifyContent: 'center' }}><Icon name="back" color={dark ? colors.ink : colors.paper} /></Pressable>}
     <Text accessibilityRole="header" style={[ui.title, { flex: 1 }, dark && { color: colors.ink }]}>{title}</Text>{right}
   </View>;
 }
@@ -80,13 +83,13 @@ export function TextLink({ title, onPress }: { title: string; onPress: () => voi
 }
 const styles = StyleSheet.create({
   fill: { flex: 1 }, scroll: { flexGrow: 1 }, content: { flex: 1, width: '100%', maxWidth: 560, alignSelf: 'center', padding: space.md, gap: space.sm },
-  centered: { justifyContent: 'center', paddingVertical: space.xl, paddingHorizontal: 32 },
+  centered: { justifyContent: 'center', paddingVertical: space.lg },
   guest: { backgroundColor: '#EBDCF6', paddingHorizontal: 8, paddingVertical: 5 }, guestText: { fontFamily, color: colors.ink, fontSize: 10, textAlign: 'center' },
-  button: { borderRadius: 23, overflow: 'hidden' }, buttonContent: { minHeight: 54, paddingVertical: 13, paddingHorizontal: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
-  smallButton: { minHeight: 44, paddingVertical: 9, paddingHorizontal: 13 }, buttonText: { fontFamily, color: colors.paper, fontSize: 18, fontWeight: '700', fontStyle: 'italic', textAlign: 'center' },
+  button: { borderRadius: 18, overflow: 'hidden', maxWidth: '100%' }, buttonContent: { minHeight: 50, paddingVertical: 12, paddingHorizontal: 18, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  smallButton: { minHeight: 44, paddingVertical: 9, paddingHorizontal: 13 }, buttonText: { fontFamily, color: colors.paper, fontSize: 16, fontWeight: '700', textAlign: 'center' },
   field: { borderWidth: 1, borderColor: '#9483AE', borderRadius: 9, backgroundColor: '#FFFFFF1E', minHeight: 57, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 13, gap: 10 },
   lightField: { backgroundColor: colors.paper, borderColor: '#DECEE9' }, input: { fontFamily, flex: 1, minWidth: 0, fontSize: 15, paddingVertical: 15 },
-  search: { flexDirection: 'row', alignItems: 'center', gap: 9, borderRadius: 25, backgroundColor: colors.paper, paddingHorizontal: 16, minHeight: 46, marginBottom: 10 },
+  search: { flexDirection: 'row', alignItems: 'center', gap: 10, borderRadius: 16, borderWidth: 1, borderColor: '#DDCDE9', backgroundColor: colors.paper, paddingLeft: 14, paddingRight: 4, minHeight: 48 },
   searchInput: { fontFamily, flex: 1, minWidth: 0, color: colors.ink, fontSize: 14, paddingVertical: 12 },
-  chip: { paddingHorizontal: 13, paddingVertical: 7, borderRadius: 20, backgroundColor: colors.paper },
+  chip: { minHeight: 40, justifyContent: 'center', maxWidth: '100%', paddingHorizontal: 13, paddingVertical: 9, borderRadius: 20, backgroundColor: colors.paper },
 });

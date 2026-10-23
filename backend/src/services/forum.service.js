@@ -49,11 +49,16 @@ function formatarForum(forum, idUsuario = null) {
   };
 }
 
-async function listarForuns(idUsuario) {
+async function listarForuns(idUsuario, filtro, options) {
+  if (filtro !== undefined && !["explorar","meus"].includes(filtro)) throw erroHttp(400,"Filtro inválido.");
   const idUsr = validarId(idUsuario);
+  if (options && (!Number.isSafeInteger(options.pagina) || options.pagina < 1 || !Number.isSafeInteger(options.limite) || options.limite < 1 || options.limite > 50 || !Number.isSafeInteger((options.pagina - 1) * options.limite))) throw erroHttp(400, 'Paginação inválida.');
 
   const foruns =
     await prisma.forum.findMany({
+      where: { ...(filtro === "explorar" ? {usuaria_forum:{none:{id_usr:idUsr}}} : filtro === "meus" ? {usuaria_forum:{some:{id_usr:idUsr}}} : {}),
+        ...(options?.busca ? { titulo_for: { contains: options.busca.slice(0,255), mode: 'insensitive' } } : {}), },
+      ...(options ? { skip: (options.pagina - 1) * options.limite, take: options.limite + 1 } : {}),
       include: {
         usuaria: {
           select: {
@@ -80,14 +85,10 @@ async function listarForuns(idUsuario) {
         }
       },
 
-      orderBy: {
-        dt_criacao: "desc"
-      }
+      orderBy: [{ dt_criacao: 'desc' }, { id_for: 'desc' }]
     });
 
-  return foruns.map((forum) =>
-    formatarForum(forum, idUsr)
-  );
+  return adicionarContadores(foruns.map(forum => formatarForum(forum,idUsr)), idUsr);
 }
 
 async function listarMeusForuns(idUsuario) {
@@ -121,9 +122,7 @@ async function listarMeusForuns(idUsuario) {
       }
     });
 
-  return registros.map((registro) =>
-    ({ ...formatarForum(registro.forum, idUsr), participando: true })
-  );
+  return adicionarContadores(registros.map(registro => ({...formatarForum(registro.forum,idUsr),participando:true})), idUsr);
 }
 
 async function buscarForum(
@@ -273,6 +272,12 @@ async function criarForum(
   const forum =
     await prisma.$transaction(
       async (tx) => {
+        // Serializa criações da mesma conta; duas requisições simultâneas não burlam o limite.
+        await tx.$queryRaw`SELECT id_usr FROM usuaria WHERE id_usr = ${idUsr} FOR UPDATE`;
+        const status = await require('./assinatura.service').buscarStatusAssinatura(idUsr);
+        if (!status.ativo && await tx.forum.count({ where: { id_usr_criadora: idUsr } }) >= 1) {
+          throw Object.assign(erroHttp(403, 'Sua conta gratuita permite criar um fórum. Conheça o PRO para criar mais.'), { codigo: 'LIMITE_FORUNS_GRATUITO' });
+        }
 
         const novoForum =
           await tx.forum.create({
@@ -500,11 +505,13 @@ async function entrarForum(
     );
   }
 
+  const latest=await prisma.postagem.findFirst({where:{id_for:idFor},orderBy:{id_post:"desc"},select:{id_post:true}});
   try {
     await prisma.usuaria_forum.create({
       data: {
         id_for: idFor,
-        id_usr: idUsr
+        id_usr: idUsr,
+        ultima_postagem_lida:latest?.id_post ?? 0n
       }
     });
   } catch (error) {
@@ -648,6 +655,7 @@ async function excluirForum(
 }
 
 module.exports = {
+  limitesCriacao,
   listarForuns,
   listarMeusForuns,
   buscarForum,
@@ -657,3 +665,20 @@ module.exports = {
   sairForum,
   excluirForum
 };
+
+async function limitesCriacao(idUsuario) {
+  const idUsr = validarId(idUsuario);
+  const [status, criados] = await Promise.all([
+    require('./assinatura.service').buscarStatusAssinatura(idUsr),
+    prisma.forum.count({ where: { id_usr_criadora: idUsr } }),
+  ]);
+  return { criados, limite: status.ativo ? null : 1, pode_criar: status.ativo || criados < 1, pro: status.ativo };
+}
+
+async function adicionarContadores(foruns, user) {
+ if (!foruns.length) return foruns;
+ const members = await prisma.usuaria_forum.findMany({ where: { id_usr: user, id_for: { in: foruns.map(forum => BigInt(forum.id_for)) } }, select: { id_for: true, ultima_postagem_lida: true } });
+ const totals = members.length ? await prisma.postagem.groupBy({ by: ['id_for'], where: { id_usr: { not: user }, OR: members.map(member => ({ id_for: member.id_for, id_post: { gt: member.ultima_postagem_lida } })) }, _count: { _all: true } }) : [];
+ const counts = new Map(totals.map(item => [String(item.id_for), item._count._all]));
+ return foruns.map(forum => ({ ...forum, nao_lidas: counts.get(forum.id_for) || 0 }));
+}

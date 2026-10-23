@@ -18,6 +18,7 @@ require.cache[prismaPath] = { id: prismaPath, filename: prismaPath, loaded: true
     async create() { consultas.escritas++; throw new Error("Escrita proibida no teste"); },
     async delete() { consultas.escritas++; throw new Error("Escrita proibida no teste"); }
   },
+  usuaria: { async findUnique({where}) { return {id_usr:where.id_usr}; } },
   conteudo_pro: {
     async findMany(query) {
       if (query.select) consultas.catalogo++; else consultas.material++;
@@ -36,6 +37,7 @@ const app = express();
 app.use(express.json());
 app.use("/api/pro", require("../src/routes/pro.routes"));
 app.use("/api/assinatura", require("../src/routes/assinatura.routes"));
+app.use(require('../src/middlewares/error.middleware'));
 let server;
 let baseUrl;
 
@@ -136,4 +138,33 @@ test("falha na verificação nega acesso sem carregar o material", async () => {
   const result = await request("/api/pro/conteudos/1");
   assert.equal(result.status, 503);
   assert.equal(consultas.material, 0);
+});
+
+test('demonstração só libera catálogo exclusivo para a conta que ativou, sem assinatura ou cobrança', async () => {
+  const oldNode=process.env.NODE_ENV, oldDemo=process.env.CONSTELLA_PRO_DEMO;
+  process.env.NODE_ENV='development'; process.env.CONSTELLA_PRO_DEMO='true';
+  try {
+    assert.equal((await request('/api/pro/demonstracao',{method:'POST',body:JSON.stringify({ativar:'true'})})).status,400);
+    const activated=await request('/api/pro/demonstracao',{method:'POST',body:JSON.stringify({ativar:true,id_usr:'2',valor:0})});
+    assert.equal(activated.status,200); assert.equal(activated.data.demonstracao,true); assert.equal(activated.data.assinatura,null);
+    const content=await request('/api/pro/conteudos');
+    assert.equal(content.status,200); assert.equal(content.data.conteudos[0].material,'material-exclusivo-de-teste');
+    const other=jwt.sign({tipo:'usuaria'},process.env.JWT_SECRET,{subject:'2',issuer:'constella',audience:'constella-app',expiresIn:'1m'});
+    assert.equal((await request('/api/pro/conteudos',{headers:{Authorization:`Bearer ${other}`}})).status,403);
+    assert.equal(consultas.escritas,0);
+    await request('/api/pro/demonstracao',{method:'POST',body:JSON.stringify({ativar:false})});
+    assert.equal((await request('/api/pro/conteudos')).status,403);
+  } finally {
+    if(oldNode===undefined)delete process.env.NODE_ENV;else process.env.NODE_ENV=oldNode;
+    if(oldDemo===undefined)delete process.env.CONSTELLA_PRO_DEMO;else process.env.CONSTELLA_PRO_DEMO=oldDemo;
+  }
+});
+test('produção recusa demonstração mesmo com variável habilitada e payload forjado',async()=>{
+  const oldNode=process.env.NODE_ENV, oldDemo=process.env.CONSTELLA_PRO_DEMO;
+  process.env.NODE_ENV='production'; process.env.CONSTELLA_PRO_DEMO='true';
+  try { assert.equal((await request('/api/pro/demonstracao',{method:'POST',body:JSON.stringify({ativar:true})})).status,403); }
+  finally {
+    if(oldNode===undefined)delete process.env.NODE_ENV;else process.env.NODE_ENV=oldNode;
+    if(oldDemo===undefined)delete process.env.CONSTELLA_PRO_DEMO;else process.env.CONSTELLA_PRO_DEMO=oldDemo;
+  }
 });

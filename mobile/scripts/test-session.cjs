@@ -27,6 +27,7 @@ function mount(initialToken = null) {
   let cursor = 0, stored = initialToken, token = null, expired;
   const api = {
     setApiSession(value) { token = value; },
+    cleanupSessionNotifications: async () => {},
     setSessionExpiredHandler(handler) { expired = handler; },
     errorMessage(error) { return error.message; },
   };
@@ -263,5 +264,18 @@ test('flag ausente permanece desconhecida; falha ao salvar token não abre sess�
   assert.equal(app.state().user, null);
   assert.equal(app.stored(), null);
   assert.equal(app.token(), null);
+  app.unmount();
+});
+
+test('falha ao trocar de conta não mantém identidade nem JWT da conta anterior', async () => {
+  const app = mount();
+  await tick();
+  await app.state().login('', '');
+  app.authService.login = async () => { throw new Error('Credenciais recusadas'); };
+  await assert.rejects(app.state().login('', ''), /Credenciais recusadas/);
+  assert.equal(app.state().user, null);
+  assert.equal(app.state().needsOnboarding, null);
+  assert.equal(app.token(), null);
+  assert.equal(app.stored(), null);
   app.unmount();
 });

@@ -20,7 +20,7 @@ function tratarErro(res, error) {
     });
   }
 
-  console.error("Erro na API de chat:", error);
+  console.error("Erro na API de chat:", error.code || error.name || 'Error');
 
   return res.status(500).json({
     mensagem: "Erro interno do servidor."
@@ -120,23 +120,24 @@ async function listarMensagens(req, res) {
 // Enviar mensagem
 async function enviarMensagem(req, res) {
   try {
-    const { conteudo } = req.body || {};
+    const { conteudo = "", imagem = null } = req.body || {};
 
     if (
       typeof conteudo !== "string" ||
-      !conteudo.trim() ||
+      (!conteudo.trim() && !imagem) ||
+      (imagem !== null && typeof imagem !== "string") ||
       conteudo.trim().length > 1000
     ) {
       return res.status(400).json({
         mensagem:
-          "A mensagem deve possuir entre 1 e 1000 caracteres."
+          "Envie texto de até 1000 caracteres e/ou uma imagem válida."
       });
     }
 
     const mensagem = await chatService.enviarMensagem(
       req.usuarioId,
       req.params.id,
-      conteudo.trim()
+      conteudo.trim(), imagem
     );
 
     return res.status(201).json({

@@ -3,7 +3,7 @@ import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { authService, type RegisterInput } from '../services/auth.service';
 import { communityService } from '../services/community.service';
-import { errorMessage, setApiSession, setSessionExpiredHandler } from '../services/api';
+import { cleanupSessionNotifications, errorMessage, setApiSession, setSessionExpiredHandler } from '../services/api';
 import type { AuthResponse, AuthUser, Profile } from '../types/models';
 
 interface AuthState {
@@ -73,7 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (current(version)) setNotice('Entre novamente para renovar sua sessão.');
       });
     });
-    void restoreSession();
+    void Promise.resolve().then(() => { if (mounted.current) return restoreSession(); });
     return () => { mounted.current = false; epoch.current++; setSessionExpiredHandler(undefined); };
   }, []);
   async function accept(result: AuthResponse, version: number) {
@@ -92,10 +92,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const version = ++epoch.current;
     // Respostas privadas da conta anterior não podem expirar esta tentativa.
     setApiSession(null); setRestoring(false);
+    setUser(null); setIsGuest(false); setAbout(''); setNeedsOnboarding(null);
+    setRestoreFailed(false); setNotice('');
+    await updateStorage(storage.clear);
+    if (!current(version)) throw new Error('Sessão alterada.');
     await accept(await request(), version);
   }
   async function logout() {
     const version = ++epoch.current;
+    // Revoga o dispositivo ainda com o JWT desta conta. Falha de rede não retém a sessão local.
+    try { await cleanupSessionNotifications(); } catch { /* Será sincronizado no próximo login. */ }
     try { await updateStorage(storage.clear); }
     catch { if (current(version)) setNotice('Não foi possível sair com segurança. Tente novamente.'); return; }
     if (!current(version)) return;

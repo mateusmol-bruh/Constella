@@ -8,7 +8,7 @@ function tratarErro(res, error) {
     });
   }
 
-  console.error("Erro na API de conexões:", error);
+  console.error("Erro na API de conexões:", error.code || error.name || 'Error');
 
   return res.status(500).json({
     mensagem: "Erro interno do servidor."

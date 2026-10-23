@@ -13,7 +13,8 @@ export type RootStackParamList = {
   Main: NavigatorScreenParams<TabParamList> | undefined;
   Chat: { id: string; nome: string; foto?: string | null };
   ChatForum: { id: string; nome: string };
-  CriarForum: undefined;
+  CriarForum: { id: string } | undefined;
+  RecuperarSenha: undefined;
   DetalheConteudo: { id: string };
 };
 export type ScreenProps<K extends keyof RootStackParamList> = NativeStackScreenProps<RootStackParamList, K>;

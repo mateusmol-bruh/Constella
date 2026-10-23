@@ -9,6 +9,8 @@ const express = require("express");
 const cors = require("cors");
 
 const authRoutes = require("./src/routes/auth.routes");
+const publicoRoutes = require("./src/routes/publico.routes");
+const uploadRoutes = require("./src/routes/upload.routes");
 
 const perfilRoutes = require("./src/routes/perfil.routes");
 
@@ -51,6 +53,11 @@ app.disable("x-powered-by");
 
 app.use(cors());
 
+// Autentica antes de ler o corpo maior permitido somente para imagens.
+app.use('/api/uploads', uploadRoutes.router);
+app.get('/uploads/:nome', uploadRoutes.serveImage);
+app.use('/api/anexos', require('./src/routes/anexo.routes'));
+
 app.use(
   express.json({
     limit: "1mb"
@@ -60,6 +67,7 @@ app.use(
 //remove o header que denuncia Express e evita payload JSON absurdamente grande.
 
 // Rotas
+app.use("/api/publico", publicoRoutes);
 app.use("/api/auth", authRoutes);
 
 app.use(
@@ -76,7 +84,9 @@ app.use(
   "/api/conexoes", conexaoRoutes
 );
 
+app.use("/api/bloqueios", require("./src/routes/bloqueio.routes"));
 app.use("/api/chats", chatRoutes);
+app.use('/api/notificacoes', require('./src/routes/notificacao.routes'));
 
 app.use(
   "/api/usuarios",
@@ -138,6 +148,7 @@ app.use(tratarErroGlobal);
 
 // Inicialização do servidor
 if (require.main === module) {
+  require('./src/services/push-worker.service').iniciar();
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`Servidor rodando na porta ${PORT}`);
   });

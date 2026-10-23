@@ -2,6 +2,9 @@ export type SubscriptionState = 'inativa' | 'pendente_validacao' | 'ativa' | 'ex
 
 export interface ProStatus {
   pro: boolean;
+  demonstracao?: boolean;
+  demonstracao_disponivel?: boolean;
+  demonstracao_expira_em?: string;
   ativo: boolean;
   status: SubscriptionState;
   registro_legado: boolean;

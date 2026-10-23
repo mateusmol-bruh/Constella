@@ -22,6 +22,7 @@ function formatarUsuaria(usuaria) {
     nome: usuaria.nome_usr,
     foto: usuaria.foto_usr,
     status_verificacao: usuaria.status_verificacao,
+    apresentacao: usuaria.apresentacao,
 
     interesses:
       usuaria.usuaria_interesses?.map((item) => ({
@@ -35,6 +36,7 @@ async function listarUsuarias(idUsuario, busca) {
   const idAtual = validarId(idUsuario);
 
   const where = {
+    ...require("./bloqueio.service").filtroVisivel(idAtual),
     id_usr: {
       not: idAtual
     }
@@ -59,6 +61,7 @@ async function listarUsuarias(idUsuario, busca) {
         nome_usr: true,
         foto_usr: true,
         status_verificacao: true,
+        apresentacao: true,
 
         usuaria_interesses: {
           include: {
@@ -104,6 +107,7 @@ async function buscarUsuariaPorId(
         nome_usr: true,
         foto_usr: true,
         status_verificacao: true,
+        apresentacao: true,
 
         usuaria_interesses: {
           include: {
@@ -138,6 +142,7 @@ async function buscarUsuariaPorId(
 
   return {
     ...formatarUsuaria(usuaria),
+    ...await require("./bloqueio.service").status(idAtual,id),
 
     conexao: conexao
       ? {

@@ -2,7 +2,10 @@ import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { Brand } from '../components/Brand';
 import { Icon } from '../components/Icon';
+import { PaymentSimulation } from '../components/PaymentSimulation';
 import { Button, Header, Notice, ResourceState, Screen } from '../components/ui';
+import { errorMessage } from '../services/api';
+import { useFeedback } from '../constexts/FeedbackContext';
 import { useAuth } from '../constexts/AuthContext';
 import { useResource } from '../hooks/useResource';
 import { proService } from '../services/pro.service';
@@ -10,6 +13,7 @@ import { publicService } from '../services/public.service';
 import ProtectedCTA from '../components/ProtectedCTA';
 import { colors, ui } from '../styles/theme';
 import type { ScreenProps } from '../types/navigation';
+import { usePro } from '../constexts/ProContext';
 import { hasProAccess, proStatusLabel } from '../utils/pro';
 
 export default function ConstellaProScreen({ navigation }: ScreenProps<'ConstellaPro'>) {
@@ -38,10 +42,23 @@ function GuestProPresentation({ navigation }: Pick<ScreenProps<'ConstellaPro'>, 
 }
 
 function AccountProPresentation({ navigation }: Pick<ScreenProps<'ConstellaPro'>, 'navigation'>) {
-  const status = useResource(() => proService.status());
+  const [demoBusy, setDemoBusy] = React.useState(false);
+  const [demoError, setDemoError] = React.useState('');
+  const notify = useFeedback();
+  const status = usePro();
   const catalog = useResource(() => proService.catalog());
   const subscription = status.data;
   const access = !!subscription && !status.error && !status.loading && hasProAccess(subscription);
+  async function toggleDemo() {
+    if (demoBusy || !subscription) return;
+    setDemoBusy(true); setDemoError('');
+    try {
+      const saved = await proService.demo(!subscription.demonstracao);
+      status.setData(saved);
+      notify(saved.demonstracao ? 'PRO de demonstração ativado. Nenhuma cobrança realizada.' : 'Demonstração PRO encerrada.');
+    } catch (cause) { setDemoError(errorMessage(cause)); }
+    finally { setDemoBusy(false); }
+  }
 
   return <Screen bottomSafe>
     <Brand variant="compact" width={140} />
@@ -55,15 +72,22 @@ function AccountProPresentation({ navigation }: Pick<ScreenProps<'ConstellaPro'>
           <Text style={ui.body}>{subscription.mensagem}</Text>
           {subscription.assinatura?.expira_em && <Text style={ui.muted}>Válida até {new Date(subscription.assinatura.expira_em).toLocaleDateString('pt-BR')}</Text>}
           <Button title="Atualizar status" variant="secondary" small onPress={() => void status.reload()} />
+          <Text style={ui.muted}>Demonstração temporária para apresentação do projeto. Não é uma assinatura paga.</Text>
+          <Notice text={demoError} />
+          <Button title={subscription.demonstracao ? 'Encerrar demonstração PRO' : 'Ativar demonstração PRO'} variant="secondary" loading={demoBusy} onPress={() => void toggleDemo()} />
         </View>
         <View style={ui.card}>
           <Text style={ui.subtitle}>O que está incluído</Text>
           {subscription.beneficios.map(benefit => <View key={benefit} style={ui.row}><Icon name="check" size={18} color={colors.pink} /><Text style={[ui.body, { flex: 1 }]}>{benefit}</Text></View>)}
-          <Text style={ui.muted}>{subscription.plano?.preco_formatado ?? 'Preço ainda não disponível.'}</Text>
-          <Text style={ui.muted}>{subscription.plano?.periodicidade ?? 'Periodicidade e condições serão informadas quando a contratação estiver disponível.'}</Text>
-          <Button title={access ? 'Gerenciar assinatura indisponível' : 'Assinatura indisponível'} disabled onPress={() => undefined} />
-          {access && <Button title="Cancelamento indisponível" variant="secondary" disabled onPress={() => undefined} />}
-          <Text style={ui.muted}>A contratação e o gerenciamento ainda não estão disponíveis. Nenhuma cobrança será realizada por esta tela.</Text>
+          {subscription.provedor_disponivel ? <>
+            <Text style={ui.muted}>{subscription.plano?.preco_formatado ?? 'Consulte as condições do plano.'}</Text>
+            <Text style={ui.muted}>{subscription.plano?.periodicidade}</Text>
+            <Text style={ui.body}>O gerenciamento da assinatura ainda não está disponível neste aplicativo.</Text>
+          </> : <>
+            <Text style={ui.subtitle}>Assinaturas em breve</Text>
+            <Text style={ui.body}>A contratação do Constella Pro ainda não foi lançada. Os planos e as formas de pagamento aparecerão aqui quando estiverem disponíveis.</Text>
+            <PaymentSimulation />
+          </>}
         </View>
       </>}
       <Text style={ui.subtitle}>Conteúdos exclusivos</Text>

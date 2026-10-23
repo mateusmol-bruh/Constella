@@ -74,6 +74,8 @@ test('JWT só acompanha rotas privadas; login/cadastro e sessão limpa não rece
   expectedAuthorization = undefined;
   await api.post('/api/auth/login', {});
   await api.post('/api/auth/cadastro', {});
+  api.defaults.headers.common.Authorization = 'Bearer residuo-sintetico';
+  await api.post('/api/auth/login', {});
   setApiSession(null);
   await api.get('/api/perfil');
 });

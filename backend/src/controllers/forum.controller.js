@@ -6,13 +6,14 @@ function tratarErro(res, error) {
     return res
       .status(error.statusCode)
       .json({
-        mensagem: error.message
+        mensagem: error.message,
+        ...(error.codigo ? { codigo: error.codigo } : {})
       });
   }
 
   console.error(
     "Erro na API de fóruns:",
-    error
+    error.code || error.name || 'Error'
   );
 
   return res.status(500).json({
@@ -23,13 +24,16 @@ function tratarErro(res, error) {
 
 async function listar(req, res) {
   try {
+    const paginated = req.query.pagina !== undefined;
+    const pagina = Number(req.query.pagina ?? 1), limite = Number(req.query.limite ?? 30);
     const foruns =
       await forumService.listarForuns(
-        req.usuarioId
+        req.usuarioId, req.query.filtro, paginated ? { pagina, limite, busca: typeof req.query.busca === 'string' ? req.query.busca.trim() : '' } : undefined
       );
 
     return res.status(200).json({
-      foruns
+      foruns: paginated ? foruns.slice(0, limite) : foruns,
+      ...(paginated ? { pagina, tem_mais: foruns.length > limite } : {})
     });
   } catch (error) {
     return tratarErro(res, error);
@@ -153,6 +157,10 @@ async function excluir(req, res) {
 }
 
 module.exports = {
+  limites: async (req, res, next) => {
+    try { res.json(await forumService.limitesCriacao(req.usuarioId)); }
+    catch (error) { next(error); }
+  },
   listar,
   meus,
   buscar,
