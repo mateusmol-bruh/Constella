@@ -1,11 +1,16 @@
 const prisma = require("../config/prisma");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const { camposOnboarding, estadoOnboarding } = require("../utils/onboarding");
 
 async function autenticarUsuaria(email, senha) {
   const usuaria = await prisma.usuaria.findUnique({
     where: {
       email_usr: email.trim().toLowerCase()
+    },
+    select: {
+      id_usr: true, nome_usr: true, email_usr: true, senha_usr: true,
+      status_verificacao: true, ...camposOnboarding()
     }
   });
 
@@ -30,6 +35,7 @@ async function autenticarUsuaria(email, senha) {
     process.env.JWT_SECRET,
     {
       expiresIn: "1h",
+      algorithm: "HS256",
       issuer: "constella",
       audience: "constella-app"
     }
@@ -41,7 +47,9 @@ async function autenticarUsuaria(email, senha) {
     usuaria: {
       id: String(usuaria.id_usr),
       nome: usuaria.nome_usr,
-      email: usuaria.email_usr
+      email: usuaria.email_usr,
+      status_verificacao: usuaria.status_verificacao,
+      ...estadoOnboarding(usuaria)
     }
   };
 }

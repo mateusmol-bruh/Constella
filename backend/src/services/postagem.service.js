@@ -18,10 +18,11 @@ function validarId(
   valor,
   campo = "ID"
 ) {
+  const texto = String(valor ?? "");
   if (
-    !/^[1-9]\d*$/.test(
-      String(valor ?? "")
-    )
+    !/^[1-9]\d*$/.test(texto) ||
+    texto.length > 19 ||
+    BigInt(texto) > 9223372036854775807n
   ) {
     throw erroHttp(
       400,
@@ -103,16 +104,26 @@ async function verificarParticipacao(
   if (!participacao) {
     throw erroHttp(
       403,
-      "Você precisa participar do fórum para publicar."
+      "Você precisa participar do fórum para acessar as postagens."
     );
   }
 }
 
 async function listarPostagens(
   idUsuario,
-  idForum
+  idForum,
+  pagina = 1,
+  limite = 50
 ) {
-  validarId(idUsuario);
+  const idUsr = validarId(idUsuario);
+
+  if (
+    !Number.isSafeInteger(pagina) || pagina < 1 ||
+    !Number.isSafeInteger(limite) || limite < 1 || limite > 50 ||
+    !Number.isSafeInteger((pagina - 1) * limite)
+  ) {
+    throw erroHttp(400, "Paginação inválida.");
+  }
 
   const idFor =
     validarId(
@@ -121,6 +132,7 @@ async function listarPostagens(
     );
 
   await verificarForum(idFor);
+  await verificarParticipacao(idUsr, idFor);
 
   const postagens =
     await prisma.postagem.findMany({
@@ -138,6 +150,8 @@ async function listarPostagens(
         }
       },
 
+      skip: (pagina - 1) * limite,
+      take: limite,
       orderBy: [
         {
           dt_post: "desc"
@@ -266,6 +280,8 @@ async function editarPostagem(
     );
   }
 
+  await verificarParticipacao(idUsr, postagem.id_for);
+
   const atualizacao = {};
 
   if (
@@ -378,6 +394,8 @@ async function excluirPostagem(
       "Você só pode excluir suas próprias postagens."
     );
   }
+
+  await verificarParticipacao(idUsr, postagem.id_for);
 
   try {
     await prisma.postagem.delete({

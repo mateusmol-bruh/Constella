@@ -1,0 +1,17 @@
+node_modules
+.env
+.env.*
+!.env.example
+.git
+.gitignore
+.codex
+.claude
+.windsurf
+tests
+contracts
+proposals
+coverage
+*.log
+npm-debug.log*
+Dockerfile*
+.dockerignore

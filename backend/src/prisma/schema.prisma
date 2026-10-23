@@ -186,6 +186,8 @@ model usuaria {
   foto_usr                                 String?                @db.VarChar(500)
   cpf_usr                                  String                 @unique @db.VarChar(14)
   status_verificacao                       Boolean                @default(false)
+  onboarding_concluido                      Boolean                @default(false)
+  apresentacao                             String?                @db.VarChar(500)
   assinatura                               assinatura?
   chat_chat_id_usr_01Tousuaria             chat[]                 @relation("chat_id_usr_01Tousuaria")
   chat_chat_id_usr_02Tousuaria             chat[]                 @relation("chat_id_usr_02Tousuaria")

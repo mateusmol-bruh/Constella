@@ -9,8 +9,11 @@ function erroHttp(status, mensagem) {
 
 // Valida IDs BigInt recebidos pela API.
 function validarId(valor, campo = "ID") {
+  const texto = String(valor ?? "");
   if (
-    !/^[1-9]\d*$/.test(String(valor ?? "")) ||
+    !/^[1-9]\d*$/.test(texto) ||
+    texto.length > 19 ||
+    BigInt(texto) > 9223372036854775807n ||
     typeof valor === "boolean"
   ) {
     throw erroHttp(400, `${campo} inválido.`);
@@ -295,13 +298,21 @@ async function excluirMensagem(idUsuario, idChat, idMensagem) {
   }
 
   // Exclui apenas se ainda pertencer à usuária e ao chat
-  const resultado = await prisma.mensagem.deleteMany({
-    where: {
-      id_msg: idMsg,
-      id_chat: idConversa,
-      id_usr_emissor: idUsr
+  let resultado;
+  try {
+    resultado = await prisma.mensagem.deleteMany({
+      where: {
+        id_msg: idMsg,
+        id_chat: idConversa,
+        id_usr_emissor: idUsr
+      }
+    });
+  } catch (error) {
+    if (error.code === "P2003") {
+      throw erroHttp(409, "Esta mensagem possui registros relacionados e não pode ser excluída.");
     }
-  });
+    throw error;
+  }
 
   if (resultado.count === 0) {
     throw erroHttp(404, "Mensagem não encontrada.");

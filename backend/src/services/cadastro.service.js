@@ -1,6 +1,7 @@
 const prisma = require("../config/prisma");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const { camposOnboarding } = require("../utils/onboarding");
 
 async function cadastrarUsuaria({ nome, email, senha, cpf }) {
   const senhaCriptografada = await bcrypt.hash(senha, 12);
@@ -19,7 +20,8 @@ async function cadastrarUsuaria({ nome, email, senha, cpf }) {
       id_usr: true,
       nome_usr: true,
       email_usr: true,
-      status_verificacao: true
+      status_verificacao: true,
+      ...camposOnboarding()
     }
   });
 
@@ -31,6 +33,7 @@ async function cadastrarUsuaria({ nome, email, senha, cpf }) {
     process.env.JWT_SECRET,
     {
       expiresIn: "1h",
+      algorithm: "HS256",
       issuer: "constella",
       audience: "constella-app"
     }

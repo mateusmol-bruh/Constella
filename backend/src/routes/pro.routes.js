@@ -21,6 +21,11 @@ router.get(
 );
 
 router.get(
+  "/catalogo",
+  proController.catalogo
+);
+
+router.get(
   "/conteudos",
   exigirPro,
   proController.listar

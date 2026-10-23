@@ -9,7 +9,7 @@ function erroHttp(mensagem, statusCode) {
 function validarId(valor) {
   const texto = String(valor ?? "");
 
-  if (!/^[1-9]\d*$/.test(texto)) {
+  if (!/^[1-9]\d*$/.test(texto) || texto.length > 19 || BigInt(texto) > 9223372036854775807n) {
     throw erroHttp("ID inválido.", 400);
   }
 

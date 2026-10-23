@@ -1,36 +1,23 @@
-const prisma = require("../config/prisma");
+﻿const { buscarStatusAssinatura } = require("../services/assinatura.service");
 
 async function exigirPro(req, res, next) {
   try {
-    const idUsr = BigInt(req.usuarioId);
+    const status = await buscarStatusAssinatura(req.usuarioId);
 
-    const assinatura =
-      await prisma.assinatura.findUnique({
-        where: {
-          id_usr: idUsr
-        }
-      });
-
-    if (!assinatura) {
+    // A decisão de acesso pertence ao servidor. Um registro legado, um
+    // booleano do cliente ou uma transação ainda pendente não concedem acesso.
+    if (status.ativo !== true) {
       return res.status(403).json({
-        mensagem:
-          "Esta funcionalidade é exclusiva para assinantes Pro."
+        codigo: "PRO_NAO_VALIDADO",
+        mensagem: "Este conteúdo exige uma assinatura Pro validada. A contratação está indisponível enquanto o provedor não for configurado."
       });
     }
 
-    req.assinatura = assinatura;
-
-    next();
-
+    req.assinatura = status.assinatura;
+    return next();
   } catch (error) {
-    console.error(
-      "Erro ao verificar assinatura Pro:",
-      error
-    );
-
-    return res.status(500).json({
-      mensagem:
-        "Erro interno do servidor."
+    return res.status(error.statusCode || 503).json({
+      mensagem: error.statusCode ? error.message : "Não foi possível verificar o acesso Pro. Tente novamente."
     });
   }
 }

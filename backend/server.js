@@ -1,5 +1,9 @@
 
-require("dotenv").config();
+require("dotenv").config({ quiet: true });
+
+if (!process.env.JWT_SECRET) {
+  throw new Error("JWT_SECRET não configurado no servidor.");
+}
 
 const express = require("express");
 const cors = require("cors");
@@ -133,7 +137,11 @@ app.use(notFound);
 app.use(tratarErroGlobal);
 
 // Inicialização do servidor
-app.listen(PORT, () => {
-  console.log(`Servidor rodando na porta ${PORT}`);
-});
+if (require.main === module) {
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`Servidor rodando na porta ${PORT}`);
+  });
+}
+
+module.exports = app;
 

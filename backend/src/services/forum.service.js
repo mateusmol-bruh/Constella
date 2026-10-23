@@ -9,7 +9,7 @@ function erroHttp(statusCode, mensagem) {
 function validarId(valor, campo = "ID") {
   const texto = String(valor ?? "");
 
-  if (!/^[1-9]\d*$/.test(texto)) {
+  if (!/^[1-9]\d*$/.test(texto) || texto.length > 19 || BigInt(texto) > 9223372036854775807n) {
     throw erroHttp(400, `${campo} inválido.`);
   }
 
@@ -122,10 +122,7 @@ async function listarMeusForuns(idUsuario) {
     });
 
   return registros.map((registro) =>
-    formatarForum(
-      registro.forum,
-      idUsr
-    )
+    ({ ...formatarForum(registro.forum, idUsr), participando: true })
   );
 }
 
@@ -503,12 +500,19 @@ async function entrarForum(
     );
   }
 
-  await prisma.usuaria_forum.create({
-    data: {
-      id_for: idFor,
-      id_usr: idUsr
+  try {
+    await prisma.usuaria_forum.create({
+      data: {
+        id_for: idFor,
+        id_usr: idUsr
+      }
+    });
+  } catch (error) {
+    if (error.code === "P2002") {
+      throw erroHttp(409, "Você já participa deste fórum.");
     }
-  });
+    throw error;
+  }
 
   return {
     mensagem:

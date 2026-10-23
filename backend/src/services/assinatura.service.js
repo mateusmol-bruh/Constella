@@ -1,176 +1,63 @@
-const prisma =
-  require("../config/prisma");
+﻿const prisma = require("../config/prisma");
 
 function erroHttp(statusCode, mensagem) {
-  const erro =
-    new Error(mensagem);
-
-  erro.statusCode =
-    statusCode;
-
+  const erro = new Error(mensagem);
+  erro.statusCode = statusCode;
   return erro;
 }
 
 function validarId(valor) {
-  if (
-    !/^[1-9]\d*$/.test(
-      String(valor ?? "")
-    )
-  ) {
-    throw erroHttp(
-      400,
-      "ID inválido."
-    );
+  const texto = String(valor ?? "");
+  if (!/^[1-9]\d*$/.test(texto) || texto.length > 19 || BigInt(texto) > 9223372036854775807n) {
+    throw erroHttp(400, "ID inválido.");
   }
-
   return BigInt(valor);
 }
 
-function formatarAssinatura(
-  assinatura
-) {
-  return {
-    id:
-      assinatura.id_ass.toString(),
-
-    forma_pagamento:
-      assinatura.forma_pagto,
-
-    valor:
-      Number(
-        assinatura.valor
-      )
-  };
-}
-
-async function buscarAssinatura(
-  idUsuario
-) {
-  const idUsr =
-    validarId(idUsuario);
-
-  const assinatura =
-    await prisma.assinatura.findUnique({
-      where: {
-        id_usr: idUsr
-      }
-    });
-
-  return assinatura
-    ? formatarAssinatura(
-        assinatura
-      )
-    : null;
-}
-
-async function criarAssinatura(
-  idUsuario,
-  dados
-) {
-  const idUsr =
-    validarId(idUsuario);
-
-  const existente =
-    await prisma.assinatura.findUnique({
-      where: {
-        id_usr: idUsr
-      }
-    });
-
-  if (existente) {
-    throw erroHttp(
-      409,
-      "A usuária já possui assinatura."
-    );
-  }
-
-  const formaPagamento =
-    typeof dados.forma_pagamento ===
-      "string"
-      ? dados.forma_pagamento.trim()
-      : "";
-
-  const valor =
-    Number(dados.valor);
-
-  if (!formaPagamento) {
-    throw erroHttp(
-      400,
-      "Forma de pagamento obrigatória."
-    );
-  }
-
-  if (
-    formaPagamento.length > 50
-  ) {
-    throw erroHttp(
-      400,
-      "Forma de pagamento inválida."
-    );
-  }
-
-  if (
-    Number.isNaN(valor) ||
-    valor < 0
-  ) {
-    throw erroHttp(
-      400,
-      "Valor inválido."
-    );
-  }
-
-  const assinatura =
-    await prisma.assinatura.create({
-      data: {
-        forma_pagto:
-          formaPagamento,
-
-        valor,
-
-        id_usr:
-          idUsr
-      }
-    });
-
-  return formatarAssinatura(
-    assinatura
-  );
-}
-
-async function cancelarAssinatura(
-  idUsuario
-) {
-  const idUsr =
-    validarId(idUsuario);
-
-  const assinatura =
-    await prisma.assinatura.findUnique({
-      where: {
-        id_usr: idUsr
-      }
-    });
-
-  if (!assinatura) {
-    throw erroHttp(
-      404,
-      "Assinatura não encontrada."
-    );
-  }
-
-  await prisma.assinatura.delete({
-    where: {
-      id_usr: idUsr
-    }
+// O modelo legado contém apenas forma de pagamento e valor. Não contém
+// transação validada, provedor ou vigência e nunca comprova acesso Pro.
+async function buscarStatusAssinatura(idUsuario) {
+  const idUsr = validarId(idUsuario);
+  const registro = await prisma.assinatura.findUnique({
+    where: { id_usr: idUsr },
+    select: { id_ass: true }
   });
 
   return {
-    mensagem:
-      "Assinatura cancelada com sucesso."
+    pro: false,
+    ativo: false,
+    status: registro ? "pendente_validacao" : "inativa",
+    registro_legado: Boolean(registro),
+    assinatura: null,
+    plano: null,
+    provedor_disponivel: false,
+    motivo: "PROVEDOR_NAO_CONFIGURADO",
+    mensagem: registro
+      ? "Existe um registro anterior sem comprovação de pagamento. O acesso Pro aguarda validação por um provedor."
+      : "As assinaturas Pro ainda não estão disponíveis para contratação.",
+    beneficios: ["Acesso a conteúdos exclusivos do catálogo Pro."]
   };
 }
 
+function provedorIndisponivel() {
+  throw erroHttp(503, "O provedor de assinaturas ainda não foi configurado. Nenhuma cobrança ou alteração de assinatura foi realizada.");
+}
+
+async function criarAssinatura(idUsuario) {
+  validarId(idUsuario);
+  // Não aceitar valor, confirmação de pagamento ou estado enviado pelo cliente.
+  // A compra exigirá provedor aprovado e validação de transação no servidor.
+  provedorIndisponivel();
+}
+
+async function cancelarAssinatura(idUsuario) {
+  validarId(idUsuario);
+  // Excluir um registro local não cancela uma cobrança no provedor.
+  provedorIndisponivel();
+}
+
 module.exports = {
-  buscarAssinatura,
+  buscarStatusAssinatura,
   criarAssinatura,
   cancelarAssinatura
 };
