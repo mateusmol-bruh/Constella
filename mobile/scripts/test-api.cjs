@@ -139,3 +139,13 @@ test('erros distinguem offline, timeout, validação, sessão, permissão, ausê
   assert.match(errorMessage(httpError({}, 503, { codigo: 'ONBOARDING_MIGRACAO_PENDENTE' })), /configuração inicial.*indisponível/i);
   assert.match(errorMessage(new Error('Falha desconhecida')), /não foi possível concluir/i);
 });
+
+test('falhas de conversa distinguem atualização, indisponibilidade, erro interno e ausência', () => {
+  const { errorMessage } = loadApi();
+  const config = { url: '/api/chats/1/mensagens' };
+  assert.match(errorMessage(httpError(config, 503, { codigo: 'CONVERSAS_ATUALIZACAO_PENDENTE' })), /conversas.*atualização/i);
+  assert.match(errorMessage(httpError(config, 503, { codigo: 'CONVERSAS_TEMPORARIAMENTE_INDISPONIVEIS' })), /temporariamente indisponível/i);
+  assert.match(errorMessage(httpError(config, 500, { codigo: 'ERRO_INTERNO_CONVERSA', mensagem: 'SQL com dados sensíveis' })), /erro ao processar a conversa/i);
+  assert.match(errorMessage(httpError(config, 404)), /conversa.*não foi encontrada/i);
+  assert.match(errorMessage(httpError({ url: '/api/foruns/1/postagens' }, 502)), /carregar as mensagens/i);
+});

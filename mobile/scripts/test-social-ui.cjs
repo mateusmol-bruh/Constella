@@ -15,9 +15,13 @@ function mountChat(conversationKey, items = [], permissions = {}, callbacks = {}
   let cursor = 0, timerId = 0, focus, cleanup, listener, mounted = false, requests = 0;
   let messages = items;
   let deleted = 0, backs = 0;
-  const notices = [], selections = [];
+  const notices = [], selections = [], scrolls = [];
   const react = {
-    createElement(type, props, ...children) { return { type, props: { ...props, children } }; },
+    createElement(type, props, ...children) {
+      if (type === 'FlatList' && props?.ref) props.ref.current = { scrollToIndex: value => scrolls.push(value), scrollToOffset() {} };
+      if (type === 'TextInput' && props?.ref) props.ref.current = { focus() {} };
+      return { type, props: { ...props, children } };
+    },
     useState(initial) {
       const i = cursor++;
       if (!(i in slots)) slots[i] = initial;
@@ -37,6 +41,7 @@ function mountChat(conversationKey, items = [], permissions = {}, callbacks = {}
     axios:require('axios'),
     './Artwork':{ Avatar:'Avatar' },
     './ForumCover':{ ForumCover:'ForumCover' },
+    './ConversationImage':{ ConversationImage:'ConversationImage' },
     './PersonModal':{ PersonModal:'PersonModal' },
     './Social':{ Sheet:'Sheet' },
     'react-native-safe-area-context':{ SafeAreaView:'SafeAreaView' },
@@ -74,7 +79,7 @@ function mountChat(conversationKey, items = [], permissions = {}, callbacks = {}
     return tree;
   }
   render();
-  return { render, timers, notices, selections, deleted:()=>deleted, backs:()=>backs, requests:()=>requests, incoming(value){ messages=value; },
+  return { render, timers, notices, selections, scrolls, deleted:()=>deleted, backs:()=>backs, requests:()=>requests, incoming(value){ messages=value; },
     poll() { const [id,timer] = [...timers][0] ?? []; assert.ok(timer,'Deve haver atualização agendada'); timers.delete(id); timer.callback(); },
     activity(state) { AppState.currentState=state; listener?.(state); },
     unmount(){cleanup();},
@@ -168,8 +173,8 @@ test('leitura não é confirmada em segundo plano; imagem privada usa JWT na ren
   assert.equal(reads.length,0);
   app.activity('active'); await tick();
   assert.deepEqual(reads,['20']);
-  const image=find(find(app.render(),'FlatList').props.renderItem({item}),'Image');
-  assert.equal(image.props.source.headers.Authorization,'Bearer token-sintetico');
+  const image=find(find(app.render(),'FlatList').props.renderItem({item}),'ConversationImage');
+  assert.equal(image.props.uri,item.image);
   app.unmount();
 });
 
@@ -186,6 +191,7 @@ test('cancelar upload ou sair da tela impede o envio da mensagem com imagem',asy
     });
     await tick();
     all(app.render(),'Pressable').find(node=>node.props.accessibilityLabel==='Anexar imagem').props.onPress();
+    all(app.render(),'Button').find(node=>node.props.title==='Escolher da galeria').props.onPress();
     await tick();
     all(app.render(),'Pressable').find(node=>node.props.accessibilityLabel==='Enviar mensagem').props.onPress();
     await tick();
@@ -209,4 +215,93 @@ test('fórum oferece câmera e galeria; a foto escolhida pode ser refeita antes 
   all(app.render(),'Button').find(item=>item.props.title==='Escolher da galeria').props.onPress();await tick();
   assert.equal(app.selections.at(-1),'library');
   app.unmount();
+});
+
+for (const conversation of ['chat:reply', 'forum:reply']) test(`${conversation}: pressão longa responde a foto/texto, permite cancelar e envia referência`, async () => {
+  const original = { id:'7',authorId:'2',author:'Maria',text:'Original',image:'/api/anexos/foto.png',date:'2026-10-23T12:00:00Z' };
+  const sent=[];
+  const app=mountChat(conversation,[original],{}, {send:async(text,image,options)=>{sent.push({text,image,options});return {...original,id:'8',text,authorId:'1'};}});
+  await tick();
+  function selectReply() {
+    const row=find(app.render(),'FlatList').props.renderItem({item:original});
+    all(row,'Pressable').find(node=>node.props.accessibilityLabel==='Opções da mensagem').props.onLongPress();
+    all(app.render(),'Button').find(node=>node.props.title==='Responder').props.onPress();
+  }
+  selectReply();
+  assert.ok(all(app.render(),'Button').some(node=>node.props.title==='Cancelar resposta'));
+  all(app.render(),'Button').find(node=>node.props.title==='Cancelar resposta').props.onPress();
+  assert.equal(all(app.render(),'Button').some(node=>node.props.title==='Cancelar resposta'),false);
+  selectReply();
+  find(app.render(),'TextInput').props.onChangeText('Minha resposta');
+  all(app.render(),'Pressable').find(node=>node.props.accessibilityLabel==='Enviar mensagem').props.onPress();await tick();
+  assert.equal(sent.length,1);assert.equal(sent[0].options.resposta_id,'7');
+  assert.match(sent[0].options.envio_id,/^[A-Za-z0-9_-]{16,100}$/);
+  assert.equal(find(app.render(),'FlatList').props.data.length,2);
+  app.unmount();
+});
+
+test('toque na citação carrega página antiga e localiza a original',async()=>{
+  const reply={id:'100',authorId:'2',author:'Maria',text:'Resposta',date:'2026-10-23T12:00:00Z',reply:{id:'7',autora:{id:'1',nome:'Autora'},conteudo:'Original',imagem:false}};
+  let page;
+  const app=mountChat('chat:old-reply',[reply],{}, {earlier:async value=>{page=value;return [{...reply,id:'7',reply:null,text:'Original'}];}});
+  await tick();
+  const row=find(app.render(),'FlatList').props.renderItem({item:reply});
+  all(row,'Pressable').find(node=>node.props.accessibilityLabel==='Localizar mensagem de Autora').props.onPress();await tick();
+  const list=find(app.render(),'FlatList');list.props.onContentSizeChange();
+  assert.equal(page,2);assert.ok(list.props.data.some(item=>item.id==='7'));
+  assert.equal(app.scrolls.at(-1).index,1);
+  app.unmount();
+});
+
+test('falha após upload mantém prévia e chave; mensagem só aparece quando backend confirma',async()=>{
+  const calls=[];let uploads=0,finish;
+  const app=mountChat('chat:retry',[],{}, {
+    selectedImage:{uri:'file:///teste.jpg',base64:'YQ=='},
+    uploadImage:async image=>{if(!image.uploadedPath)uploads++;return '/api/anexos/foto.png';},
+    send:async(text,image,options)=>{calls.push(options.envio_id);if(calls.length===1)throw new Error('timeout');await new Promise(resolve=>{finish=resolve;});return {id:'8',authorId:'1',author:'TESTE',text,image,date:'2026-10-23T12:00:00Z'};},
+  });
+  await tick();
+  all(app.render(),'Button').find(node=>node.props.title==='Escolher da galeria').props.onPress();await tick();
+  all(app.render(),'Pressable').find(node=>node.props.accessibilityLabel==='Enviar mensagem').props.onPress();await tick();
+  assert.equal(find(app.render(),'FlatList').props.data.length,0);
+  assert.ok(all(app.render(),'Image').some(node=>node.props.accessibilityLabel==='Prévia da imagem selecionada'));
+  all(app.render(),'Button').find(node=>node.props.title==='Tentar enviar novamente').props.onPress();await tick();
+  assert.equal(find(app.render(),'FlatList').props.data.length,0);
+  finish();await tick();
+  assert.equal(find(app.render(),'FlatList').props.data.length,1);
+  assert.equal(calls[0],calls[1]);assert.equal(uploads,1);
+  app.unmount();
+});
+
+test('aviso de sistema usa texto centralizado sem avatar nem ações de participante',async()=>{
+  const item={id:'9',authorId:'',author:'',text:'Maria saiu do fórum.',system:true,date:'2026-10-23T12:00:00Z'};
+  const app=mountChat('forum:system',[item]);await tick();
+  const row=find(app.render(),'FlatList').props.renderItem({item});
+  assert.equal(all(row,'Avatar').length,0);assert.equal(all(row,'Pressable').length,0);
+  assert.equal(row.props.style.alignSelf,'center');assert.equal(find(row,'Text').props.children[0],item.text);
+  app.unmount();
+});
+
+test('falha inicial permite tentar novamente; atualização temporária preserva histórico e recupera',async()=>{
+  let failed=true;
+  const item={id:'1',authorId:'2',author:'Outra',text:'Preservada',date:'2026-10-23T12:00:00Z'};
+  const app=mountChat('chat:recovery',[],{}, {loader:async()=>{if(failed)throw new Error('Falha temporária');return {items:[item],canSend:true,subtitle:'TESTE'};}});
+  await tick();
+  assert.equal(find(app.render(),'ResourceState').props.error,'Erro de teste');
+  failed=false;find(app.render(),'ResourceState').props.onRetry();await tick();
+  assert.equal(find(app.render(),'FlatList').props.data[0].text,'Preservada');
+  failed=true;app.poll();await tick();
+  assert.equal(find(app.render(),'FlatList').props.data[0].text,'Preservada');
+  const retry=all(app.render(),'Button').find(node=>node.props.title==='Tentar novamente');assert.ok(retry);
+  failed=false;retry.props.onPress();await tick();
+  assert.equal(all(app.render(),'Button').some(node=>node.props.title==='Tentar novamente'),false);
+  app.unmount();
+});
+
+test('conversa vazia e reabertura não são tratadas como falha',async()=>{
+  for(const key of ['chat:empty','forum:empty'])for(let reopen=0;reopen<2;reopen++){
+    const app=mountChat(key);await tick();
+    const state=find(app.render(),'ResourceState');assert.equal(state.props.error,'');assert.ok(state.props.empty);
+    assert.equal(find(app.render(),'FlatList').props.data.length,0);app.unmount();
+  }
 });

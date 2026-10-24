@@ -1,6 +1,6 @@
 import axios from 'axios';
-import { api } from './api';
-import type { Conversation, Person, Forum, Message, Post } from '../types/models';
+import { api, signalResourceChange } from './api';
+import type { Conversation, Person, Forum, Message, Post, SendOptions } from '../types/models';
 
 export const conversationPageSize = 50;
 export type SocialForum = Forum & { criadora?: { id: string; nome: string; foto?: string | null } };
@@ -24,8 +24,9 @@ export const socialService = {
     });
     return [...data.postagens].reverse();
   },
-  async sendPost(id: string, conteudo: string, imagem?: string) {
-    return (await api.post<{ postagem: Post }>(`/api/foruns/${path(id)}/postagens`, { conteudo, ...(imagem ? { imagem } : {}) })).data.postagem;
+  async sendPost(id: string, conteudo: string, imagem?: string, options: SendOptions = {}) {
+    const result = (await api.post<{ postagem: Post }>(`/api/foruns/${path(id)}/postagens`, { conteudo, ...(imagem ? { imagem } : {}), ...options })).data.postagem;
+    signalResourceChange(); return result;
   },
   async joinForum(id: string) {
     try { await api.post(`/api/foruns/${path(id)}/entrar`); }
@@ -34,7 +35,7 @@ export const socialService = {
       if (!axios.isAxiosError(cause) || cause.response?.status !== 409) throw cause;
     }
   },
-  async leaveForum(id: string) { await api.delete(`/api/foruns/${path(id)}/sair`); },
+  async leaveForum(id: string) { await api.delete(`/api/foruns/${path(id)}/sair`); signalResourceChange(); },
   async deleteForum(id: string) { await api.delete(`/api/foruns/${path(id)}`); },
   async editForum(id: string, dados: { titulo: string; descricao: string; capa: string | null }) {
     return (await api.put<{ forum: SocialForum }>(`/api/foruns/${path(id)}`, dados)).data.forum;
@@ -47,8 +48,9 @@ export const socialService = {
       params: { pagina, limite: conversationPageSize }, signal,
     })).data.mensagens;
   },
-  async sendMessage(id: string, conteudo: string, imagem?: string) {
-    return (await api.post<{ dados: Message }>(`/api/chats/${path(id)}/mensagens`, { conteudo, ...(imagem ? { imagem } : {}) })).data.dados;
+  async sendMessage(id: string, conteudo: string, imagem?: string, options: SendOptions = {}) {
+    const result = (await api.post<{ dados: Message }>(`/api/chats/${path(id)}/mensagens`, { conteudo, ...(imagem ? { imagem } : {}), ...options })).data.dados;
+    signalResourceChange(); return result;
   },
   async deleteMessage(chatId: string, messageId: string) {
     await api.delete(`/api/chats/${path(chatId)}/mensagens/${path(messageId)}`);

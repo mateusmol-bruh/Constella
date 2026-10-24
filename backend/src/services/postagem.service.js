@@ -1,5 +1,6 @@
 const prisma =
   require("../config/prisma");
+const replies = require('./resposta.service');
 
 function erroHttp(
   statusCode,
@@ -43,12 +44,14 @@ function formatarPostagem(postagem) {
 
     imagem:
       postagem.img_post,
+    tipo: postagem.tipo_post === 'SAIDA' ? 'sistema' : 'mensagem',
+    resposta: replies.preview(postagem.resposta, true),
 
     dt_post:
       postagem.dt_post,
 
     autora:
-      postagem.usuaria
+      postagem.tipo_post !== 'SAIDA' && postagem.usuaria
         ? {
             id:
               postagem.usuaria
@@ -141,6 +144,7 @@ async function listarPostagens(
       },
 
       include: {
+        ...replies.replyInclude,
         usuaria: {
           select: {
             id_usr: true,
@@ -174,6 +178,7 @@ async function criarPostagem(
 ) {
   const idUsr =
     validarId(idUsuario);
+  const { resposta_id, envio_id } = replies.options(dados);
 
   const idFor =
     validarId(
@@ -218,17 +223,28 @@ async function criarPostagem(
     );
   }
 
-  if (imagem) await require("./anexo.service").validarAnexo(imagem,idUsr);
   const postagem = await prisma.$transaction(async tx => {
+    await replies.lock(tx, idUsr);
+    // Confere novamente dentro da transação: não publica após uma saída concorrente.
+    if (!await tx.usuaria_forum.findUnique({ where: { id_for_id_usr: { id_for: idFor, id_usr: idUsr } } })) throw erroHttp(403, 'Você precisa participar do fórum para publicar.');
+    if (envio_id) {
+      const existing = await tx.postagem.findUnique({ where: { id_usr_envio_id: { id_usr: idUsr, envio_id } }, include: { ...replies.replyInclude, usuaria: { select: replies.publicAuthor } } });
+      if (existing) return replies.sameAttempt(existing, idFor, conteudo, imagem, resposta_id, true);
+    }
+    await replies.original(tx, resposta_id, idFor, true);
+    if (imagem) await require('./anexo.service').validarAnexo(imagem, idUsr, tx);
     const saved = await tx.postagem.create({
       data: {
         cont_post: conteudo,
         img_post: imagem,
         id_usr: idUsr,
-        id_for: idFor
+        id_for: idFor,
+        ...(resposta_id !== null ? { resposta_id } : {}),
+        ...(envio_id ? { envio_id } : {})
       },
 
       include: {
+        ...replies.replyInclude,
         usuaria: {
           select: {
             id_usr: true,
@@ -278,6 +294,7 @@ async function editarPostagem(
 
   if (
     postagem.id_usr !== idUsr
+    || postagem.tipo_post === 'SAIDA'
   ) {
     throw erroHttp(
       403,
@@ -324,7 +341,6 @@ async function editarPostagem(
       );
     }
 
-    if (dados.imagem) await require("./anexo.service").validarAnexo(dados.imagem,idUsr);
     atualizacao.img_post =
       dados.imagem === null
         ? null
@@ -342,7 +358,10 @@ async function editarPostagem(
   }
 
   const atualizada =
-    await prisma.postagem.update({
+    await prisma.$transaction(async tx => {
+    await replies.lock(tx, idUsr);
+    if (atualizacao.img_post && atualizacao.img_post !== postagem.img_post) await require('./anexo.service').validarAnexo(atualizacao.img_post, idUsr, tx);
+    return tx.postagem.update({
       where: {
         id_post: idPost
       },
@@ -350,6 +369,7 @@ async function editarPostagem(
       data: atualizacao,
 
       include: {
+        ...replies.replyInclude,
         usuaria: {
           select: {
             id_usr: true,
@@ -358,6 +378,7 @@ async function editarPostagem(
           }
         }
       }
+    });
     });
 
   return formatarPostagem(
@@ -394,6 +415,7 @@ async function excluirPostagem(
 
   if (
     postagem.id_usr !== idUsr
+    || postagem.tipo_post === 'SAIDA'
   ) {
     throw erroHttp(
       403,

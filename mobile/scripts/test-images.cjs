@@ -5,7 +5,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 const ts = require('typescript');
 
-function imageService(pick, post = async()=>{ throw new Error('Upload não esperado'); }, camera = {}) {
+function imageService(pick, post = async()=>{ throw new Error('Upload não esperado'); }, camera = {}, manipulator = {}) {
   const filename = path.resolve(__dirname,'../src/services/image.service.ts');
   const code = ts.transpileModule(fs.readFileSync(filename,'utf8'), {
     compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022},
@@ -13,6 +13,7 @@ function imageService(pick, post = async()=>{ throw new Error('Upload não esper
   const module={exports:{}};
   vm.runInNewContext(code,{module,exports:module.exports,Error,require(name){
     if(name==='expo-image-picker') return {launchImageLibraryAsync:pick,...camera};
+    if(name==='expo-image-manipulator') return manipulator;
     assert.equal(name,'./api'); return {api:{post}};
   }});
   return module.exports;
@@ -39,7 +40,7 @@ test('upload envia os bytes e exige caminho confirmado; retry reaproveita upload
   let calls=0;
   const service=imageService(undefined,async(url,body,config)=>{
     calls++; assert.equal(url,'/api/uploads/imagens'); assert.equal(body.imagem,'YQ==');
-    assert.equal(body.uri,undefined); assert.equal(config.timeout,30000);
+    assert.equal(body.uri,undefined); assert.equal(config.timeout,60000);
     return {data:{caminho:'/uploads/12345678-abcd-abcd-abcd-123456789abc.jpg'}};
   });
   const image={uri:'file:///teste.jpg',base64:'YQ=='};
@@ -73,4 +74,39 @@ test('anexo de conversa solicita armazenamento privado e rejeita retorno públic
   assert.equal(calls,1);
   const invalid=imageService(undefined,async()=>({data:{caminho:image.uploadedPath}}));
   await assert.rejects(invalid.uploadImage(image,true),e=>e.message==='IMAGEM_RESPOSTA_INVALIDA');
+});
+
+for (const [width,height] of [[3000,4000],[4000,2000],[3000,3000]]) test(`foto ${width}x${height}: seleção sem recorte e otimização preservam proporção`,async()=>{
+  const operations=[];let released=0;
+  const context={resize:value=>operations.push(value),release:()=>released++,renderAsync:async()=>({release:()=>released++,saveAsync:async options=>{
+    assert.equal(options.format,'jpeg');assert.equal(options.base64,true);
+    const scale=2048/Math.max(width,height);
+    return {uri:'file:///otimizada.jpg',base64:'YQ==',width:width*scale,height:height*scale};
+  }})};
+  const service=imageService(async options=>{
+    assert.equal(options.allowsEditing,false);assert.equal(options.aspect,undefined);assert.equal(options.base64,false);
+    return {canceled:false,assets:[{uri:'file:///original.jpg',width,height}]};
+  },undefined,{}, {ImageManipulator:{manipulate:(uri,options)=>{assert.equal(uri,'file:///original.jpg');assert.equal(options.maxWidth,2048);return context;}},SaveFormat:{JPEG:'jpeg'}});
+  const selected=await service.selectImage();
+  assert.equal(selected.width/selected.height,width/height);
+  assert.equal(Object.keys(operations[0]).length,1);assert.equal(operations[0].crop,undefined);
+  assert.equal(released,2);
+});
+
+test('visualizador privado mantém JWT, ajusta proporção e abre a imagem inteira',()=>{
+  const filename=path.resolve(__dirname,'../src/components/ConversationImage.tsx');
+  const code=ts.transpileModule(fs.readFileSync(filename,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,jsx:ts.JsxEmit.React,esModuleInterop:true}}).outputText;
+  let cursor=0;const states=[];
+  const react={createElement:(type,props,...children)=>({type,props:{...props,children}}),useState(initial){const index=cursor++;if(!(index in states))states[index]=initial;return [states[index],value=>states[index]=typeof value==='function'?value(states[index]):value];}};
+  const deps={react:{__esModule:true,default:react,...react},'react-native':Object.fromEntries(['ActivityIndicator','Image','Modal','Pressable','Text','View'].map(name=>[name,name])),'react-native-safe-area-context':{SafeAreaView:'SafeAreaView'},'../services/api':{imageAuthHeaders:()=>({Authorization:'Bearer teste'})},'../utils/media':{mediaUrl:value=>`https://api.invalid${value}`},'../utils/layout':{fitImage:(w,h,mw,mh)=>({width:Math.min(mw,mh*w/h),height:Math.min(mh,mw*h/w)})}};
+  const module={exports:{}};vm.runInNewContext(code,{module,exports:module.exports,require:name=>deps[name]});
+  const render=()=>{cursor=0;return module.exports.ConversationImage({uri:'/api/anexos/imagem.jpg',maxWidth:200});};
+  function nodes(tree,type){if(!tree||typeof tree!=='object')return [];return [...(tree.type===type?[tree]:[]),...(Array.isArray(tree)?tree:tree.props?.children??[]).flatMap(child=>nodes(child,type))];}
+  let tree=render(),image=nodes(tree,'Image')[0];
+  assert.equal(image.props.source.headers.Authorization,'Bearer teste');assert.equal(image.props.resizeMode,'contain');
+  image.props.onLoad({nativeEvent:{source:{width:1000,height:2000}}});
+  tree=render();image=nodes(tree,'Image')[0];assert.equal(image.props.style.width/image.props.style.height,0.5);
+  nodes(tree,'Pressable')[0].props.onPress();tree=render();assert.equal(nodes(tree,'Modal')[0].props.visible,true);
+  assert.equal(nodes(tree,'Image')[1].props.resizeMode,'contain');
+  nodes(tree,'Modal')[0].props.onRequestClose();assert.equal(nodes(render(),'Modal')[0].props.visible,false);
 });

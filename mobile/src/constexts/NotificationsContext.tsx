@@ -96,7 +96,8 @@ function AccountNotifications({ children }: { children: React.ReactNode }) {
           const forum = await socialService.forum(target.id);
           if (!active) return true;
           navigationRef.navigate('ChatForum', { id: forum.id_for, nome: forum.titulo });
-        } else navigationRef.navigate('Main', { screen: 'Conexoes' });
+        } else navigationRef.navigate('Main', { screen: 'Conexoes', params: { aba: 'requests', evento: target.evento } });
+        signalResourceChange();
       } catch (cause) { notify(errorMessage(cause), 'error'); }
       return true;
     });

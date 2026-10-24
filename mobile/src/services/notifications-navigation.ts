@@ -24,5 +24,5 @@ export async function flushNotificationNavigation() {
       if (handled.size > 50) handled.delete(handled.values().next().value!);
       if (pending === target) pending = undefined;
     }
-  } finally { opening = false; if (pending && callback !== opener) void flushNotificationNavigation(); }
+  } finally { opening = false; if (pending && (pending !== target || callback !== opener)) void flushNotificationNavigation(); }
 }

@@ -4,25 +4,26 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { CanceledError, isAxiosError, isCancel } from 'axios';
 import { selectImage, uploadImage, type SelectedImage } from '../services/image.service';
-import { mediaUrl } from '../utils/media';
 import { PersonModal } from './PersonModal';
 import { Sheet } from './Social';
 import { chatImageWidth } from '../utils/layout';
 import { Avatar } from './Artwork';
 import { ForumCover } from './ForumCover';
+import { ConversationImage } from './ConversationImage';
 import { useFeedback } from '../constexts/FeedbackContext';
 import { Icon } from './Icon';
 import { Button, Notice, ResourceState, Screen } from './ui';
 import { useAuth } from '../constexts/AuthContext';
-import { errorMessage, imageAuthHeaders } from '../services/api';
+import { errorMessage } from '../services/api';
+import type { ReplyPreview, SendOptions } from '../types/models';
 import { conversationPageSize } from '../services/social.service';
 import { colors, fontFamily, ui } from '../styles/theme';
 
-export interface ChatItem { id: string; authorId: string; author: string; foto?: string | null; text: string; image?: string | null; date: string }
+export interface ChatItem { id: string; authorId: string; author: string; foto?: string | null; text: string; image?: string | null; date: string; reply?: ReplyPreview | null; system?: boolean }
 export interface ChatFeed { items: ChatItem[]; canSend: boolean; subtitle: string; canLeave?: boolean; canDelete?: boolean; title?: string; foto?: string | null; personId?: string; blocked?: boolean }
 interface ChatPanelProps {
   conversationKey: string; title: string; foto?: string | null; onBack: () => void;
-  loader: (signal?: AbortSignal) => Promise<ChatFeed>; send: (text: string, image?: string) => Promise<ChatItem>;
+  loader: (signal?: AbortSignal) => Promise<ChatFeed>; send: (text: string, image?: string, options?: SendOptions) => Promise<ChatItem>;
   markRead?: (last: string, signal?: AbortSignal) => Promise<void>;
   join?: () => Promise<void>; leave?: () => Promise<void>;
   destroy?: () => Promise<void>; edit?: () => void;
@@ -52,10 +53,19 @@ export function ChatPanel(props: ChatPanelProps) {
   const callbacks = useRef(props);
   React.useLayoutEffect(() => { callbacks.current = props; });
   const run = useRef<FocusRun | null>(null);
+  const list = useRef<FlatList<ChatItem>>(null);
+  const input = useRef<React.ComponentRef<typeof TextInput>>(null);
+  const attempt = useRef<{ signature: string; id: string } | null>(null);
+  const scrollTarget = useRef<string | null>(null);
+  const scrollRetry = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const viewable = useCallback(({ viewableItems }: { viewableItems: { item: ChatItem }[] }) => {
+    if (viewableItems.some(({ item }) => item.id === scrollTarget.current)) scrollTarget.current = null;
+  }, []);
   const [feed, setFeed] = useState<ChatFeed>();
   const [loading, setLoading] = useState(true);
   const [reading, setReading] = useState(false);
   const [loadError, setLoadError] = useState('');
+  const [syncError, setSyncError] = useState('');
   const [actionError, setActionError] = useState('');
   const [notice, setNotice] = useState('');
   const [text, setText] = useState('');
@@ -69,6 +79,17 @@ export function ChatPanel(props: ChatPanelProps) {
   const [profileOpen, setProfileOpen] = useState(false);
   const [imageSources, setImageSources] = useState(false);
   const [forumActions, setForumActions] = useState(false);
+  const [replying, setReplying] = useState<ChatItem | null>(null);
+  const [messageActions, setMessageActions] = useState<ChatItem | null>(null);
+  const [highlighted, setHighlighted] = useState<string | null>(null);
+  const [sendFailed, setSendFailed] = useState(false);
+
+  function scrollToOriginal() {
+    const target = scrollTarget.current;
+    const index = feed?.items.findIndex(item => item.id === target) ?? -1;
+    if (index < 0) return;
+    list.current?.scrollToIndex({ index, animated: true, viewPosition: 0.5 });
+  }
 
   function schedule(current: FocusRun) {
     clearTimeout(current.timer);
@@ -108,10 +129,13 @@ export function ChatPanel(props: ChatPanelProps) {
       }
       setHasEarlier((result.canSend || !!result.blocked) && lastPageLength === conversationPageSize);
       setLoadError('');
+      setSyncError('');
     } catch (cause) {
       if (current.active) {
-        // Não mantém conteúdo privado visível após o servidor negar o acesso.
-        setFeed(undefined); setHasEarlier(false); setLoadError(errorMessage(cause));
+        // Falha transitória preserva o histórico; perda de autorização remove o conteúdo privado.
+        if (deniedAccess(cause)) { setFeed(undefined); setHasEarlier(false); setLoadError(errorMessage(cause)); }
+        else if (quiet) setSyncError(errorMessage(cause));
+        else setLoadError(errorMessage(cause));
       }
     } finally {
       current.busy = false;
@@ -123,8 +147,9 @@ export function ChatPanel(props: ChatPanelProps) {
   useFocusEffect(useCallback(() => {
     const current: FocusRun = { active: !!user, busy: false, pages: 1 };
     run.current = current;
-    setFeed(undefined); setText(''); setImage(null); setProfileOpen(false); setLoadError(''); setActionError(''); setNotice('');
+    setFeed(undefined); setText(''); setImage(null); setProfileOpen(false); setLoadError(''); setSyncError(''); setActionError(''); setNotice('');
     setHasEarlier(false); setSending(false); setPicking(false); setUploading(false); setImageSources(false); setForumActions(false); setConfirmation(null); setReason(''); setLoading(true);
+    setReplying(null); setMessageActions(null); setHighlighted(null); setSendFailed(false); attempt.current = null; scrollTarget.current = null;
     if (user) void refresh(current);
     else setLoading(false);
     const subscription = AppState.addEventListener('change', state => {
@@ -133,6 +158,7 @@ export function ChatPanel(props: ChatPanelProps) {
     });
     return () => {
       current.active = false;
+      clearTimeout(scrollRetry.current);
       clearTimeout(current.timer); current.abort?.abort(); subscription.remove();
     };
     // Callbacks ficam em ref; somente uma conversa/conta diferente reinicia o ciclo.
@@ -165,15 +191,18 @@ export function ChatPanel(props: ChatPanelProps) {
     const current = run.current;
     if (!current?.active || sending || picking) return;
     setImageSources(false); setPicking(true); setActionError('');
-    try { const selected = await selectImage([4, 3], source); if (current.active && selected) setImage(selected); }
+    try { const selected = await selectImage(undefined, source); if (current.active && selected) setImage(selected); }
     catch (cause) { if (current.active) setActionError(errorMessage(cause)); }
     finally { if (current.active) setPicking(false); }
   }
   async function submit() {
     const value = text.trim();
     if ((!value && !image) || !feed?.canSend) return;
+    const signature = JSON.stringify([value, image?.uri, replying?.id]);
+    if (attempt.current?.signature !== signature) attempt.current = { signature, id: `${Date.now().toString(36)}_${Math.random().toString(36).slice(2)}_${Math.random().toString(36).slice(2)}` };
+    const envio_id = attempt.current.id;
     let sent: ChatItem | undefined;
-    await mutate(async () => {
+    const success = await mutate(async () => {
       const current = run.current;
       if (!current?.active) return;
       let attachment: string | undefined;
@@ -190,12 +219,14 @@ export function ChatPanel(props: ChatPanelProps) {
         }
       }
       if (!current.active) return;
-      sent = await callbacks.current.send(value, attachment);
+      sent = await callbacks.current.send(value, attachment, { envio_id, ...(replying ? { resposta_id: replying.id } : {}) });
     }, () => {
       const message = sent;
       if (message) setFeed(previous => previous ? { ...previous, items: mergeItems([...previous.items, message]) } : previous);
-      setText(''); setImage(null);
+      setText(''); setImage(null); setReplying(null); attempt.current = null;
+      list.current?.scrollToOffset({ offset: 0, animated: true });
     });
+    if (run.current?.active) setSendFailed(!success);
   }
 
   async function membership(action?: () => Promise<void>, leaving = false) {
@@ -232,6 +263,38 @@ export function ChatPanel(props: ChatPanelProps) {
     }
   }
 
+  async function locateOriginal(id: string) {
+    const current = run.current;
+    if (!current?.active || current.busy) return;
+    setHighlighted(id); scrollTarget.current = id;
+    if (feed?.items.some(item => item.id === id)) { scrollToOriginal(); return; }
+    if (!callbacks.current.earlier) return;
+    current.busy = true; clearTimeout(current.timer);
+    current.abort = new AbortController(); setReading(true); setActionError('');
+    let found = false;
+    try {
+      // Carrega o histórico de forma cancelável até alcançar a mensagem citada.
+      while (current.active) {
+        const items = await callbacks.current.earlier(current.pages + 1, current.abort.signal);
+        if (!current.active) return;
+        current.pages++;
+        setFeed(previous => previous ? { ...previous, items: mergeItems([...previous.items, ...items]) } : previous);
+        setHasEarlier(items.length === conversationPageSize);
+        found = items.some(item => item.id === id);
+        if (found || items.length < conversationPageSize) break;
+      }
+      if (!found) { scrollTarget.current = null; setActionError('A mensagem original foi excluída ou não está mais disponível.'); }
+    } catch (cause) {
+      if (current.active) {
+        setActionError(errorMessage(cause));
+        if (deniedAccess(cause)) { setFeed(undefined); setHasEarlier(false); }
+      }
+    } finally {
+      current.busy = false; current.abort = undefined;
+      if (current.active) { setReading(false); schedule(current); }
+    }
+  }
+
   async function confirmAction() {
     const target = confirmation;
     if (!target) return;
@@ -258,6 +321,10 @@ export function ChatPanel(props: ChatPanelProps) {
   }
 
   const busy = sending || reading || picking;
+  function chooseReply(item: ChatItem) {
+    if (!feed?.canSend || item.system || sending) return;
+    setReplying(item); setMessageActions(null); input.current?.focus();
+  }
   const { title, foto, onBack, join, leave, earlier, remove, report } = props;
   return <Screen paper scroll={false} bottomSafe>
     <View style={[ui.row, { gap: 8, paddingBottom: 12, borderBottomWidth: 1, borderColor: '#E4D9ED' }]}>
@@ -269,21 +336,29 @@ export function ChatPanel(props: ChatPanelProps) {
     </View>
     <ResourceState loading={loading} error={loadError} onRetry={() => { if (run.current) void refresh(run.current); }} dark empty={!feed?.items.length && !!feed && (feed.canSend ? 'Comece a conversa com um olá.' : 'Participe do fórum para ler e enviar postagens.')} />
     <FlatList
+      ref={list}
       style={{ flex: 1 }} inverted data={feed?.items ?? []} keyExtractor={item => item.id}
-      keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1, justifyContent: 'flex-end', paddingVertical: 16, gap: 20 }}
+      onContentSizeChange={scrollToOriginal}
+      onViewableItemsChanged={viewable}
+      onTouchStart={() => { scrollTarget.current = null; clearTimeout(scrollRetry.current); }}
+      onScrollToIndexFailed={({ index, averageItemLength }) => { list.current?.scrollToOffset({ offset: index * averageItemLength, animated: true }); clearTimeout(scrollRetry.current); scrollRetry.current = setTimeout(scrollToOriginal, 150); }}
+      keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1, justifyContent: 'flex-end', paddingVertical: 16, gap: 12 }}
       ListFooterComponent={earlier && hasEarlier ? <Button title="Mensagens anteriores" variant="secondary" small loading={reading} disabled={sending} onPress={() => void loadEarlier()} /> : undefined}
       renderItem={({ item }) => {
+        if (item.system) return <View style={{ alignSelf: 'center', backgroundColor: '#EEDFF5', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 6, maxWidth: '90%' }}><Text style={{ fontFamily, color: '#7A678D', textAlign: 'center', fontSize: 12 }}>{item.text}</Text></View>;
         const mine = item.authorId === user?.id;
         return <View style={{ flexDirection: mine ? 'row-reverse' : 'row', gap: 8, alignItems: 'flex-end' }}>
           {!mine && <Avatar nome={item.author} foto={item.foto} size={30} />}
           <View style={{ maxWidth: '80%', gap: 4, alignItems: mine ? 'flex-end' : 'flex-start' }}>
             {!mine && <Text style={{ color: colors.ink, fontSize: 11, paddingLeft: 5 }}>{item.author}</Text>}
-            <View style={{ backgroundColor: mine ? colors.ink : '#CA7CCB', padding: 14, borderRadius: 20, borderBottomRightRadius: mine ? 4 : 20, borderBottomLeftRadius: mine ? 20 : 4 }}>
-              {item.image && <Image source={{ uri: mediaUrl(item.image), headers: item.image.startsWith('/api/anexos/') ? imageAuthHeaders() : undefined }} accessibilityLabel="Imagem enviada na conversa" style={{ width: imageWidth, height: imageWidth * 0.9, borderRadius: 10, marginBottom: item.text ? 8 : 0 }} resizeMode="contain" onError={() => setActionError('Não foi possível carregar uma imagem. Tente atualizar a conversa.')} />}
+            <Pressable accessibilityLabel="Opções da mensagem" accessibilityRole="button" onLongPress={() => setMessageActions(item)} style={{ backgroundColor: mine ? colors.ink : '#CA7CCB', padding: 14, borderRadius: 20, borderBottomRightRadius: mine ? 4 : 20, borderBottomLeftRadius: mine ? 20 : 4, borderWidth: 2, borderColor: highlighted === item.id ? colors.orchid : 'transparent', gap: 6 }}>
+              {item.reply && <Pressable accessibilityRole="button" accessibilityLabel={`Localizar mensagem de ${item.reply.autora.nome}`} onPress={() => void locateOriginal(item.reply!.id)} style={{ borderLeftWidth: 3, borderColor: '#EEDFF5', backgroundColor: '#FFFFFF22', borderRadius: 6, padding: 8 }}><Text numberOfLines={1} style={{ color: colors.paper, fontWeight: '700', fontSize: 12 }}>{item.reply.autora.nome}</Text><Text numberOfLines={2} style={{ color: colors.paper, fontSize: 12 }}>{item.reply.imagem ? 'Foto' + (item.reply.conteudo ? ' · ' : '') : ''}{item.reply.conteudo}</Text></Pressable>}
+              {item.image && <ConversationImage uri={item.image} maxWidth={imageWidth} onLongPress={() => setMessageActions(item)} />}
               {!!item.text && <Text selectable style={{ fontFamily, color: colors.paper, fontSize: 15, lineHeight: 21 }}>{item.text}</Text>}
-            </View>
+            </Pressable>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
               <Text style={{ color: '#7A678D', fontSize: 10 }}>{new Date(item.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</Text>
+              {feed?.canSend && <Pressable accessibilityRole="button" accessibilityLabel="Responder a esta mensagem" disabled={sending} onPress={() => chooseReply(item)} style={{ minHeight: 36, justifyContent: 'center' }}><Text style={{ color: colors.purple, fontSize: 11 }}>Responder</Text></Pressable>}
               {(mine ? remove : report) && <Pressable accessibilityRole="button" accessibilityLabel={mine ? 'Excluir esta mensagem' : 'Denunciar esta mensagem'} disabled={busy} onPress={() => { setActionError(''); setReason(''); setConfirmation({ kind: mine ? 'delete' : 'report', item }); }} style={{ minHeight: 36, justifyContent: 'center' }}><Text style={{ color: colors.purple, fontSize: 11 }}>{mine ? 'Excluir' : 'Denunciar'}</Text></Pressable>}
             </View>
           </View>
@@ -291,18 +366,26 @@ export function ChatPanel(props: ChatPanelProps) {
       }}
     />
     <Notice text={actionError} dark />
+    <Notice text={syncError} dark />
+    {!!syncError && !loadError && <Button title="Tentar novamente" small variant="secondary" disabled={busy} onPress={() => { if (run.current) void refresh(run.current, true); }} />}
+    {sendFailed && feed?.canSend && (text.trim() || image) && <Button title="Tentar enviar novamente" small variant="secondary" disabled={busy} onPress={() => void submit()} />}
     {!!notice && <Text accessibilityRole="alert" style={ui.dark}>{notice}</Text>}
-    {image && <View style={[ui.row, { padding: 8 }]}><Image source={{ uri: image.uri }} accessibilityLabel="Prévia da imagem selecionada" style={{ width: 80, height: 80, borderRadius: 10 }} /><Button title="Remover imagem" small variant="secondary" disabled={sending} onPress={() => setImage(null)} /></View>}
+    {replying && feed?.canSend && <View style={[ui.row, { backgroundColor: '#EEDFF5', borderLeftWidth: 3, borderColor: colors.purple, borderRadius: 10, padding: 10 }]}><View style={{ flex: 1 }}><Text style={[ui.dark, { fontWeight: '700', fontSize: 12 }]}>Respondendo a {replying.author}</Text><Text numberOfLines={2} style={[ui.dark, { fontSize: 12 }]}>{replying.image ? 'Foto' + (replying.text ? ' · ' : '') : ''}{replying.text}</Text></View><Button title="Cancelar resposta" small variant="secondary" disabled={sending} onPress={() => setReplying(null)} /></View>}
+    {image && <View style={[ui.row, { padding: 8 }]}><Image source={{ uri: image.uri }} resizeMode="contain" accessibilityLabel="Prévia da imagem selecionada" style={{ width: 80, height: 100, borderRadius: 10 }} /><Button title="Remover imagem" small variant="secondary" disabled={sending} onPress={() => setImage(null)} /></View>}
     {uploading && <Button title="Cancelar envio da imagem" small variant="secondary" onPress={() => run.current?.abort?.abort()} />}
     {feed?.blocked && <Text style={ui.dark}>Envio indisponível por bloqueio entre as contas. Você pode consultar o perfil e o histórico.</Text>}
     {feed?.canSend ? <View style={[ui.row, { gap: 8, paddingTop: 8 }]}>
-      <Pressable accessibilityRole="button" accessibilityLabel="Anexar imagem" disabled={busy} onPress={() => props.conversationKey.startsWith('forum:') ? setImageSources(true) : void pickImage()} style={{ width: 44, height: 48, alignItems: 'center', justifyContent: 'center' }}>{picking ? <ActivityIndicator /> : <Icon name="camera" />}</Pressable>
-      <TextInput accessibilityLabel="Digite uma mensagem" placeholder="Digite uma mensagem..." placeholderTextColor="#7B6593" value={text} onChangeText={setText} multiline maxLength={1000} editable={!sending} style={{ fontFamily, flex: 1, maxHeight: 120, minHeight: 50, color: colors.ink, backgroundColor: '#EEDFF5', borderRadius: 25, paddingHorizontal: 18, paddingVertical: 14, fontSize: 14 }} />
+      <Pressable accessibilityRole="button" accessibilityLabel="Anexar imagem" disabled={busy} onPress={() => setImageSources(true)} style={{ width: 44, height: 48, alignItems: 'center', justifyContent: 'center' }}>{picking ? <ActivityIndicator /> : <Icon name="camera" />}</Pressable>
+      <TextInput ref={input} accessibilityLabel="Digite uma mensagem" placeholder="Digite uma mensagem..." placeholderTextColor="#7B6593" value={text} onChangeText={setText} multiline maxLength={1000} editable={!sending} style={{ fontFamily, flex: 1, maxHeight: 120, minHeight: 50, color: colors.ink, backgroundColor: '#EEDFF5', borderRadius: 25, paddingHorizontal: 18, paddingVertical: 14, fontSize: 14 }} />
       <Pressable accessibilityRole="button" accessibilityLabel="Enviar mensagem" accessibilityState={{ disabled: busy || (!text.trim() && !image) }} disabled={busy || (!text.trim() && !image)} onPress={() => void submit()} style={{ width: 50, height: 50, borderRadius: 25, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.purple, opacity: busy || (!text.trim() && !image) ? 0.5 : 1 }}>
         {sending ? <ActivityIndicator color={colors.paper} /> : <Icon name="send" color={colors.paper} size={22} />}
       </Pressable>
     </View> : join && feed ? <Button title="Participar do fórum" loading={sending} disabled={reading} onPress={() => void membership(join)} /> : null}
     {image && props.conversationKey.startsWith('forum:') && <Button title="Refazer foto" variant="secondary" small disabled={busy} onPress={() => void pickImage('camera')} />}
+    <Sheet visible={messageActions !== null} title="Mensagem" onClose={() => setMessageActions(null)}>
+      {feed?.canSend && <Button title="Responder" disabled={sending} onPress={() => { if (messageActions) chooseReply(messageActions); }} />}
+      {messageActions && (messageActions.authorId === user?.id ? remove : report) && <Button title={messageActions.authorId === user?.id ? 'Excluir mensagem' : 'Denunciar mensagem'} variant="secondary" disabled={busy} onPress={() => { if (messageActions) { setReason(''); setConfirmation({ kind: messageActions.authorId === user?.id ? 'delete' : 'report', item: messageActions }); setMessageActions(null); } }} />}
+    </Sheet>
     <Sheet visible={imageSources} title="Adicionar foto" onClose={() => setImageSources(false)}><Button title="Tirar foto" icon="camera" onPress={() => void pickImage('camera')} /><Button title="Escolher da galeria" variant="secondary" onPress={() => void pickImage('library')} /></Sheet>
     <Sheet visible={forumActions} title="Opções do fórum" onClose={() => setForumActions(false)}>
       {feed?.canLeave && leave && <Button title="Sair do fórum" variant="secondary" onPress={() => { setForumActions(false); setActionError(''); setConfirmation({ kind: 'leave' }); }} />}

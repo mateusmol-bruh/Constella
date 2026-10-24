@@ -18,7 +18,8 @@ function load(relative, dependencies) {
 }
 const service = (name, prisma) => {
   prisma.$transaction ??= action => action(prisma);
-  return load(`services/${name}.service.js`, { '../config/prisma': prisma, './notificacao.service': { enabled: () => false, enfileirar: async () => {} } });
+  prisma.$queryRaw ??= async () => [];
+  return load(`services/${name}.service.js`, { '../config/prisma': prisma, './resposta.service': require('../src/services/resposta.service'), './notificacao.service': { enabled: () => false, enfileirar: async () => {} } });
 };
 const forbidden = () => assert.fail('Operação Prisma não autorizada foi chamada.');
 const status = code => error => error.statusCode === code;
@@ -197,8 +198,9 @@ test('denúncia de mensagem privada recusa participantes externos', async () => 
 
 test('controlador de envio usa identidade autenticada ignorando o corpo forjado', async () => {
   const controller = load('controllers/chat.controller.js', {
+    '../utils/conversation-error': require('../src/utils/conversation-error'),
     '../services/chat.service': {
-      enviarMensagem: async (...args) => { assert.deepEqual(args, ['1', '4', 'Olá', null]); return { id_msg: '8' }; },
+      enviarMensagem: async (...args) => { assert.deepEqual(args, ['1', '4', 'Olá', null, { resposta_id: undefined, envio_id: undefined }]); return { id_msg: '8' }; },
     },
   });
   const res = { status(code) { assert.equal(code, 201); return this; }, json(body) { assert.equal(body.dados.id_msg, '8'); } };

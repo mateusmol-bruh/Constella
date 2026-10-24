@@ -14,13 +14,13 @@ async function salvar(encoded,user) {
  await fs.writeFile(path.join(directory,name),data,{flag:'wx',mode:0o600});
  return {caminho:`/api/anexos/${name}`};
 }
-async function validarAnexo(value,user) {
+async function validarAnexo(value,user,db=prisma) {
  if(typeof value!=='string' || !value.startsWith('/api/anexos/')) throw invalid('Anexo inválido.');
  const name=value.slice('/api/anexos/'.length),match=pattern.exec(name);
  if(!match || match[1]!==id(user).toString()) throw invalid('O anexo deve pertencer à sua conta.',403);
  try {await fs.stat(path.join(directory,name));}catch {throw invalid('Anexo não encontrado.',404);}
  // Cada upload pertence a uma única mensagem ou postagem. Evita reutilização entre conversas.
- const [message,post]=await Promise.all([prisma.mensagem.findFirst({where:{imagem_msg:value},select:{id_msg:true}}),prisma.postagem.findFirst({where:{img_post:value},select:{id_post:true}})]);
+ const [message,post]=await Promise.all([db.mensagem.findFirst({where:{imagem_msg:value},select:{id_msg:true}}),db.postagem.findFirst({where:{img_post:value},select:{id_post:true}})]);
  if(message||post) throw invalid('Este anexo já foi enviado. Escolha a imagem novamente.',409);
 }
 async function autorizar(name,user) {

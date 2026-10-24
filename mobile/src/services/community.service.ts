@@ -1,4 +1,4 @@
-import { api } from './api';
+import { api, signalResourceChange } from './api';
 import type { Connection, Content, Conversation, Forum, Interest, Message, Person, Post, Profile } from '../types/models';
 
 interface InterestDTO { id_intr: string; nome_intr: string }
@@ -27,11 +27,11 @@ export const communityService = {
   },
   async people(busca?: string) { return (await api.get<{ usuarias: Person[] }>('/api/usuarios', { params: { busca: busca?.trim() || undefined } })).data.usuarias; },
   async person(id: string) { return (await api.get<{ usuaria: Person }>(`/api/usuarios/${path(id)}`)).data.usuaria; },
-  async connect(id: string) { await api.post(`/api/conexoes/${path(id)}`); },
+  async connect(id: string) { await api.post(`/api/conexoes/${path(id)}`); signalResourceChange(); },
   async connections() { return (await api.get<{ conexoes: Connection[] }>('/api/conexoes')).data.conexoes; },
   async received() { return (await api.get<{ solicitacoes: Connection[] }>('/api/conexoes/recebidas')).data.solicitacoes; },
   async sent() { return (await api.get<{ solicitacoes: Connection[] }>('/api/conexoes/enviadas')).data.solicitacoes; },
-  async respond(id: string, accept: boolean) { await api.patch(`/api/conexoes/${path(id)}/${accept ? 'aceitar' : 'recusar'}`); },
+  async respond(id: string, accept: boolean) { await api.patch(`/api/conexoes/${path(id)}/${accept ? 'aceitar' : 'recusar'}`); signalResourceChange(); },
   async conversations() { return (await api.get<{ chats: Conversation[] }>('/api/chats')).data.chats; },
   async startChat(id: string) { return (await api.post<{ chat: Conversation }>('/api/chats', { id_destinataria: id })).data.chat; },
   async messages(id: string, pagina = 1) {

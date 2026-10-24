@@ -3,7 +3,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 export type TabParamList = {
   Forum: undefined; Conversas: undefined; Conteudos: undefined;
-  Home: undefined; Conexoes: undefined; Perfil: undefined;
+  Home: undefined; Conexoes: { aba?: 'requests'; evento?: string } | undefined; Perfil: undefined;
 };
 export type RootStackParamList = {
   Splash: undefined; Login: undefined; Cadastro: undefined; VerificarConta: undefined;

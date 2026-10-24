@@ -505,14 +505,11 @@ async function entrarForum(
     );
   }
 
-  const latest=await prisma.postagem.findFirst({where:{id_for:idFor},orderBy:{id_post:"desc"},select:{id_post:true}});
   try {
-    await prisma.usuaria_forum.create({
-      data: {
-        id_for: idFor,
-        id_usr: idUsr,
-        ultima_postagem_lida:latest?.id_post ?? 0n
-      }
+    await prisma.$transaction(async tx => {
+      await require('./resposta.service').lock(tx, idUsr);
+      const latest = await tx.postagem.findFirst({ where: { id_for: idFor }, orderBy: { id_post: 'desc' }, select: { id_post: true } });
+      await tx.usuaria_forum.create({ data: { id_for: idFor, id_usr: idUsr, ultima_postagem_lida: latest?.id_post ?? 0n } });
     });
   } catch (error) {
     if (error.code === "P2002") {
@@ -563,20 +560,17 @@ async function sairForum(
     );
   }
 
-  const resultado =
-    await prisma.usuaria_forum.deleteMany({
-      where: {
-        id_for: idFor,
-        id_usr: idUsr
-      }
+  await prisma.$transaction(async tx => {
+    await require('./resposta.service').lock(tx, idUsr);
+    const resultado = await tx.usuaria_forum.deleteMany({ where: { id_for: idFor, id_usr: idUsr } });
+    if (!resultado.count) return; // Repetir a saída não cria outro aviso.
+    const account = await tx.usuaria.findUnique({ where: { id_usr: idUsr }, select: { nome_usr: true } });
+    await tx.postagem.create({ data: { id_for: idFor, id_usr: idUsr, tipo_post: 'SAIDA', cont_post: `${account.nome_usr} saiu do fórum.` } });
+    if (require('./notificacao.service').enabled()) await tx.notificacao_push.updateMany({
+      where: { id_usr: idUsr, estado: 'PENDENTE', AND: [{ dados: { path: ['tipo'], equals: 'forum' } }, { dados: { path: ['id'], equals: String(idFor) } }] },
+      data: { estado: 'CANCELADA' },
     });
-
-  if (resultado.count === 0) {
-    throw erroHttp(
-      404,
-      "Você não participa deste fórum."
-    );
-  }
+  });
 
   return {
     mensagem:
@@ -678,7 +672,7 @@ async function limitesCriacao(idUsuario) {
 async function adicionarContadores(foruns, user) {
  if (!foruns.length) return foruns;
  const members = await prisma.usuaria_forum.findMany({ where: { id_usr: user, id_for: { in: foruns.map(forum => BigInt(forum.id_for)) } }, select: { id_for: true, ultima_postagem_lida: true } });
- const totals = members.length ? await prisma.postagem.groupBy({ by: ['id_for'], where: { id_usr: { not: user }, OR: members.map(member => ({ id_for: member.id_for, id_post: { gt: member.ultima_postagem_lida } })) }, _count: { _all: true } }) : [];
+ const totals = members.length ? await prisma.postagem.groupBy({ by: ['id_for'], where: { tipo_post: 'MENSAGEM', id_usr: { not: user }, OR: members.map(member => ({ id_for: member.id_for, id_post: { gt: member.ultima_postagem_lida } })) }, _count: { _all: true } }) : [];
  const counts = new Map(totals.map(item => [String(item.id_for), item._count._all]));
  return foruns.map(forum => ({ ...forum, nao_lidas: counts.get(forum.id_for) || 0 }));
 }

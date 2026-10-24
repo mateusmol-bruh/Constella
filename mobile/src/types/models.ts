@@ -16,7 +16,9 @@ export interface Conversation {
   id_chat: string; dt_inicio: string; nao_lidas?: number; ultima_mensagem?: Message | null; interacao_bloqueada?: boolean;
   destinataria?: { id: string; nome: string; foto: string | null } | null;
 }
-export interface Message { id_msg: string; id_usr_emissor: string; conteudo: string; imagem?: string | null; dt_envio: string }
+export interface ReplyPreview { id: string; autora: { id: string; nome: string }; conteudo: string; imagem: boolean }
+export interface SendOptions { resposta_id?: string; envio_id?: string }
+export interface Message { id_msg: string; id_usr_emissor: string; conteudo: string; imagem?: string | null; dt_envio: string; resposta?: ReplyPreview | null }
 export interface Forum {
   id_for: string; titulo: string; descricao: string | null; capa: string | null;
   nao_lidas?: number; participando?: boolean; quantidade_membros?: number;
@@ -24,6 +26,7 @@ export interface Forum {
 }
 export interface Post {
   id_post: string; conteudo: string; imagem: string | null; dt_post: string;
+  tipo?: 'mensagem' | 'sistema'; resposta?: ReplyPreview | null;
   autora?: { id: string; nome: string; foto: string | null };
 }
 export interface Content {

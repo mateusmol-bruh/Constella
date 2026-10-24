@@ -29,10 +29,10 @@ async function enviar(row, transport) {
   try {
     if (!await service.permitido(row)) { await update(row, { estado: 'CANCELADA' }, 'ENVIANDO'); return; }
     const tipo = row.dados.tipo;
-    const body = tipo === 'chat' ? (row.dados.foto ? 'Você recebeu uma nova foto.' : 'Você recebeu uma nova mensagem.')
-      : tipo === 'forum' ? 'Nova publicação em um fórum que você participa.'
-      : row.chave.startsWith('aceite:') ? 'Sua solicitação de conexão foi aceita.' : 'Você recebeu uma solicitação de conexão.';
-    const response = await expo('send', { to: row.token, title: 'Constella', body, sound: 'default', channelId: 'conversas',
+    const content = await service.conteudo(row);
+    const group = `${row.id_usr}:${tipo}:${row.dados.id}`;
+    const response = await expo('send', { to: row.token, ...content, sound: 'default', channelId: 'conversas',
+      collapseId: group, tag: group,
       data: { ...row.dados, evento: row.id_push.toString() } }, transport);
     const ticket = Array.isArray(response.data) ? response.data[0] : response.data;
     if (ticket?.status === 'ok' && typeof ticket.id === 'string') {

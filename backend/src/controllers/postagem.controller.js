@@ -1,25 +1,9 @@
 const postagemService =
   require("../services/postagem.service");
+const { responderErroConversa } = require('../utils/conversation-error');
 
 function tratarErro(res, error) {
-  if (error.statusCode) {
-    return res
-      .status(error.statusCode)
-      .json({
-        mensagem:
-          error.message
-      });
-  }
-
-  console.error(
-    "Erro na API de postagens:",
-    error.code || error.name || 'Error'
-  );
-
-  return res.status(500).json({
-    mensagem:
-      "Erro interno do servidor."
-  });
+  return responderErroConversa(res, error, 'postagem');
 }
 
 async function listar(req, res) {

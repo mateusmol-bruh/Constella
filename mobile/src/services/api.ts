@@ -33,16 +33,21 @@ export function errorMessage(error: unknown): string {
     if (status === 401) return 'Sessão expirada ou credenciais inválidas. Entre novamente.';
     if (status === 403) return error.response.data?.mensagem ?? 'Você não tem permissão para acessar este recurso.';
     if (status === 404 && error.config?.url?.startsWith('/api/publico/')) return 'O acesso público ainda não está disponível no servidor. Entre com sua conta ou tente novamente mais tarde.';
+    if (status === 404 && /^\/api\/(chats|foruns)(\/|$)/.test(error.config?.url ?? '')) return 'Esta conversa não foi encontrada ou não está mais disponível.';
     if (status === 404) return 'Esta informação não está mais disponível.';
     if (status === 429) return 'Muitas tentativas. Aguarde um pouco antes de tentar novamente.';
     if (status === 503 && error.response.data?.codigo === 'ONBOARDING_MIGRACAO_PENDENTE') return 'A configuração inicial da conta ainda está indisponível. Tente novamente mais tarde.';
+    if (status === 503 && error.response.data?.codigo === 'CONVERSAS_ATUALIZACAO_PENDENTE') return 'As conversas estão em atualização no servidor. Tente novamente em instantes.';
+    if (status === 503 && error.response.data?.codigo === 'CONVERSAS_TEMPORARIAMENTE_INDISPONIVEIS') return 'O serviço de conversas está temporariamente indisponível. Tente novamente em instantes.';
+    if (status === 500 && error.response.data?.codigo === 'ERRO_INTERNO_CONVERSA') return 'O servidor encontrou um erro ao processar a conversa. Tente novamente.';
+    if (status && status >= 500 && /\/api\/(chats|foruns)\/[^/]+\/(mensagens|postagens)/.test(error.config?.url ?? '')) return 'Não foi possível carregar as mensagens agora. Tente novamente.';
     if (status && status >= 500) return 'O servidor não conseguiu concluir a operação. Tente novamente.';
     if (error.response.data?.mensagem && typeof error.response.data.mensagem === 'string') return error.response.data.mensagem;
     if (status === 409) return 'Já existe um registro com esses dados. Confira as informações.';
     return 'Confira os dados informados e tente novamente.';
   }
   if (error instanceof Error && error.message === 'API_NAO_CONFIGURADA') return 'O servidor ainda não está configurado. Tente novamente mais tarde.';
-  if (error instanceof Error && error.message === 'IMAGEM_MUITO_GRANDE') return 'A imagem precisa ter até 2 MB. Escolha uma foto menor ou recorte a imagem.';
+  if (error instanceof Error && error.message === 'IMAGEM_MUITO_GRANDE') return 'A imagem precisa ter até 2 MB. Escolha uma foto com menor tamanho de arquivo.';
   if (error instanceof Error && error.message === 'IMAGEM_INVALIDA') return 'Não foi possível ler essa imagem. Escolha outra foto.';
   if (error instanceof Error && error.message === 'CAMERA_SEM_PERMISSAO') return 'Permita o acesso à câmera nas configurações do celular para tirar uma foto.';
   if (error instanceof Error && error.message === 'CAMERA_INDISPONIVEL') return 'Não foi possível abrir a câmera. Tente novamente ou escolha uma foto da galeria.';

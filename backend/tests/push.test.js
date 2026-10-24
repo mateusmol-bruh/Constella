@@ -12,6 +12,7 @@ function load(name, dependencies) {
   return mod.exports;
 }
 function notificationService(prisma) {
+  prisma.dispositivo_push ??= { findUnique: async () => ({ ativo: true, id_usr: 2n }) };
   return load('notificacao', { '../config/prisma': prisma, './bloqueio.service': { id: value => BigInt(value) } });
 }
 const sample = () => ({ id_push: 1n, id_usr: 2n, token: 'ExpoPushToken[TESTE_sem_destinatario_real]', estado: 'PENDENTE', tentativas: 0, chave: 'mensagem:8', dados: { tipo: 'chat', id: '4', autor: '1', destinataria: '2' }, criado_em: new Date(), dispositivo: { ativo: true, id_usr: 2n } });
@@ -52,7 +53,7 @@ test('bloqueio, leitura e saída de fórum impedem entrega pendente', async () =
   const row = sample();
   const blocked = notificationService({ bloqueio: { findFirst: async () => ({}) } });
   assert.equal(await blocked.permitido(row), false);
-  const read = notificationService({ bloqueio: { findFirst: async () => null }, mensagem: { findUnique: async () => ({ id_msg: 8n, id_chat: 4n, chat: { id_usr_01: 1n, id_usr_02: 2n } }) }, chat_leitura: { findUnique: async () => ({ ultima_mensagem: 8n }) } });
+  const read = notificationService({ bloqueio: { findFirst: async () => null }, conexao: { findFirst: async () => ({}) }, mensagem: { findUnique: async () => ({ id_msg: 8n, id_chat: 4n, chat: { id_usr_01: 1n, id_usr_02: 2n } }) }, chat_leitura: { findUnique: async () => ({ ultima_mensagem: 8n }) } });
   assert.equal(await read.permitido(row), false);
   const left = notificationService({ bloqueio: { findFirst: async () => null }, usuaria_forum: { findUnique: async () => null }, postagem: { findUnique: async () => ({id_post: 8n}) } });
   assert.equal(await left.permitido({ ...row, chave: 'postagem:8', dados: { ...row.dados, tipo: 'forum' } }), false);
@@ -64,14 +65,15 @@ function worker(allowed = true, claim = true) {
     notificacao_push: { updateMany: async query => { updates.push(query); return { count: query.where.estado === 'PENDENTE' ? Number(claim) : 1 }; } },
     dispositivo_push: { updateMany: async query => devices.push(query) },
   };
-  return { updates, devices, api: load('push-worker', { '../config/prisma': prisma, './notificacao.service': { permitido: async () => allowed, enabled: () => true } }) };
+  return { updates, devices, api: load('push-worker', { '../config/prisma': prisma, './notificacao.service': { permitido: async () => allowed, enabled: () => true, conteudo: async () => ({ title: 'Nova mensagem de TESTE', body: 'Mensagem de teste' }) } }) };
 }
 test('ticket Expo aceito fica aguardando recibo; não é marcado como recebido no aparelho', async () => {
   const instance = worker();
   await instance.api.enviar(sample(), async(url, options) => {
     assert.ok(url.endsWith('/send'));
     const body = JSON.parse(options.body); assert.equal(body.data.destinataria, '2');
-    assert.equal(body.body, 'Você recebeu uma nova mensagem.');
+    assert.equal(body.title, 'Nova mensagem de TESTE'); assert.equal(body.body, 'Mensagem de teste');
+    assert.equal(body.collapseId, '2:chat:4'); assert.equal(body.tag, '2:chat:4');
     return { ok: true, json: async () => ({ data: { status: 'ok', id: 'ticket-teste' } }) };
   });
   assert.equal(instance.updates.at(-1).data.estado, 'AGUARDANDO');
@@ -92,4 +94,31 @@ test('token inválido é desativado; evento já reservado e acesso revogado não
   for (const instance of [worker(false), worker(true, false)]) {
     await instance.api.enviar(sample(), async () => assert.fail('Não deve enviar push'));
   }
+});
+
+test('prévia do push usa autora real e diferencia texto, foto, fórum e solicitação',async()=>{
+  const db={usuaria:{findUnique:async()=>({nome_usr:'Maria'})},mensagem:{findUnique:async()=>({cont_msg:'Oi! Tudo bem?',imagem_msg:null})},forum:{findUnique:async()=>({titulo_for:'Tecnologia'})}};
+  const service=notificationService(db),row=sample();
+  assert.deepEqual(await service.conteudo(row),{title:'Nova mensagem de Maria',body:'Oi! Tudo bem?'});
+  db.mensagem.findUnique=async()=>({cont_msg:'',imagem_msg:'/api/anexos/foto.png'});
+  assert.equal((await service.conteudo(row)).title,'Maria enviou uma foto.');
+  assert.deepEqual(await service.conteudo({...row,dados:{...row.dados,tipo:'forum',foto:true}}),{title:'Nova mensagem em Tecnologia',body:'Maria enviou uma foto no fórum.'});
+  assert.deepEqual(await service.conteudo({...row,chave:'solicitacao:1',dados:{...row.dados,tipo:'conexao'}}),{title:'Nova solicitação de conexão',body:'Maria quer se conectar com você!'});
+});
+
+test('conexão desfeita cancela push de chat; leitura e participação limitam push do fórum',async()=>{
+  const row=sample();
+  const db={bloqueio:{findFirst:async()=>null},conexao:{findFirst:async()=>null},mensagem:{findUnique:async()=>({id_msg:8n,id_chat:4n,chat:{id_usr_01:1n,id_usr_02:2n}})}};
+  assert.equal(await notificationService(db).permitido(row),false);
+  db.usuaria_forum={findUnique:async()=>({ultima_postagem_lida:7n})};
+  db.postagem={findUnique:async()=>({id_post:8n,id_for:4n,tipo_post:'MENSAGEM'})};
+  const forum={...row,chave:'postagem:8',dados:{...row.dados,tipo:'forum'}};
+  assert.equal(await notificationService(db).permitido(forum),true);
+  db.usuaria_forum.findUnique=async()=>({ultima_postagem_lida:8n});
+  assert.equal(await notificationService(db).permitido(forum),false);
+});
+
+test('dispositivo reassociado após carregar a fila é revalidado antes do envio',async()=>{
+  const service=notificationService({dispositivo_push:{findUnique:async()=>({ativo:true,id_usr:3n})}});
+  assert.equal(await service.permitido(sample()),false);
 });

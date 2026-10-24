@@ -7,6 +7,7 @@ import { api } from './api';
 const tokenKey = 'constella.push.token';
 let registeringToken: string | undefined;
 let binding: Promise<void> | undefined;
+let tokenGeneration = 0;
 export function pushSupported() { return Platform.OS !== 'web' && Device.isDevice && Constants.executionEnvironment !== 'storeClient'; }
 export function pushProjectId() { return Constants.easConfig?.projectId ?? Constants.expoConfig?.extra?.eas?.projectId as string | undefined; }
 export async function notificationsModule() {
@@ -14,6 +15,8 @@ export async function notificationsModule() {
   return import('expo-notifications');
 }
 export async function registerPush(requestPermission = false, signal?: AbortSignal) {
+  const version = tokenGeneration;
+  const canceled = () => signal?.aborted || version !== tokenGeneration;
   const notifications = await notificationsModule();
   const projectId = pushProjectId();
   if (!projectId) throw new Error('PUSH_NAO_CONFIGURADO');
@@ -25,10 +28,10 @@ export async function registerPush(requestPermission = false, signal?: AbortSign
   if (!permission.granted && requestPermission) permission = await notifications.requestPermissionsAsync();
   if (!permission.granted) { await unregisterPush().catch(() => undefined); return false; }
   const token = (await notifications.getExpoPushTokenAsync({ projectId })).data;
-  if (signal?.aborted) return false;
+  if (canceled()) return false;
   const previous = await SecureStore.getItemAsync(tokenKey);
   if (previous && previous !== token) await api.delete('/api/notificacoes/dispositivo', { data: { token: previous }, signal });
-  if (signal?.aborted) return false;
+  if (canceled()) return false;
   registeringToken = token;
   const operation = (async () => {
     await api.put('/api/notificacoes/dispositivo', { token, plataforma: Platform.OS }, { signal });
@@ -39,6 +42,7 @@ export async function registerPush(requestPermission = false, signal?: AbortSign
   return true;
 }
 export async function unregisterPush() {
+  tokenGeneration++; // Invalida também um registro ainda esperando permissão/token do SO.
   if (Platform.OS === 'web') return;
   // Um registro em andamento deve concluir antes da revogação, preservando a ordem no servidor.
   await binding?.catch(() => undefined);

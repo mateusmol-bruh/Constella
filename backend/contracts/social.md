@@ -33,3 +33,42 @@ Todas as rotas abaixo exigem JWT. IDs são strings decimais positivas compatíve
 ## Migração
 
 `20261023000200_social`: cria `bloqueio` e `chat_leitura`; adiciona `usuaria_forum.ultima_postagem_lida` e `mensagem.imagem_msg`, sem excluir dados nem alterar texto existente. Aplicar antes de iniciar a versão atualizada do backend. A coluna existente `postagem.img_post` é reutilizada.
+
+## Respostas e repetição segura de envios
+
+As duas rotas de envio aceitam também `resposta_id` (ID decimal da original) e
+`envio_id` (chave de 16 a 100 caracteres alfanuméricos, `_` ou `-`). São opcionais
+para compatibilidade. A original deve existir na mesma conversa/fórum; avisos de
+sistema não podem ser respondidos. Referência inválida retorna 400.
+
+Listagem e envio retornam `resposta: null` ou
+`{ id, autora: { id, nome }, conteudo, imagem }`. O conteúdo da prévia é limitado a
+160 caracteres; `imagem` é booleano. Não expõe URL de anexo de outra conversa.
+Excluir a original anula sua referência; não exclui respostas.
+
+Repetir a mesma chave, autora e corpo devolve o mesmo registro, sem novo push ou
+novo vínculo de imagem. Reutilizar a chave para outro corpo/conversa retorna 409.
+A trava transacional por autora serializa concorrência e vínculo de anexos.
+
+`DELETE /api/foruns/:id/sair` remove a participação e insere uma postagem `SAIDA`
+na mesma transação. Repetição sem participação retorna sucesso sem outro evento.
+Na listagem ela tem `tipo: "sistema"`, não possui `autora` e não incrementa
+`nao_lidas`. Mensagens comuns têm `tipo: "mensagem"`. Não é possível criar,
+editar ou excluir um aviso de sistema por meio das rotas de postagem comum.
+
+Exige a migração aditiva `20261023000400_respostas_sistema`, aplicada no banco de
+desenvolvimento em 23/10/2026 após autorização na correção urgente. Outros
+ambientes precisam ser verificados antes de atualizar o servidor. Proposta e
+riscos: `backend/proposals/respostas-sistema.md`.
+
+## Erros de conversa
+
+Controllers de chat, postagem e fórum compartilham `utils/conversation-error.js`.
+Uma coluna/tabela incompatível com o client Prisma (`P2022`/`P2021`) produz HTTP
+503 com `CONVERSAS_ATUALIZACAO_PENDENTE`. Indisponibilidade de banco/pool produz
+503 com `CONVERSAS_TEMPORARIAMENTE_INDISPONIVEIS`; erro inesperado produz 500 com
+`ERRO_INTERNO_CONVERSA`. Respostas 5xx incluem referência de diagnóstico; logs
+guardam essa referência, operação, código, modelo e locais do stack, sem SQL,
+payload, JWT ou conteúdo de mensagem. Autenticação, autorização e ausência
+continuam com 401, 403 e 404. O mobile diferencia esses casos e permite repetir
+o carregamento; falha temporária durante atualização preserva o histórico.

@@ -9,13 +9,20 @@ import { errorMessage } from '../services/api';
 import { ui } from '../styles/theme';
 import { useFeedback } from '../constexts/FeedbackContext';
 import { socialService } from '../services/social.service';
+import { useRoute, type RouteProp } from '@react-navigation/native';
+import type { TabParamList } from '../types/navigation';
 
 export default function ConexoesScreen() {
+  const route = useRoute<RouteProp<TabParamList, 'Conexoes'>>();
+  return <ConexoesContent key={route.params?.evento ?? 'default'} initialTab={route.params?.aba ?? 'mine'} />;
+}
+
+function ConexoesContent({ initialTab }: { initialTab: 'mine' | 'requests' }) {
   const repo = useCommunity();
   const notify = useFeedback();
   const recommendations = useResource(repo.recommendedPeople, true, 15000);
   const [query, setQuery] = useState('');
-  const [tab, setTab] = useState<'mine' | 'requests' | 'discover' | 'blocked'>('mine');
+  const [tab, setTab] = useState<'mine' | 'requests' | 'discover' | 'blocked'>(initialTab);
   const blocked = useResource(socialService.blocked, true, 15000);
   const [selectedId, setSelectedId] = useState<string>();
   const [busy, setBusy] = useState('');
@@ -66,7 +73,7 @@ export default function ConexoesScreen() {
         <Text style={ui.subtitle}>Recebidas</Text>
         {!received.length && <Text style={ui.body}>Nenhuma solicitação recebida.</Text>}
         {received.map(item => <View key={item.id_conexao} style={ui.card}>
-          <Text style={ui.body}>{item.outra_usuaria?.nome_usr ?? 'Solicitação de conexão'}</Text>
+          <CollectionRow title={item.outra_usuaria?.nome_usr ?? 'Solicitação de conexão'} foto={item.outra_usuaria?.foto_usr} subtitle="Ver perfil" onPress={() => setSelectedId(item.id_user_solicit)} />
           <View style={ui.row}><View style={{ flex: 1 }}><Button title="Aceitar" small disabled={!!busy} loading={busy === item.id_conexao} onPress={() => void respond(item.id_conexao, true)} /></View><View style={{ flex: 1 }}><Button title="Recusar" variant="secondary" small disabled={!!busy} onPress={() => void respond(item.id_conexao, false)} /></View></View>
         </View>)}
         <Text style={ui.subtitle}>Enviadas</Text>

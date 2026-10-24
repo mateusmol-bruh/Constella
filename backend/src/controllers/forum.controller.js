@@ -1,25 +1,9 @@
 const forumService =
   require("../services/forum.service");
+const { responderErroConversa } = require('../utils/conversation-error');
 
 function tratarErro(res, error) {
-  if (error.statusCode) {
-    return res
-      .status(error.statusCode)
-      .json({
-        mensagem: error.message,
-        ...(error.codigo ? { codigo: error.codigo } : {})
-      });
-  }
-
-  console.error(
-    "Erro na API de fóruns:",
-    error.code || error.name || 'Error'
-  );
-
-  return res.status(500).json({
-    mensagem:
-      "Erro interno do servidor."
-  });
+  return responderErroConversa(res, error, 'forum');
 }
 
 async function listar(req, res) {

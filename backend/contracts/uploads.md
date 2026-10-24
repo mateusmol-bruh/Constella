@@ -13,4 +13,20 @@ Armazenamento padrão: backend/uploads. Configure UPLOADS_DIR para diretório pe
 
 Trocar/remover foto desfaz a referência, sem exclusão automática dos arquivos anteriores. Falha depois do upload pode deixar arquivo não associado. Limpeza de arquivos requer processo separado, após verificar referências; não foi executada.
 
-Validação: testes HTTP em tests/upload.test.js e integração real em mobile/scripts/integration-api.cjs confirmam arquivo, vínculo em PostgreSQL e leitura depois do reinício da API.
+Cobertura disponível: testes HTTP em `tests/upload.test.js` e roteiro de integração
+em `mobile/scripts/integration-api.cjs` para arquivo, vínculo no PostgreSQL e leitura
+depois do reinício da API. A disponibilidade desses testes não implica execução
+em cada alteração; veja o relatório da rodada para os resultados efetivos.
+
+## Seletor de conversas
+
+Chats e fóruns usam seleção sem recorte. O mobile normaliza a foto para JPEG,
+limita a maior dimensão a 2048 px e comprime preservando a proporção. Se o resultado
+ainda exceder 2 MB após uma segunda compressão, informa o limite antes da rede.
+O transporte continua sendo o JSON/base64 deste contrato, com JWT; não utiliza
+multipart/FormData nem cabeçalho de multipart manual. Timeout de upload: 60 s.
+
+A prévia usa o arquivo otimizado local. O caminho confirmado é reaproveitado
+quando só a gravação da mensagem falha. A mensagem aparece como enviada após a
+confirmação da API, com `envio_id` para repetição segura. O visualizador usa JWT
+para anexos privados e permite abrir a foto inteira em `contain`.

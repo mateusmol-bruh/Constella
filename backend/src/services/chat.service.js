@@ -1,5 +1,6 @@
 
 const prisma = require("../config/prisma");
+const replies = require('./resposta.service');
 
 function erroHttp(status, mensagem) {
   const erro = new Error(mensagem);
@@ -73,6 +74,7 @@ function formatarMensagem(mensagem) {
     id_usr_emissor: mensagem.id_usr_emissor.toString(),
     conteudo: mensagem.cont_msg,
     imagem: mensagem.imagem_msg,
+    resposta: replies.preview(mensagem.resposta),
     dt_envio: mensagem.dt_envio
   };
 }
@@ -246,7 +248,8 @@ async function listarMensagens(
       { id_msg: "desc" }
     ],
     skip: (pagina - 1) * limite,
-    take: limite
+    take: limite,
+    include: replies.replyInclude
   });
 
   return mensagens
@@ -255,21 +258,30 @@ async function listarMensagens(
 }
 
 // POST /api/chats/:id/mensagens
-async function enviarMensagem(idUsuario, idChat, conteudo, imagem = null) {
+async function enviarMensagem(idUsuario, idChat, conteudo, imagem = null, dados = {}) {
   const idUsr = validarId(idUsuario);
   const idConversa = validarId(idChat, "Chat");
+  const { resposta_id, envio_id } = replies.options(dados);
 
   const chat=await verificarAcessoChat(idConversa,idUsr);
   await require("./bloqueio.service").permitir(idUsr,chat.id_usr_01===idUsr?chat.id_usr_02:chat.id_usr_01);
-  if (imagem) await require("./anexo.service").validarAnexo(imagem,idUsr);
   const mensagem = await prisma.$transaction(async tx => {
+    if (envio_id || imagem) await replies.lock(tx, idUsr);
+    if (envio_id) {
+      const existing = await tx.mensagem.findUnique({ where: { id_usr_emissor_envio_id: { id_usr_emissor: idUsr, envio_id } }, include: replies.replyInclude });
+      if (existing) return replies.sameAttempt(existing, idConversa, conteudo, imagem, resposta_id);
+    }
+    await replies.original(tx, resposta_id, idConversa);
+    if (imagem) await require('./anexo.service').validarAnexo(imagem, idUsr, tx);
     const saved = await tx.mensagem.create({
     data: {
       id_chat: idConversa,
       id_usr_emissor: idUsr,
       cont_msg: conteudo,
-      imagem_msg: imagem
-    }
+      imagem_msg: imagem,
+      ...(resposta_id !== null ? { resposta_id } : {}),
+      ...(envio_id ? { envio_id } : {})
+    }, include: replies.replyInclude
     });
     await require('./notificacao.service').enfileirar(tx, { chave: `mensagem:${saved.id_msg}`, tipo: 'chat', recurso: idConversa, autor: idUsr,
       destinatarias: [chat.id_usr_01 === idUsr ? chat.id_usr_02 : chat.id_usr_01], foto: !!imagem });
@@ -347,7 +359,7 @@ module.exports = {
 async function resumoChat(chat,user) {
  const leitura=await prisma.chat_leitura.findUnique({where:{id_chat_id_usr:{id_chat:chat.id_chat,id_usr:user}}});
  const [last,unread]=await Promise.all([
-  prisma.mensagem.findFirst({where:{id_chat:chat.id_chat},orderBy:[{dt_envio:'desc'},{id_msg:'desc'}]}),
+  prisma.mensagem.findFirst({where:{id_chat:chat.id_chat},orderBy:[{dt_envio:'desc'},{id_msg:'desc'}],include:replies.replyInclude}),
   prisma.mensagem.count({where:{id_chat:chat.id_chat,id_usr_emissor:{not:user},id_msg:{gt:leitura?.ultima_mensagem ?? 0n}}})
  ]);
  return {ultima_mensagem:last?formatarMensagem(last):null,nao_lidas:unread};

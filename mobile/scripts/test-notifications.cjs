@@ -47,3 +47,25 @@ test('logout aguarda o registro pendente e revoga o token antes de limpar o arma
   await Promise.all([registration,logout]);
   assert.deepEqual(calls,['registrando','registrado','salvo','revogado','limpo']);assert.equal(stored,null);
 });
+
+test('logout invalida registro ainda esperando o token do sistema operacional',async()=>{
+  let finish,puts=0;
+  const service=load('../src/services/notifications.service.ts',{
+    'react-native':{Platform:{OS:'android'}},'expo-constants':{__esModule:true,default:{executionEnvironment:'standalone',easConfig:{projectId:'teste'}}},'expo-device':{isDevice:true},
+    'expo-secure-store':{getItemAsync:async()=>null,deleteItemAsync:async()=>{},setItemAsync:async()=>assert.fail('Não deve salvar token após logout')},
+    './api':{api:{put:async()=>{puts++;},delete:async()=>{}}},
+    'expo-notifications':{AndroidImportance:{DEFAULT:3},setNotificationChannelAsync:async()=>{},getPermissionsAsync:async()=>({granted:true}),getExpoPushTokenAsync:()=>new Promise(resolve=>{finish=resolve;})},
+  });
+  const registration=service.registerPush();await new Promise(setImmediate);
+  await service.unregisterPush();finish({data:'ExpoPushToken[TESTE_sem_destinatario_real]'});
+  assert.equal(await registration,false);assert.equal(puts,0);
+});
+
+test('segundo toque recebido durante abertura de outra notificação também é processado',async()=>{
+  const calls=[];let finish;
+  const service=load('../src/services/notifications-navigation.ts',{'@react-navigation/native':{createNavigationContainerRef:()=>({isReady:()=>true})}});
+  service.setNotificationOpener(async target=>{calls.push(target.evento);if(target.evento==='3')await new Promise(resolve=>{finish=resolve;});return true;});
+  service.queueNotification({tipo:'chat',id:'1',destinataria:'2',evento:'3'});await new Promise(setImmediate);
+  service.queueNotification({tipo:'forum',id:'4',destinataria:'2',evento:'5'});finish();await new Promise(setImmediate);
+  assert.deepEqual(calls,['3','5']);
+});
