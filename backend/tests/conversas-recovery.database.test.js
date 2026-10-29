@@ -4,7 +4,6 @@ const { randomBytes, randomInt } = require('node:crypto');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const jwt = require('jsonwebtoken');
 
 test('HTTP + PostgreSQL: chats/fóruns vazios, histórico, texto, imagem privada e resposta', {
   skip: process.env.CONSTELLA_CONVERSATION_INTEGRATION !== '1', timeout: 60000,
@@ -43,7 +42,9 @@ test('HTTP + PostgreSQL: chats/fóruns vazios, histórico, texto, imagem privada
       const server = app.listen(0, '127.0.0.1');
       await new Promise((resolve, reject) => { server.once('listening', resolve); server.once('error', reject); });
       const origin = `http://127.0.0.1:${server.address().port}`;
-      const token = user => jwt.sign({ tipo: 'usuaria' }, process.env.JWT_SECRET, { subject: String(user.id_usr), issuer: 'constella', audience: 'constella-app', expiresIn: '5m' });
+      const tokens=new Map();
+      for(const user of users)tokens.set(String(user.id_usr),await require('../src/services/sessao.service').emitirSessao('usuaria',user.id_usr,db));
+      const token=user=>tokens.get(String(user.id_usr));
       async function request(endpoint, user = a, method = 'GET', body) {
         return fetch(origin + endpoint, { method, headers: { 'Content-Type': 'application/json', ...(user ? { Authorization: `Bearer ${token(user)}` } : {}) },
           ...(body === undefined ? {} : { body: JSON.stringify(body) }), signal: AbortSignal.timeout(10000) });

@@ -6,6 +6,7 @@ import { usePro } from '../constexts/ProContext';
 import { proService } from '../services/pro.service';
 import { Icon } from '../components/Icon';
 import { CoverArt } from '../components/Artwork';
+import { ContentCover } from '../components/ContentCover';
 import { contentColumns } from '../utils/layout';
 import { searchMatches } from '../components/Social';
 import { Button, Header, ResourceState, Screen, SearchField } from '../components/ui';
@@ -22,12 +23,12 @@ export default function ConteudosScreen() {
   const pro = usePro();
   const { width, fontScale } = useWindowDimensions();
   const columns = contentColumns(width, fontScale);
-  const catalog = useResource(async signal => isGuest ? (await publicService.pro(signal)).catalogo : proService.catalog());
+  const catalog = useResource(async signal => isGuest ? (await publicService.pro(signal)).catalogo : proService.catalog(), true, 15000);
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const resource = useResource<Omit<Content, 'material'>[]>(signal => isGuest ? publicService.contents(signal) : contentsService.list());
+  const resource = useResource<Omit<Content, 'material'>[]>(signal => isGuest ? publicService.contents(signal) : contentsService.list(), true, 15000);
   const recommendations = useResource(() => contentsService.recommended(), !isGuest);
   const [query, setQuery] = useState('');
-  const items = resource.data?.filter(item => searchMatches(item.titulo + ' ' + (item.descricao ?? ''), query)) ?? [];
+  const items = resource.data?.filter(item => searchMatches(item.titulo + ' ' + (item.descricao ?? '') + ' ' + (item.categoria ?? ''), query)) ?? [];
   const recommended = recommendations.data?.filter(item => item.score > 0).slice(0, 3) ?? [];
   return <Screen>
     <Header title="Conteúdos" /><SearchField value={query} onChangeText={setQuery} placeholder="Buscar conteúdos" />
@@ -44,15 +45,15 @@ export default function ConteudosScreen() {
     <ResourceState {...resource} empty={!items.length && (query ? 'Nenhum conteúdo encontrado.' : 'Novos conteúdos aparecerão aqui.')} onRetry={() => void resource.reload()} />
     <View style={ui.wrap}>
       {!resource.error && items.map((item, index) => <Pressable accessibilityRole="button" accessibilityLabel={'Ler ' + item.titulo} key={item.id} onPress={() => navigation.navigate('DetalheConteudo', { id: item.id })} style={({ pressed }) => ({ width: columns === 1 || index === 0 ? '100%' : '48%', backgroundColor: colors.card, padding: 12, borderRadius: 20, gap: 8, opacity: pressed ? 0.75 : 1 })}>
-        <CoverArt kind={index + 2} large={index === 0} /><Text style={[ui.body, { fontWeight: '700' }]}>{item.titulo}</Text>
+        {item.capa ? <ContentCover capa={item.capa} titulo={item.titulo}/> : <CoverArt kind={index + 2} large={index === 0} />}<Text style={[ui.body, { fontWeight: '700' }]}>{item.titulo}</Text>
         <Text style={ui.muted} numberOfLines={3}>{item.descricao}</Text><Text style={[ui.muted, { fontSize: 11 }]}>{item.duracao ? item.duracao + ' min • ' : ''}Ler conteúdo →</Text>
       </Pressable>)}
     </View>
     <View style={ui.section}><View style={ui.row}><Icon name="shield" color={colors.pink} /><Text style={ui.subtitle}>Conteúdos PRO</Text></View><Text style={ui.muted}>{pro.access ? 'Seu acesso exclusivo está liberado.' : 'Uma seleção exclusiva para ir além.'}</Text></View>
     <ResourceState {...catalog} empty={!catalog.data?.length && 'Novos conteúdos exclusivos aparecerão aqui.'} onRetry={() => void catalog.reload()} />
     {!catalog.error && catalog.data?.filter(item => searchMatches(item.titulo + ' ' + (item.descricao ?? ''), query)).map(item => <Pressable key={'pro:' + item.id} accessibilityRole="button" accessibilityLabel={(pro.access ? 'Ler ' : 'Conteúdo PRO bloqueado: ') + item.titulo} onPress={() => navigation.navigate('DetalhePro', { id: item.id })} style={ui.card}>
-      <CoverArt kind={4} /><View style={ui.row}><Icon name={pro.access ? 'content' : 'lock'} color={colors.pink} /><Text style={[ui.subtitle, { flex: 1 }]}>{item.titulo}</Text></View>
-      <Text style={ui.muted}>{item.descricao}</Text><Text style={ui.muted}>{pro.access ? 'Exclusivo PRO · Abrir conteúdo' : 'Exclusivo PRO · Conheça o plano para acessar'}</Text>
+      {item.capa ? <ContentCover capa={item.capa} titulo={item.titulo}/> : <CoverArt kind={4} />}<View style={ui.row}><Icon name={pro.access ? 'content' : 'lock'} color={colors.pink} /><Text style={[ui.subtitle, { flex: 1 }]}>{item.titulo}</Text></View>
+      <Text style={ui.muted}>{item.descricao}</Text>{!!item.categoria&&<Text style={ui.muted}>{item.categoria}</Text>}<Text style={ui.muted}>{pro.access ? 'Exclusivo PRO · Abrir conteúdo' : 'Exclusivo PRO · Conheça o plano para acessar'}</Text>
     </Pressable>)}
   </Screen>;
 }

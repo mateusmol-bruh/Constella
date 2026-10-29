@@ -2,14 +2,14 @@ const prisma = require("../config/prisma");
 
 // Somente metadados autorizados. Nunca reutilizar projeções com dados de contas.
 const conteudoSelect = {
-  id_cont: true, titulo_cont: true, desc_cont: true,
+  id_cont: true, capa: true, categoria: true, atualizado_em: true, titulo_cont: true, desc_cont: true,
   duracao_cont: true, data_pub: true,
   conteudo_interesses: { select: { interesses: { select: { id_intr: true, nome_intr: true } } } }
 };
 
 function formatarConteudo(conteudo) {
   return {
-    id: conteudo.id_cont.toString(), titulo: conteudo.titulo_cont,
+    id: conteudo.id_cont.toString(), capa: conteudo.capa, categoria: conteudo.categoria, atualizado_em: conteudo.atualizado_em, titulo: conteudo.titulo_cont,
     descricao: conteudo.desc_cont, duracao: conteudo.duracao_cont,
     data_publicacao: conteudo.data_pub,
     interesses: conteudo.conteudo_interesses.map(({ interesses }) => ({
@@ -29,6 +29,7 @@ function validarId(id) {
 
 async function listarConteudosPublicos() {
   const registros = await prisma.conteudo.findMany({
+    where: { publicado: true },
     select: conteudoSelect, take: 100, orderBy: [{ data_pub: "desc" }, { id_cont: "desc" }]
   });
   return registros.map(formatarConteudo);
@@ -36,9 +37,9 @@ async function listarConteudosPublicos() {
 
 async function buscarConteudoPublico(id) {
   const conteudo = await prisma.conteudo.findUnique({
-    where: { id_cont: validarId(id) }, select: { ...conteudoSelect, mat_text_content: true }
+    where: { id_cont: validarId(id), publicado: true }, select: { ...conteudoSelect, mat_text_content: true }
   });
-  if (!conteudo) {
+  if (!conteudo || conteudo.publicado === false) {
     const erro = new Error("Conteúdo não encontrado.");
     erro.statusCode = 404;
     throw erro;
@@ -63,8 +64,9 @@ async function listarForunsPublicos() {
 
 async function apresentarProPublico() {
   const registros = await prisma.conteudo_pro.findMany({
+    where: { publicado: true },
     select: {
-      id_cont_pro: true, titulo_cont_pro: true, desc_cont_pro: true,
+      id_cont_pro: true, capa: true, categoria: true, atualizado_em: true, titulo_cont_pro: true, desc_cont_pro: true,
       duracao_cont_pro: true, data_pub_cont_pro: true
     },
     take: 100, orderBy: [{ data_pub_cont_pro: "desc" }, { id_cont_pro: "desc" }]
@@ -75,7 +77,7 @@ async function apresentarProPublico() {
     mensagem: "Conheça os conteúdos exclusivos do Constella Pro. As assinaturas ainda não estão disponíveis para contratação.",
     beneficios: ["Acesso a conteúdos exclusivos do catálogo Pro."], planos: [],
     catalogo: registros.map((conteudo) => ({
-      id: conteudo.id_cont_pro.toString(), titulo: conteudo.titulo_cont_pro,
+      id: conteudo.id_cont_pro.toString(), capa: conteudo.capa, categoria: conteudo.categoria, atualizado_em: conteudo.atualizado_em, titulo: conteudo.titulo_cont_pro,
       descricao: conteudo.desc_cont_pro, duracao: conteudo.duracao_cont_pro?.toString() ?? null,
       data_publicacao: conteudo.data_pub_cont_pro
     }))

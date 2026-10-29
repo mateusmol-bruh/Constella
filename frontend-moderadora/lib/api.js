@@ -1,189 +1,256 @@
-import { readDemo, updateDemo } from './demo';
-import { rememberStatusChange, reconcileAuditHistory, wasStatusAuditConfirmed } from './audit';
-
-/**
- * Em modo real: todas as chamadas passam pelo proxy Next -> Express.
- * Em modo demonstração: dados locais, sem fazer alterações no servidor.
- */
-async function request(path, { token, method = 'GET', body } = {}) {
-  let response;
+let csrfToken = null,
+  version = 0;
+export function setCsrf(value) {
+  if (value !== csrfToken) {
+    csrfToken = value;
+    version++;
+  }
+}
+export async function request(path, { method = 'GET', body, signal } = {}) {
+  const current = version,
+    controller = new AbortController(),
+    timer = setTimeout(() => controller.abort(), 20000);
+  const abort = () => controller.abort();
+  signal?.addEventListener('abort', abort, { once: true });
   try {
-    const freshPath = method === 'GET' && path.startsWith('/relatorios')
-      ? `${path}${path.includes('?') ? '&' : '?'}_=${Date.now()}` : path;
-    response = await fetch(`/api/backend/moderacao${freshPath}`, {
+    const response = await fetch('/api/backend/moderacao' + path, {
       method,
-      headers: {
-        ...(body ? {'Content-Type': 'application/json'} : {}),
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        ...(freshPath !== path ? { 'Cache-Control': 'no-cache' } : {}),
-      },
-      ...(body ? { body: JSON.stringify(body) } : {}),
+      credentials: 'same-origin',
       cache: 'no-store',
+      signal: controller.signal,
+      headers: {
+        ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),
+        ...(!['GET', 'HEAD'].includes(method) && csrfToken
+          ? { 'X-CSRF-Token': csrfToken }
+          : {}),
+      },
+      ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
     });
-  } catch {
-    throw new Error('Sem conexão com o servidor. Verifique se o backend está ligado.');
+    const result =
+      response.status === 204 ? {} : await response.json().catch(() => ({}));
+    if (!response.ok) {
+      if (
+        response.status === 401 &&
+        current === version &&
+        !['/login', '/sessao'].includes(path) &&
+        typeof window !== 'undefined'
+      )
+        window.dispatchEvent(new Event('constella:session-expired'));
+      throw Object.assign(
+        new Error(
+          result.mensagem ||
+            'Não foi possível concluir a operação (' + response.status + ').',
+        ),
+        { status: response.status },
+      );
+    }
+    return result;
+  } catch (error) {
+    if (error.status) throw error;
+    throw new Error(
+      error.name === 'AbortError'
+        ? 'O servidor demorou para responder. Tente novamente.'
+        : 'Sem conexão com o servidor. Verifique se o backend está ligado.',
+    );
+  } finally {
+    clearTimeout(timer);
+    signal?.removeEventListener('abort', abort);
   }
-  let result = {};
-  try { result = await response.json(); } catch { /* Sem corpo JSON */ }
-  if (!response.ok) {
-    const err = new Error(result.mensagem || `Erro na requisição (${response.status}).`);
-    err.status = response.status;
-    throw err;
-  }
-  return result;
+}
+export const loginModeradora = (email, senha) =>
+  request('/login', { method: 'POST', body: { email, senha } });
+export const getSession = () => request('/sessao');
+export const logoutModeradora = () => request('/logout', { method: 'POST' });
+export async function getDashboard() {
+  const [d, f, r] = await Promise.all([
+    request('/denuncias?status=PENDENTE&limite=5'),
+    request('/foruns?limite=10'),
+    request('/resumo'),
+  ]);
+  return { denuncias: d.denuncias, foruns: f.foruns, resumo: r.resumo };
+}
+export async function getDenuncias(session, { status = '', pagina = 1 } = {}) {
+  return (
+    await request(
+      '/denuncias?' +
+        new URLSearchParams({
+          ...(status ? { status } : {}),
+          pagina: String(pagina),
+        }),
+    )
+  ).denuncias;
+}
+export async function getDenuncia(session, id) {
+  return (await request('/denuncias/' + encodeURIComponent(id))).denuncia;
+}
+export async function setStatusDenuncia(session, id, status, decisao) {
+  return (
+    await request('/denuncias/' + encodeURIComponent(id) + '/status', {
+      method: 'PATCH',
+      body: { status, decisao },
+    })
+  ).denuncia;
+}
+export async function getForuns(session, pagina = 1) {
+  return (await request('/foruns?pagina=' + pagina)).foruns;
+}
+export async function getForum(session, id) {
+  return (await request('/foruns/' + encodeURIComponent(id))).forum;
+}
+export async function editForum(session, id, data) {
+  return (
+    await request('/foruns/' + encodeURIComponent(id), {
+      method: 'PATCH',
+      body: data,
+    })
+  ).forum;
+}
+export const deleteForum = (session, id) =>
+  request('/foruns/' + encodeURIComponent(id), { method: 'DELETE' });
+export async function getConteudos({
+  tipo = 'normal',
+  pagina = 1,
+  q = '',
+  publicado = '',
+} = {}) {
+  return (
+    await request(
+      '/conteudos?' +
+        new URLSearchParams({ tipo, pagina: String(pagina), q, publicado }),
+    )
+  ).conteudos;
+}
+const contentPath = (tipo, id) =>
+  '/conteudos' +
+  (tipo === 'pro' ? '/pro' : '') +
+  (id ? '/' + encodeURIComponent(id) : '');
+export async function getConteudo(tipo, id) {
+  return (await request(contentPath(tipo, id))).conteudo;
+}
+export async function saveConteudo(tipo, id, body) {
+  return (
+    await request(contentPath(tipo, id), { method: id ? 'PUT' : 'POST', body })
+  ).conteudo;
+}
+export async function publishConteudo(tipo, id, publicado) {
+  return (
+    await request(contentPath(tipo, id) + '/publicacao', {
+      method: 'PATCH',
+      body: { publicado },
+    })
+  ).conteudo;
+}
+export const deleteConteudo = (tipo, id) =>
+  request(contentPath(tipo, id), { method: 'DELETE' });
+export async function createRelatorio(session, data) {
+  return (await request('/relatorios', { method: 'POST', body: data }))
+    .relatorio;
+}
+export async function getRelatorios() {
+  return (await request('/relatorios')).relatorios;
+}
+export async function getUsuarias(query = '', pagina = 1) {
+  return (
+    await request(
+      '/usuarias?' + new URLSearchParams({ q: query, pagina: String(pagina) }),
+    )
+  ).usuarias;
+}
+export function mediaUrl(path) {
+  if (typeof path !== 'string') return '';
+  if (/^\/api\/moderacao\/midias\/pro\/[a-f0-9-]{36}$/.test(path))
+    return '/api/backend/moderacao/midias/pro/' + path.split('/').pop();
+  if (path.startsWith('/uploads/')) return '/media' + path;
+  if (/^\/api\/anexos\/[1-9]\d*-/.test(path))
+    return '/api/backend/moderacao/anexos/' + path.split('/').pop();
+  return '';
+}
+export async function uploadCover(file) {
+  if (
+    !['image/png', 'image/jpeg'].includes(file.type) ||
+    file.size > 2 * 1024 * 1024
+  )
+    throw new Error('Selecione JPG ou PNG de até 2 MB.');
+  const imagem = await new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result).split(',')[1]);
+    r.onerror = () => reject(new Error('Não foi possível ler a imagem.'));
+    r.readAsDataURL(file);
+  });
+  return (await request('/capas', { method: 'POST', body: { imagem } }))
+    .caminho;
 }
 
-// Replica a auditoria do Express apenas no modo demonstração.
-// Não cria ações no banco nem representa operações não suportadas.
-function appendDemoAction(state, acao, descricao) {
-  if (!Array.isArray(state.relatorios)) state.relatorios = [];
-  state.relatorios.unshift({
-    id: `demo-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    acao,
-    descricao,
-    data: new Date().toISOString(),
+export const getUsuaria = (id) =>
+  request('/usuarias/' + encodeURIComponent(id)).then((r) => r.usuaria);
+export const setBanimento = (id, banida, motivo) =>
+  request('/usuarias/' + encodeURIComponent(id) + '/banimento', {
+    method: 'PATCH',
+    body: { banida, motivo },
+  }).then((r) => r.usuaria);
+export function uploadProFile(file, uploadId, onProgress, signal) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest(),
+      current = version;
+    xhr.open(
+      'POST',
+      '/api/backend/moderacao/midias/pro/' + encodeURIComponent(uploadId),
+    );
+    xhr.timeout = 120000;
+    xhr.withCredentials = true;
+    xhr.setRequestHeader('Content-Type', file.type);
+    xhr.setRequestHeader(
+      'X-File-Name',
+      encodeURIComponent(file.name.slice(0, 255)),
+    );
+    if (csrfToken) xhr.setRequestHeader('X-CSRF-Token', csrfToken);
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable)
+        onProgress?.(Math.round((e.loaded / e.total) * 100));
+    };
+    const abort = () => xhr.abort();
+    signal?.addEventListener('abort', abort, { once: true });
+    xhr.onloadend = () => signal?.removeEventListener('abort', abort);
+    xhr.onload = () => {
+      let r = {};
+      try {
+        r = JSON.parse(xhr.responseText);
+      } catch {}
+      if (xhr.status >= 200 && xhr.status < 300) return resolve(r.arquivo);
+      if (xhr.status === 401 && current === version)
+        window.dispatchEvent(new Event('constella:session-expired'));
+      reject(
+        new Error(
+          r.mensagem || 'Não foi possível enviar o arquivo. Tente novamente.',
+        ),
+      );
+    };
+    xhr.onerror = () =>
+      reject(new Error('Conexão interrompida. Tente enviar novamente.'));
+    xhr.ontimeout = () =>
+      reject(new Error('O envio demorou demais. Tente novamente.'));
+    xhr.onabort = () => reject(new Error('Envio cancelado.'));
+    if (signal?.aborted) {
+      reject(new Error('Envio cancelado.'));
+      return;
+    }
+    xhr.send(file);
   });
 }
 
-export async function loginModeradora(email, senha) {
-  return request('/login', { method:'POST', body:{email,senha} });
-}
-
-export async function getDashboard(session) {
-  if (session.demo) {
-    const d=readDemo();
-    return { denuncias:d.denuncias, foruns:d.foruns, resumo:{denunciasPendentes:d.denuncias.filter(x=>x.status==='PENDENTE').length,forunsAtivos:d.foruns.length,conteudosPostados:d.conteudos.length} };
-  }
-  const [den,foru,resumo] = await Promise.all([
-    request('/denuncias', {token:session.token}),
-    request('/foruns', {token:session.token}),
-    request('/resumo', {token:session.token}),
-  ]);
-  return {denuncias:den.denuncias || [],foruns:foru.foruns || [],resumo:resumo.resumo};
-}
-
-export async function getDenuncia(session, id) {
-  if (session.demo) {
-    const value=readDemo().denuncias.find(x=>x.id===String(id));
-    if (!value) throw new Error('Denúncia não encontrada.');
-    return value;
-  }
-  return (await request(`/denuncias/${encodeURIComponent(id)}`, {token:session.token})).denuncia;
-}
-
-export async function setStatusDenuncia(session, id, status) {
-  if (session.demo) {
-    const data=updateDemo(d=>{
-      const item=d.denuncias.find(x=>x.id===String(id));
-      if (!item) throw new Error('Denúncia não encontrada.');
-      item.status=status;
-      appendDemoAction(d, 'ALTERACAO_STATUS_DENUNCIA', `Denúncia ${id} alterada para ${status}.`);
-      return d;
-    });
-    return { ...data.denuncias.find(x=>x.id===String(id)), historicoConfirmado: true };
-  }
-  // O backend do Constella grava o status e a auditoria na mesma transação.
-  // Depois do PATCH, exigimos evidência em GET /relatorios. Não simulamos
-  // registros persistidos quando a versão do backend estiver desatualizada.
-  const updated = (await request(`/denuncias/${encodeURIComponent(id)}/status`, {
-    token:session.token,method:'PATCH',body:{status}
-  })).denuncia;
-  const attempt = rememberStatusChange(session, id, status);
-  try {
-    const history = await getRelatorios(session);
-    return { ...updated, historicoConfirmado: wasStatusAuditConfirmed(history, attempt) };
-  } catch {
-    // O PATCH teve sucesso, mas a consulta de auditoria falhou. Isso não
-    // desfaz a operação nem autoriza dizer que o histórico foi persistido.
-    return { ...updated, historicoConfirmado: false, erroConsultaHistorico: true };
-  }
-}
-
-export async function getForum(session,id) {
-  if (session.demo) {
-    const forum=readDemo().foruns.find(x=>x.id===String(id));
-    if (!forum) throw new Error('Fórum não encontrado.');
-    return forum;
-  }
-  return (await request(`/foruns/${encodeURIComponent(id)}`, {token:session.token})).forum;
-}
-
-export async function editForum(session,id,data) {
-  if (session.demo) {
-    return updateDemo(d=>{
-      const f=d.foruns.find(x=>x.id===String(id));
-      if (!f) throw new Error('Fórum não encontrado.');
-      f.titulo=data.titulo;f.descricao=data.descricao;
-      appendDemoAction(d, 'EDICAO_FORUM', `Fórum ${id} editado pela moderadora.`);
-      return d;
-    }).foruns.find(x=>x.id===String(id));
-  }
-  return (await request(`/foruns/${encodeURIComponent(id)}`,{token:session.token,method:'PATCH',body:data})).forum;
-}
-export async function deleteForum(session,id) {
-  if (session.demo) {
-    updateDemo(d=>{
-      const f=d.foruns.find(x=>x.id===String(id));
-      if (!f) throw new Error('Fórum não encontrado.');
-      d.foruns=d.foruns.filter(x=>x.id!==String(id));
-      appendDemoAction(d, 'EXCLUSAO_FORUM', `Fórum ${id} (${f.titulo}) excluído.`);
-      return d;
-    });
-    return;
-  }
-  await request(`/foruns/${encodeURIComponent(id)}`, {token:session.token,method:'DELETE'});
-}
-
-export async function createConteudo(session,data) {
-  if (session.demo) {
-    const d=updateDemo(x=>{
-      const id=String(Date.now());
-      x.conteudos.push({id,titulo:data.titulo});
-      appendDemoAction(x, 'CRIACAO_CONTEUDO', `Conteúdo ${id} criado.`);
-      return x;
-    });
-    return d.conteudos.at(-1);
-  }
-  return (await request('/conteudos',{token:session.token,method:'POST',body:data})).conteudo;
-}
-
-export async function createConteudoPro(session, data) {
-  if (session.demo) {
-    const state = updateDemo(d => {
-      const id = String(Date.now());
-      d.conteudos.push({ id, titulo: data.titulo, pro: true });
-      appendDemoAction(d, 'CRIACAO_CONTEUDO_PRO', `Conteúdo PRO ${id} criado.`);
-      return d;
-    });
-    return state.conteudos.at(-1);
-  }
-  return (await request('/conteudos/pro', {
-    token: session.token,
-    method: 'POST',
-    body: data,
-  })).conteudo;
-}
-
-export async function createRelatorio(session,data) {
-  if (session.demo) {
-    const d=updateDemo(x=>{
-      x.relatorios.unshift({id:String(Date.now()),acao:"RELATORIO_MANUAL",descricao:`${data.titulo}\n\n${data.conteudo}`,data:new Date().toISOString()});return x;
-    });
-    return d.relatorios[0];
-  }
-  return (await request('/relatorios',{token:session.token,method:'POST',body:data})).relatorio;
-}
-
-/**
- * GET /api/moderacao/relatorios: traz apenas registros da moderadora autenticada.
- * O backend fornece {id, acao, descricao, data}; não há endpoint de detalhe.
- */
-export async function getRelatorios(session) {
-  if (session.demo) {
-    return [...(readDemo().relatorios || [])].sort(
-      (a, b) => new Date(b.data || 0).getTime() - new Date(a.data || 0).getTime()
-    );
-  }
-  const result = await request('/relatorios', { token: session.token });
-  return reconcileAuditHistory(session, result.relatorios);
+export function createUploadId() {
+  if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  bytes[6] = (bytes[6] & 15) | 64;
+  bytes[8] = (bytes[8] & 63) | 128;
+  const hex = Array.from(bytes, (n) => n.toString(16).padStart(2, '0')).join(
+    '',
+  );
+  return [
+    hex.slice(0, 8),
+    hex.slice(8, 12),
+    hex.slice(12, 16),
+    hex.slice(16, 20),
+    hex.slice(20),
+  ].join('-');
 }

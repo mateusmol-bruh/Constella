@@ -18,6 +18,6 @@ export default function ChatScreen({ navigation, route }: ScreenProps<'Chat'>) {
     send={async (text, image, options) => map(await socialService.sendMessage(id, text, image, options))}
     earlier={async (page, signal) => (await socialService.messages(id, page, signal)).map(map)}
     remove={item => socialService.deleteMessage(id, item.id)}
-    report={(item, reason) => socialService.reportMessage(item.id, reason)}
+    report={(item, reason, description) => socialService.reportMessage(item.id, reason, description)}
   />;
 }

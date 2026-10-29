@@ -1,6 +1,6 @@
 const prisma = require("../config/prisma");
 const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
+const { emitirSessao } = require("./sessao.service");
 const { camposOnboarding, estadoOnboarding } = require("../utils/onboarding");
 
 async function autenticarUsuaria(email, senha) {
@@ -10,7 +10,7 @@ async function autenticarUsuaria(email, senha) {
     },
     select: {
       id_usr: true, nome_usr: true, email_usr: true, senha_usr: true,
-      status_verificacao: true, ...camposOnboarding()
+      status_verificacao: true, banida: true, ...camposOnboarding()
     }
   });
 
@@ -27,19 +27,8 @@ async function autenticarUsuaria(email, senha) {
     return null;
   }
 
-  const token = jwt.sign(
-    {
-      sub: String(usuaria.id_usr),
-      tipo: "usuaria"
-    },
-    process.env.JWT_SECRET,
-    {
-      expiresIn: "1h",
-      algorithm: "HS256",
-      issuer: "constella",
-      audience: "constella-app"
-    }
-  );
+  if (usuaria.banida) throw Object.assign(new Error('Sua conta está banida. Entre em contato com a moderação.'), { statusCode:403, codigo:'CONTA_BANIDA' });
+  const token = await emitirSessao("usuaria", usuaria.id_usr);
 
   return {
     mensagem: "Login realizado com sucesso",

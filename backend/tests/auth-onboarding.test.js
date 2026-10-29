@@ -14,6 +14,7 @@ const conta = {
 let atualizacoes = [];
 let transacoes = 0;
 const prisma = {
+  sessao: require("./helpers/sessoes")("7"),
   usuaria: {
     async findUnique({ where }) {
       if (where.email_usr && where.email_usr !== conta.email_usr) return null;
@@ -48,7 +49,7 @@ const app = require("../server");
 let server;
 let origem;
 function token(payload = {}, options = {}) {
-  return jwt.sign({ sub: "7", tipo: "usuaria", ...payload }, process.env.JWT_SECRET,
+  return jwt.sign({ sub: "7", tipo: "usuaria", jti: "a".repeat(64), ...payload }, process.env.JWT_SECRET,
     { issuer: "constella", audience: "constella-app", expiresIn: "1h", ...options });
 }
 async function api(path, method = "GET", body, bearer = token()) {

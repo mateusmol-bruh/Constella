@@ -9,7 +9,7 @@ export default function ChatForumScreen({ navigation, route }: ScreenProps<'Chat
   const { user } = useAuth();
   const { id, nome } = route.params;
   const map = (item: Post): ChatItem => ({ id: item.id_post, authorId: item.autora?.id ?? '', author: item.autora?.nome ?? 'Participante', foto: item.autora?.foto, text: item.conteudo, image: item.imagem, date: item.dt_post, reply: item.resposta, system: item.tipo === 'sistema' });
-  return <ChatPanel key={`${user?.id}:${id}`} conversationKey={`forum:${id}`} title={nome} onBack={() => navigation.goBack()}
+  return <ChatPanel mode="forum" key={`${user?.id}:${id}`} conversationKey={`forum:${id}`} title={nome} onBack={() => navigation.goBack()}
     loader={async signal => {
       // Metadados permitem entrar. Postagens só são solicitadas após confirmar a participação.
       const forum: SocialForum = await socialService.forum(id, signal);
@@ -24,6 +24,6 @@ export default function ChatForumScreen({ navigation, route }: ScreenProps<'Chat
     destroy={() => socialService.deleteForum(id)}
     edit={() => navigation.navigate('CriarForum', { id })}
     remove={item => socialService.deletePost(item.id)}
-    report={(item, reason) => socialService.reportPost(item.id, reason)}
+    report={(item, reason, description) => socialService.reportPost(item.id, reason, description)}
   />;
 }

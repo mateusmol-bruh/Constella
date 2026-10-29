@@ -3,7 +3,7 @@ import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { authService, type RegisterInput } from '../services/auth.service';
 import { communityService } from '../services/community.service';
-import { cleanupSessionNotifications, errorMessage, setApiSession, setSessionExpiredHandler } from '../services/api';
+import { cleanupSessionNotifications, revokeCurrentSession, errorMessage, setApiSession, setSessionExpiredHandler } from '../services/api';
 import type { AuthResponse, AuthUser, Profile } from '../types/models';
 
 interface AuthState {
@@ -64,11 +64,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
   useEffect(() => {
     mounted.current = true;
-    setSessionExpiredHandler(() => {
+    setSessionExpiredHandler((message) => {
       const version = ++epoch.current;
       setApiSession(null); setUser(null); setIsGuest(false); setAbout(''); setNeedsOnboarding(null);
       setRestoring(false); setRestoreFailed(false);
-      setNotice('Sua sessão expirou. Entre novamente.');
+      setNotice(message || 'Sua sessão expirou. Entre novamente.');
       void updateStorage(storage.clear).catch(() => {
         if (current(version)) setNotice('Entre novamente para renovar sua sessão.');
       });
@@ -100,12 +100,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
   async function logout() {
     const version = ++epoch.current;
+    const revocation = revokeCurrentSession();
     // Revoga o dispositivo ainda com o JWT desta conta. Falha de rede não retém a sessão local.
     try { await cleanupSessionNotifications(); } catch { /* Será sincronizado no próximo login. */ }
     try { await updateStorage(storage.clear); }
     catch { if (current(version)) setNotice('Não foi possível sair com segurança. Tente novamente.'); return; }
+    const revoked=await revocation;
     if (!current(version)) return;
-    setApiSession(null); setUser(null); setIsGuest(false); setAbout(''); setNeedsOnboarding(null); setNotice('');
+    setApiSession(null); setUser(null); setIsGuest(false); setAbout(''); setNeedsOnboarding(null); setNotice(revoked ? '' : 'Você saiu deste aparelho. Não foi possível confirmar o encerramento da sessão no servidor.');
     setRestoring(false); setRestoreFailed(false);
   }
   async function retryAccount() {

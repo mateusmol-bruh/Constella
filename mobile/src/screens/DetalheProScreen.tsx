@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Linking, Text, View } from 'react-native';
+import { ProMedia } from '../components/ProMedia';
+import { ContentCover } from '../components/ContentCover';
 import { Icon } from '../components/Icon';
 import { Button, Header, Notice, ResourceState, Screen } from '../components/ui';
 import { useAuth } from '../constexts/AuthContext';
@@ -41,13 +43,14 @@ export default function DetalheProScreen({ navigation, route }: ScreenProps<'Det
   return <Screen bottomSafe>
     <Header title="Conteúdo Pro" onBack={() => navigation.goBack()} />
     <ResourceState {...resource} onRetry={() => void resource.reload()} />
-    {data?.kind === 'guest' && <View style={ui.card}>
-      <Icon name="lock" size={36} color={colors.pink} /><Text style={ui.title}>{data.item?.titulo ?? 'Conteúdo exclusivo'}</Text>
+    {data && !data.item && <Text style={ui.body}>Este conteúdo não está mais disponível.</Text>}
+    {data?.kind === 'guest' && data.item && <View style={ui.card}>
+      <ContentCover capa={data.item.capa} titulo={data.item.titulo}/><Icon name="lock" size={36} color={colors.pink} /><Text style={ui.title}>{data.item?.titulo ?? 'Conteúdo exclusivo'}</Text>
       <Text style={ui.body}>{data.item?.descricao}</Text><Text style={ui.muted}>O material exclusivo requer uma conta com assinatura validada pelo servidor.</Text>
       <ProtectedCTA embedded title="Conteúdo Pro bloqueado" />
     </View>}
-    {data?.kind === 'locked' && <View style={ui.card}>
-      <Icon name="lock" size={36} color={colors.pink} />
+    {data?.kind === 'locked' && data.item && <View style={ui.card}>
+      <ContentCover capa={data.item.capa} titulo={data.item.titulo}/><Icon name="lock" size={36} color={colors.pink} />
       <Text style={ui.title}>{data.item?.titulo ?? 'Conteúdo exclusivo'}</Text>
       {!!data.item?.descricao && <Text style={ui.body}>{data.item.descricao}</Text>}
       <Text style={ui.body}>Para abrir este material, é necessária uma assinatura validada pelo servidor.</Text>
@@ -56,11 +59,13 @@ export default function DetalheProScreen({ navigation, route }: ScreenProps<'Det
     </View>}
     {data?.kind === 'content' && <View style={ui.card}>
       <Text style={ui.subtitle}>{data.demo ? 'PRO · Demonstração' : 'Exclusivo PRO'}</Text>
-      <Text style={ui.title}>{data.item.titulo}</Text>
+      <ContentCover capa={data.item.capa} titulo={data.item.titulo}/><Text style={ui.title}>{data.item.titulo}</Text>
       <Text style={ui.body}>{data.item.descricao}</Text>
       {data.item.material && /^https?:\/\/[^\s]+$/i.test(data.item.material)
         ? <Button title="Abrir material" onPress={() => void openMaterial(data.item.material!)} />
-        : <Text selectable style={ui.body}>{data.item.material || 'Material ainda não disponibilizado.'}</Text>}
+        : <Text selectable style={ui.body}>{data.item.material || (data.item.imagem||data.item.video ? '' : 'Material ainda não disponibilizado.')}</Text>}
+      {data.item.imagem&&<ProMedia key={data.item.imagem.id} file={data.item.imagem}/>}
+      {data.item.video&&<ProMedia key={data.item.video.id} file={data.item.video}/>}
       {!!data.item.anexos && <Text style={ui.muted}>Anexos cadastrados: {data.item.anexos}</Text>}
     </View>}
     <Notice text={openError} />

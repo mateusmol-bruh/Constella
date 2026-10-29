@@ -1,7 +1,8 @@
 import React, { useRef, useState } from 'react';
-import { Text, TextInput, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { ReportFields } from './ReportFields';
 import { Sheet } from './Social';
 import { Avatar } from './Artwork';
 import { Button, Chip, Notice, ResourceState } from './ui';
@@ -24,6 +25,7 @@ export function PersonModal({ id, onClose, onChanged }: { id: string; onClose: (
   const [reporting, setReporting] = useState(false);
   const [reported, setReported] = useState(false);
   const [reason, setReason] = useState('');
+  const [description,setDescription]=useState('');
   const [info, setInfo] = useState('');
   const notify = useFeedback();
   const person = resource.data;
@@ -64,8 +66,8 @@ export function PersonModal({ id, onClose, onChanged }: { id: string; onClose: (
     pending.current = true;
     setBusy(true); setError('');
     try {
-      await socialService.reportPerson(id, reason.trim());
-      setReported(true); setReporting(false); setReason('');
+      await socialService.reportPerson(id, reason.trim(), description.trim());
+      setReported(true); setReporting(false); setReason(''); setDescription('');
       notify('Denúncia enviada à moderação.'); setInfo('Sua denúncia foi enviada para análise.');
     } catch (cause) { setError(errorMessage(cause)); }
     finally { pending.current = false; setBusy(false); }
@@ -83,7 +85,7 @@ export function PersonModal({ id, onClose, onChanged }: { id: string; onClose: (
       <Button title={status === 'ACEITO' ? 'Conversar' : received ? 'Aceitar conexão' : status === 'PENDENTE' ? 'Solicitação enviada' : person.conexao ? 'Conexão indisponível' : 'Conectar'} loading={busy} disabled={!!person.interacao_bloqueada || (!!person.conexao && status !== 'ACEITO' && !received)} onPress={() => void act()} />
       {reporting ? <View style={{ gap: 12 }}>
         <Text style={ui.body}>Denunciar {person.nome}? Explique o motivo para a moderação analisar.</Text>
-        <TextInput accessibilityLabel="Motivo da denúncia" placeholder="Descreva o motivo" placeholderTextColor="#DFD4EF" value={reason} onChangeText={setReason} editable={!busy} multiline maxLength={255} style={[ui.body, { minHeight: 90, borderWidth: 1, borderColor: '#DFD4EF', borderRadius: 10, padding: 12 }]} />
+        <ReportFields reason={reason} onReason={setReason} description={description} onDescription={setDescription} busy={busy}/>
         <Button title="Confirmar denúncia" loading={busy} disabled={!reason.trim()} onPress={() => void report()} />
         <Button title="Cancelar denúncia" variant="secondary" disabled={busy} onPress={() => setReporting(false)} />
       </View> : <Button title={reported ? 'Denúncia enviada' : 'Denunciar usuária'} variant="secondary" disabled={busy || reported} onPress={() => { setError(''); setReporting(true); }} />}

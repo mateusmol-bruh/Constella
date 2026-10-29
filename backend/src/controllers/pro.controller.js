@@ -13,7 +13,7 @@ function tratarErro(res, error) {
 
   console.error(
     "Erro na API Pro:",
-    error
+    error.code || error.name || 'Error'
   );
 
   return res.status(500).json({

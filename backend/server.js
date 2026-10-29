@@ -1,4 +1,3 @@
-
 require("dotenv").config({ quiet: true });
 
 if (!process.env.JWT_SECRET) {
@@ -51,7 +50,14 @@ const PORT = process.env.PORT || 3000;
 // Middlewares
 app.disable("x-powered-by");
 
-app.use(cors());
+const allowedOrigins=(process.env.CORS_ALLOWED_ORIGINS||'').split(',').map(s=>s.trim()).filter(Boolean);
+app.use(cors({credentials:true,origin(origin,callback){
+ if(!origin || allowedOrigins.includes(origin) || (process.env.NODE_ENV!=='production' && /^http:\/\/(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/.test(origin)))return callback(null,true);
+ return callback(Object.assign(new Error('Origem não autorizada.'),{statusCode:403}));
+}}));
+app.use((req,res,next)=>{res.set('X-Content-Type-Options','nosniff');res.set('Referrer-Policy','no-referrer');if(req.path.startsWith('/api/'))res.set('Cache-Control','no-store');next();});
+// O corpo maior só é lido após autenticação e CSRF da moderadora.
+app.use('/api/moderacao/capas',require('./src/middlewares/moderadora.middleware'),express.json({limit:'3mb'}));
 
 // Autentica antes de ler o corpo maior permitido somente para imagens.
 app.use('/api/uploads', uploadRoutes.router);
@@ -155,4 +161,3 @@ if (require.main === module) {
 }
 
 module.exports = app;
-

@@ -14,6 +14,7 @@ const router =
   express.Router();
 
 router.use(autenticar);
+router.get('/conteudos/:id/midias/:arquivo',exigirPro,async(req,res,next)=>{try{const m=require('../services/midia-pro.service');m.deliver(await m.subscriberFile(req.params.id,req.params.arquivo),res,next);}catch(e){next(e);}});
 
 router.post('/demonstracao', async (req, res, next) => {
   try {

@@ -40,6 +40,11 @@ model conexao {
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model conteudo {
+  publicado Boolean @default(true)
+  capa String? @db.VarChar(500)
+  categoria String? @db.VarChar(100)
+  atualizado_em DateTime @default(now()) @updatedAt @db.Timestamp(6)
+  @@index([publicado, data_pub])
   id_cont             BigInt                @id @default(autoincrement())
   titulo_cont         String                @db.VarChar(255)
   desc_cont           String?
@@ -63,6 +68,19 @@ model conteudo_interesses {
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model conteudo_pro {
+  imagem_pro_id String? @db.Uuid
+  video_pro_id String? @db.Uuid
+  imagem_pro arquivo_pro? @relation("imagem_pro", fields: [imagem_pro_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  video_pro arquivo_pro? @relation("video_pro", fields: [video_pro_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  @@index([imagem_pro_id])
+  @@index([video_pro_id])
+  publicado Boolean @default(true)
+  capa String? @db.VarChar(500)
+  categoria String? @db.VarChar(100)
+  atualizado_em DateTime @default(now()) @updatedAt @db.Timestamp(6)
+  id_mod BigInt?
+  moderadora moderadora? @relation(fields: [id_mod], references: [id_mod], onDelete: NoAction, onUpdate: NoAction, map: "fk_conteudo_pro_moderadora")
+  @@index([publicado, data_pub_cont_pro])
   id_cont_pro          BigInt                 @id @default(autoincrement())
   titulo_cont_pro      String                 @db.VarChar(255)
   desc_cont_pro        String?
@@ -75,6 +93,7 @@ model conteudo_pro {
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model denuncia {
+  descricao String? @db.VarChar(2000)
   id_den             BigInt              @id @default(autoincrement())
   motivo_den         String              @db.VarChar(255)
   status             String              @default("PENDENTE") @db.VarChar(50)
@@ -155,6 +174,10 @@ model mensagem {
 }
 
 model moderadora {
+  banimentos usuaria[] @relation("banimentos")
+  arquivos_pro arquivo_pro[]
+  sessoes sessao[]
+  conteudos_pro conteudo_pro[]
   id_mod              BigInt                @id @default(autoincrement())
   nome_mod            String                @db.VarChar(255)
   email_mod           String                @unique @db.VarChar(255)
@@ -194,6 +217,12 @@ model relatorio_moderacao {
 }
 
 model usuaria {
+  banida Boolean @default(false)
+  banida_em DateTime? @db.Timestamp(6)
+  banida_motivo String? @db.VarChar(1000)
+  banida_por BigInt?
+  responsavel_banimento moderadora? @relation("banimentos", fields: [banida_por], references: [id_mod], onDelete: NoAction, onUpdate: NoAction)
+  sessoes sessao[]
   id_usr                                   BigInt                 @id @default(autoincrement())
   nome_usr                                 String                 @db.VarChar(255)
   email_usr                                String                 @unique @db.VarChar(255)
@@ -287,7 +316,7 @@ model dispositivo_push {
  id_usr BigInt
  plataforma String @db.VarChar(10)
  ativo Boolean @default(true)
- atualizado_em DateTime @updatedAt @db.Timestamp(6)
+ atualizado_em DateTime @default(now()) @updatedAt @db.Timestamp(6)
  usuaria usuaria @relation(fields:[id_usr],references:[id_usr],onDelete:Cascade,onUpdate:NoAction)
  entregas notificacao_push[]
  @@index([id_usr,ativo])
@@ -309,4 +338,37 @@ model notificacao_push {
  usuaria usuaria @relation(fields:[id_usr],references:[id_usr],onDelete:Cascade,onUpdate:NoAction)
  @@unique([chave,token])
  @@index([estado,proxima_tentativa])
+}
+
+model sessao {
+ id String @id @db.VarChar(64)
+ tipo String @db.VarChar(20)
+ id_usr BigInt?
+ id_mod BigInt?
+ criada_em DateTime @default(now()) @db.Timestamp(6)
+ ultima_atividade DateTime @default(now()) @db.Timestamp(6)
+ expira_em DateTime @db.Timestamp(6)
+ revogada_em DateTime? @db.Timestamp(6)
+ usuaria usuaria? @relation(fields:[id_usr], references:[id_usr], onDelete:Cascade, onUpdate:NoAction, map:"sessao_usuaria_fkey")
+ moderadora moderadora? @relation(fields:[id_mod], references:[id_mod], onDelete:Cascade, onUpdate:NoAction, map:"sessao_moderadora_fkey")
+ @@index([id_usr, expira_em])
+ @@index([id_mod, expira_em])
+}
+
+model arquivo_pro {
+  id String @id @db.Uuid
+  tipo String @db.VarChar(10)
+  nome String @db.VarChar(255)
+  mime String @db.VarChar(50)
+  tamanho BigInt
+  sha256 String @db.VarChar(64)
+  largura Int
+  altura Int
+  duracao Float?
+  criado_em DateTime @default(now()) @db.Timestamp(6)
+  id_mod BigInt
+  moderadora moderadora @relation(fields: [id_mod], references: [id_mod], onDelete: NoAction, onUpdate: NoAction)
+  imagens conteudo_pro[] @relation("imagem_pro")
+  videos conteudo_pro[] @relation("video_pro")
+  @@index([id_mod])
 }

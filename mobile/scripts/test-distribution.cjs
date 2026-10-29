@@ -1,23 +1,4 @@
-const { test } = require('node:test');
-const assert = require('node:assert/strict');
-const configure = require('../app.config');
-
-test('distribuição exige API HTTPS pública antes de empacotar', () => {
-  const previous = { mode:process.env.CONSTELLA_DISTRIBUTION, url:process.env.EXPO_PUBLIC_API_URL };
-  try {
-    process.env.CONSTELLA_DISTRIBUTION='1';
-    for (const url of ['', 'http://api.example.invalid', 'https://localhost', 'https://127.0.0.1:3000', 'https://10.0.0.2', 'https://192.168.1.1', 'https://172.16.0.1', 'https://[::1]', 'https://host.local', 'https://user:pass@api.example.invalid', 'https://api.example.invalid?token=test']) {
-      process.env.EXPO_PUBLIC_API_URL=url;
-      assert.throws(()=>configure({config:{}}),/HTTPS pública/);
-    }
-    process.env.EXPO_PUBLIC_API_URL='https://api.example.invalid';
-    assert.deepEqual(configure({config:{name:'Constella'}}),{name:'Constella'});
-    process.env.CONSTELLA_DISTRIBUTION='0';
-    delete process.env.EXPO_PUBLIC_API_URL;
-    assert.deepEqual(configure({config:{}}),{});
-  } finally {
-    for(const [key,value]of [['CONSTELLA_DISTRIBUTION',previous.mode],['EXPO_PUBLIC_API_URL',previous.url]]) {
-      if(value===undefined) delete process.env[key]; else process.env[key]=value;
-    }
-  }
-});
+const {test}=require('node:test');const assert=require('node:assert/strict');const configure=require('../app.config');
+function run(vars,action){const keys=['CONSTELLA_DISTRIBUTION','CONSTELLA_LAN_BUILD','EXPO_PUBLIC_API_URL'];const prior=Object.fromEntries(keys.map(k=>[k,process.env[k]]));try{for(const k of keys){if(vars[k]===undefined)delete process.env[k];else process.env[k]=vars[k];}action();}finally{for(const k of keys){if(prior[k]===undefined)delete process.env[k];else process.env[k]=prior[k];}}}
+test('APK local aceita IPv4 privado e HTTP porta 3000 sem localhost, segredos ou destinos externos',()=>{run({CONSTELLA_DISTRIBUTION:'1',CONSTELLA_LAN_BUILD:'1'},()=>{for(const url of ['http://localhost:3000','http://127.0.0.1:3000','https://192.168.1.2:3000','http://192.168.1.2:4000','http://api.example.invalid:3000','http://u:p@192.168.1.2:3000','http://192.168.1.2:3000?token=x']){process.env.EXPO_PUBLIC_API_URL=url;assert.throws(()=>configure({config:{}}),/APK local/);}process.env.EXPO_PUBLIC_API_URL='http://192.168.1.2:3000/api';const c=configure({config:{name:'Constella'}});assert.equal(c.name,'Constella');assert.deepEqual(c.plugins.at(-1),['./plugins/with-local-network',{enabled:true}]);});});
+test('perfil de produção mantém HTTPS e não libera HTTP local por acidente',()=>{run({CONSTELLA_DISTRIBUTION:'1'},()=>{for(const url of ['', 'http://api.example.invalid','https://localhost','https://10.0.0.2','https://192.168.1.1']){process.env.EXPO_PUBLIC_API_URL=url;assert.throws(()=>configure({config:{}}),/HTTPS pública/);}process.env.EXPO_PUBLIC_API_URL='https://api.example.invalid';assert.deepEqual(configure({config:{}}).plugins.at(-1),['./plugins/with-local-network',{enabled:false}]);});});

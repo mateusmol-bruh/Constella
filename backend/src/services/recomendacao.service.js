@@ -250,6 +250,7 @@ async function recomendarConteudos(
 
   const conteudos =
     await prisma.conteudo.findMany({
+      where: { publicado: true },
       include: {
         conteudo_interesses: {
           include: {

@@ -4,7 +4,7 @@ const configuredUrl = process.env.EXPO_PUBLIC_API_URL?.trim();
 export const apiUrl = configuredUrl?.replace(/\/+$/, '').replace(/\/api$/i, '');
 export const api = axios.create({ baseURL: apiUrl, timeout: 15000 });
 let currentToken: string | null = null;
-let onExpired: (() => void) | undefined;
+let onExpired: ((message?: string) => void) | undefined;
 let logoutCleanup: (() => Promise<void>) | undefined;
 export function setLogoutCleanup(callback?: () => Promise<void>) { logoutCleanup = callback; }
 export async function cleanupSessionNotifications() { await logoutCleanup?.(); }
@@ -12,17 +12,23 @@ const resourceListeners = new Set<() => void>();
 export function signalResourceChange() { resourceListeners.forEach(listener => listener()); }
 export function subscribeResourceChanges(listener: () => void) { resourceListeners.add(listener); return () => { resourceListeners.delete(listener); }; }
 export function imageAuthHeaders() { return currentToken ? { Authorization: `Bearer ${currentToken}` } : undefined; }
+export async function revokeCurrentSession(): Promise<boolean> {
+ const token=currentToken;
+ if(!token || !apiUrl) return true;
+ try { await axios.post(apiUrl+'/api/auth/logout', {}, { headers: { Authorization: 'Bearer '+token }, timeout:8000 }); return true; }
+ catch(error) { return axios.isAxiosError(error) && error.response?.status===401; }
+}
 export function setApiSession(token: string | null) { currentToken = token; }
-export function setSessionExpiredHandler(handler?: () => void) { onExpired = handler; }
+export function setSessionExpiredHandler(handler?: (message?: string) => void) { onExpired = handler; }
 api.interceptors.request.use(config => {
   if (!apiUrl || !/^https?:\/\//i.test(apiUrl)) throw new Error('API_NAO_CONFIGURADA');
-  if (currentToken && !config.url?.startsWith('/api/auth/') && !config.url?.startsWith('/api/publico/')) config.headers.Authorization = `Bearer ${currentToken}`;
+  if (currentToken && !/^\/api\/auth\/(login|cadastro)$/.test(config.url ?? '') && !config.url?.startsWith('/api/publico/')) config.headers.Authorization = `Bearer ${currentToken}`;
   else config.headers.delete('Authorization');
   return config;
 });
 api.interceptors.response.use(response => response, (error: unknown) => {
-  if (axios.isAxiosError(error) && error.response?.status === 401 && currentToken &&
-      error.config?.headers.Authorization === `Bearer ${currentToken}`) onExpired?.();
+  if (axios.isAxiosError(error) && (error.response?.status === 401 || (error.response?.status === 403 && error.response.data?.codigo === 'CONTA_BANIDA')) && currentToken &&
+      error.config?.headers.Authorization === `Bearer ${currentToken}`) onExpired?.(error.response?.data?.codigo === 'CONTA_BANIDA' ? 'Sua conta está banida. Entre em contato com a moderação.' : undefined);
   return Promise.reject(error);
 });
 export function errorMessage(error: unknown): string {

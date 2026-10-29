@@ -22,6 +22,10 @@ function tratarErroGlobal(error, req, res, next) {
     });
   }
 
+  if ((error.code==='P2021' && String(error.meta?.modelName||error.meta?.table||'').match(/sessao|arquivo_pro/)) ||
+      (error.code==='P2022' && /publicado|categoria|atualizado_em|descricao|id_mod|banida|imagem_pro_id|video_pro_id/.test(String(error.meta?.column||'')))) {
+    return res.status(503).json({codigo:'INTEGRACAO_MIGRACAO_PENDENTE',mensagem:'A integração administrativa aguarda atualização autorizada do banco.'});
+  }
   if (error.statusCode) {
     return res.status(error.statusCode).json({
       mensagem:

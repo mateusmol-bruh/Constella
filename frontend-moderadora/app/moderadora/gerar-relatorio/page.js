@@ -10,35 +10,68 @@ import { useSession } from '@/components/SessionProvider';
 import { createRelatorio } from '@/lib/api';
 
 export default function GerarRelatorio() {
-  const {session}=useSession();
-  const router=useRouter();
-  const [titulo,setTitulo]=useState('');
-  const [conteudo,setConteudo]=useState('');
-  const [file,setFile]=useState(null);
-  const [error,setError]=useState('');
-  const [success,setSuccess]=useState('');
-  const [saving,setSaving]=useState(false);
+  const { session } = useSession();
+  const router = useRouter();
+  const [titulo, setTitulo] = useState('');
+  const [conteudo, setConteudo] = useState('');
+  const [file, setFile] = useState(null);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [saving, setSaving] = useState(false);
   async function handleSubmit(e) {
-    e.preventDefault();setError('');setSuccess('');
-    if(file) {setError('A API de relatórios ainda não armazena arquivos. Remova o anexo para salvar o texto.');return;}
+    e.preventDefault();
+    setError('');
+    setSuccess('');
     setSaving(true);
     try {
-      await withVisibleLoading(() => createRelatorio(session,{titulo:titulo.trim(),conteudo:conteudo.trim()}));
-      setSuccess('Relatório registrado com sucesso! Abrindo seus relatórios…');setTitulo('');setConteudo('');
-      setTimeout(()=>router.push('/moderadora/ver-relatorios'),1000);
-    } catch(e) {setError(e.message);} finally {setSaving(false);}
+      await withVisibleLoading(() =>
+        createRelatorio(session, { titulo: titulo.trim(), conteudo: conteudo.trim() }),
+      );
+      setSuccess('Relatório registrado com sucesso! Abrindo seus relatórios…');
+      setTitulo('');
+      setConteudo('');
+      setTimeout(() => router.push('/moderadora/ver-relatorios'), 1000);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setSaving(false);
+    }
   }
-  return <Shell form><Panel title="Gerar relatório" className="form-panel">
-    <form onSubmit={handleSubmit}>
-      <div className="form-columns">
-        <div className="form-fields">
-          <label className="form-label">Título:<input maxLength={100} required value={titulo} onChange={e=>setTitulo(e.target.value)} placeholder="Título do relatório"/></label>
-          <label className="form-label content-label">Conteúdo:<textarea required value={conteudo} onChange={e=>setConteudo(e.target.value)} placeholder="Descreva as informações do relatório"/></label>
-        </div>
-        <UploadBox file={file} onFile={setFile}/>
-      </div>
-      <Notice message={error}/><Notice message={success} type="success"/>
-      <GradientButton type="submit" disabled={saving} className="submit-floating">{saving?'Salvando…':'Concluir'}</GradientButton>
-    </form>
-  </Panel>{saving && <AstroLoader variant="overlay" label="Salvando relatório…" />}</Shell>;
+  return (
+    <Shell form>
+      <Panel title="Gerar relatório" className="form-panel">
+        <form onSubmit={handleSubmit}>
+          <div className="form-columns">
+            <div className="form-fields">
+              <label className="form-label">
+                Título:
+                <input
+                  maxLength={100}
+                  required
+                  value={titulo}
+                  onChange={(e) => setTitulo(e.target.value)}
+                  placeholder="Título do relatório"
+                />
+              </label>
+              <label className="form-label content-label">
+                Conteúdo:
+                <textarea
+                  required
+                  value={conteudo}
+                  onChange={(e) => setConteudo(e.target.value)}
+                  placeholder="Descreva as informações do relatório"
+                />
+              </label>
+            </div>
+          </div>
+          <Notice message={error} />
+          <Notice message={success} type="success" />
+          <GradientButton type="submit" disabled={saving} className="submit-floating">
+            {saving ? 'Salvando…' : 'Concluir'}
+          </GradientButton>
+        </form>
+      </Panel>
+      {saving && <AstroLoader variant="overlay" label="Salvando relatório…" />}
+    </Shell>
+  );
 }

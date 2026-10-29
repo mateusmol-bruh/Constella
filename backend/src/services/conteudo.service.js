@@ -1,272 +1,77 @@
-const prisma =
-  require("../config/prisma");
-
-function erroHttp(statusCode, mensagem) {
-  const erro =
-    new Error(mensagem);
-
-  erro.statusCode =
-    statusCode;
-
-  return erro;
+const prisma = require('../config/prisma');
+const erro = (statusCode, mensagem) => Object.assign(new Error(mensagem), { statusCode });
+function id(value) {
+  const s = String(value ?? '');
+  if (!/^[1-9]\d{0,18}$/.test(s) || BigInt(s) > 9223372036854775807n)
+    throw erro(400, 'Conteúdo inválido.');
+  return BigInt(s);
 }
-
-function validarId(
-  valor,
-  campo = "ID"
-) {
-  const texto = String(valor ?? "");
-  if (
-    !/^[1-9]\d*$/.test(texto) ||
-    texto.length > 19 ||
-    BigInt(texto) > 9223372036854775807n
-  ) {
-    throw erroHttp(
-      400,
-      `${campo} inválido.`
-    );
-  }
-
-  return BigInt(valor);
-}
-
-function formatarConteudo(conteudo) {
+const include = { conteudo_interesses: { include: { interesses: true } } };
+function dto(c) {
   return {
-    id:
-      conteudo.id_cont.toString(),
-
-    titulo:
-      conteudo.titulo_cont,
-
-    descricao:
-      conteudo.desc_cont,
-
-    material:
-      conteudo.mat_text_content,
-
-    duracao:
-      conteudo.duracao_cont,
-
-    data_publicacao:
-      conteudo.data_pub,
-
+    id: String(c.id_cont),
+    titulo: c.titulo_cont,
+    descricao: c.desc_cont,
+    material: c.mat_text_content,
+    duracao: c.duracao_cont,
+    data_publicacao: c.data_pub,
+    capa: c.capa,
+    categoria: c.categoria,
+    atualizado_em: c.atualizado_em,
     interesses:
-      conteudo.conteudo_interesses
-        ?.map((item) => ({
-          id:
-            item.interesses
-              .id_intr
-              .toString(),
-
-          nome:
-            item.interesses
-              .nome_intr
-        })) || []
+      c.conteudo_interesses?.map((i) => ({
+        id: String(i.interesses.id_intr),
+        nome: i.interesses.nome_intr,
+      })) || [],
   };
 }
-
 async function listarConteudos() {
-  const conteudos =
+  return (
     await prisma.conteudo.findMany({
-      include: {
-        conteudo_interesses: {
-          include: {
-            interesses: true
-          }
-        }
-      },
-
-      orderBy: {
-        data_pub: "desc"
-      }
-    });
-
-  return conteudos.map(
-    formatarConteudo
-  );
+      where: { publicado: true },
+      include,
+      orderBy: [{ data_pub: 'desc' }, { id_cont: 'desc' }],
+      take: 100,
+    })
+  ).map(dto);
 }
-
-async function buscarConteudo(id) {
-  const idCont =
-    validarId(
-      id,
-      "Conteúdo"
-    );
-
-  const conteudo =
-    await prisma.conteudo.findUnique({
-      where: {
-        id_cont: idCont
-      },
-
-      include: {
-        conteudo_interesses: {
-          include: {
-            interesses: true
-          }
-        }
-      }
-    });
-
-  if (!conteudo) {
-    throw erroHttp(
-      404,
-      "Conteúdo não encontrado."
-    );
-  }
-
-  return formatarConteudo(
-    conteudo
-  );
+async function registro(value) {
+  const c = await prisma.conteudo.findUnique({
+    where: { id_cont: id(value), publicado: true },
+    include,
+  });
+  if (!c || c.publicado === false) throw erro(404, 'Conteúdo não encontrado.');
+  return c;
 }
-
-async function registrarAcesso(
-  idUsuario,
-  idConteudo
-) {
-  const idUsr =
-    validarId(idUsuario);
-
-  const idCont =
-    validarId(
-      idConteudo,
-      "Conteúdo"
-    );
-
-  const conteudo =
-    await prisma.conteudo.findUnique({
-      where: {
-        id_cont: idCont
-      }
-    });
-
-  if (!conteudo) {
-    throw erroHttp(
-      404,
-      "Conteúdo não encontrado."
-    );
-  }
-
-  const existente =
-    await prisma.usuaria_conteudo.findUnique({
-      where: {
-        id_usr_id_cont: {
-          id_usr: idUsr,
-          id_cont: idCont
-        }
-      }
-    });
-
-  if (existente) {
-    return {
-      mensagem:
-        "Acesso já registrado.",
-
-      progresso:
-        existente.progresso_cont !== null
-          ? Number(
-              existente.progresso_cont
-            )
-          : null
-    };
-  }
-
-  const acesso =
-    await prisma.usuaria_conteudo.create({
-      data: {
-        id_usr: idUsr,
-        id_cont: idCont,
-        progresso_cont: 0
-      }
-    });
-
+async function buscarConteudo(value) {
+  return dto(await registro(value));
+}
+async function registrarAcesso(user, value) {
+  const usr = id(user),
+    cont = id(value);
+  await registro(value);
+  const r = await prisma.usuaria_conteudo.upsert({
+    where: { id_usr_id_cont: { id_usr: usr, id_cont: cont } },
+    update: {},
+    create: { id_usr: usr, id_cont: cont, progresso_cont: 0 },
+  });
   return {
-    mensagem:
-      "Acesso registrado com sucesso.",
-
-    progresso:
-      Number(
-        acesso.progresso_cont
-      )
+    mensagem: 'Acesso registrado.',
+    progresso: r.progresso_cont === null ? null : Number(r.progresso_cont),
   };
 }
-
-async function atualizarProgresso(
-  idUsuario,
-  idConteudo,
-  progresso
-) {
-  const idUsr =
-    validarId(idUsuario);
-
-  const idCont =
-    validarId(
-      idConteudo,
-      "Conteúdo"
-    );
-
-  const valor =
-    Number(progresso);
-
-  if (
-    Number.isNaN(valor) ||
-    valor < 0 ||
-    valor > 100
-  ) {
-    throw erroHttp(
-      400,
-      "O progresso deve estar entre 0 e 100."
-    );
-  }
-
-  const conteudo =
-    await prisma.conteudo.findUnique({
-      where: {
-        id_cont: idCont
-      }
-    });
-
-  if (!conteudo) {
-    throw erroHttp(
-      404,
-      "Conteúdo não encontrado."
-    );
-  }
-
-  const registro =
-    await prisma.usuaria_conteudo.upsert({
-      where: {
-        id_usr_id_cont: {
-          id_usr: idUsr,
-          id_cont: idCont
-        }
-      },
-
-      update: {
-        progresso_cont: valor
-      },
-
-      create: {
-        id_usr: idUsr,
-        id_cont: idCont,
-        progresso_cont: valor
-      }
-    });
-
-  return {
-    id_conteudo:
-      registro.id_cont.toString(),
-
-    progresso:
-      Number(
-        registro.progresso_cont
-      )
-  };
+async function atualizarProgresso(user, value, progresso) {
+  const usr = id(user),
+    cont = id(value),
+    n = Number(progresso);
+  if (!Number.isFinite(n) || n < 0 || n > 100)
+    throw erro(400, 'O progresso deve estar entre 0 e 100.');
+  await registro(value);
+  const r = await prisma.usuaria_conteudo.upsert({
+    where: { id_usr_id_cont: { id_usr: usr, id_cont: cont } },
+    update: { progresso_cont: n },
+    create: { id_usr: usr, id_cont: cont, progresso_cont: n },
+  });
+  return { id_conteudo: String(r.id_cont), progresso: Number(r.progresso_cont) };
 }
-
-module.exports = {
-  listarConteudos,
-  buscarConteudo,
-  registrarAcesso,
-  atualizarProgresso
-};
+module.exports = { listarConteudos, buscarConteudo, registrarAcesso, atualizarProgresso };

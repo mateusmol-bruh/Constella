@@ -30,6 +30,7 @@ export interface Post {
   autora?: { id: string; nome: string; foto: string | null };
 }
 export interface Content {
+  capa?: string | null; categoria?: string | null; atualizado_em?: string;
   id: string; titulo: string; descricao: string | null; material: string | null;
   duracao: number | null; interesses: Interest[];
 }

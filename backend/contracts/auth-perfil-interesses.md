@@ -1,6 +1,6 @@
 # Autenticação, perfil e interesses
 
-Base: `/api`. JSON UTF-8. IDs BIGINT são strings decimais positivas. Exemplos usam placeholders, nunca credenciais reais. Erros seguem `{ "mensagem": "...", "codigo": "..." }`; `codigo` existe somente quando necessário. Rotas privadas usam `Authorization: Bearer <token>` validado para emissor `constella`, público `constella-app`, algoritmo HS256, tipo `usuaria`, subject positivo e expiração. O ID pessoal vem sempre desse JWT.
+Base: `/api`. JSON UTF-8. IDs BIGINT são strings decimais positivas. Exemplos usam placeholders, nunca credenciais reais. Erros seguem `{ "mensagem": "...", "codigo": "..." }`; `codigo` existe somente quando necessário. Rotas privadas usam `Authorization: Bearer <token>` validado para emissor `constella`, público `constella-app`, algoritmo HS256, tipo `usuaria`, subject positivo e expiração. O ID pessoal vem sempre desse JWT. Desde a migração 20261029000100_moderacao_sessoes, jti e sessão não revogada/expirada também são validados no PostgreSQL; tokens antigos exigem novo login.
 
 ## POST /auth/cadastro
 
@@ -16,7 +16,7 @@ Erros: 400 validação, 409 e-mail ou CPF existente, 429 limite, 500 falha inter
 
 Pública; limitada a 10 requisições/15 minutos por IP. Payload: `{ "email": "conta@example.invalid", "senha": "<senha definida localmente>" }`.
 
-Valida tipos, formato e limite do e-mail, presença de senha e limite de 72 bytes. Compara hash bcrypt. 200: `{ "mensagem": "Login realizado com sucesso", "token": "<JWT>", "usuaria": { "id": "<id>", "nome": "Conta de exemplo", "email": "conta@example.invalid", "status_verificacao": false, "onboarding_concluido": false, "apresentacao": null } }`. JWT dura uma hora; não existe refresh token ou rota de refresh. Logout limpa a sessão no aplicativo; não altera onboarding.
+Valida tipos, formato e limite do e-mail, presença de senha e limite de 72 bytes. Compara hash bcrypt. 200: `{ "mensagem": "Login realizado com sucesso", "token": "<JWT>", "usuaria": { "id": "<id>", "nome": "Conta de exemplo", "email": "conta@example.invalid", "status_verificacao": false, "onboarding_concluido": false, "apresentacao": null } }`. JWT dura uma hora; não existe refresh token ou rota de refresh. Logout revoga a sessão no servidor e limpa o aplicativo; não altera onboarding.
 
 Erros: 400 validação, 401 credenciais inválidas (mesma resposta para conta ausente e senha incorreta), 429 limite, 500 falha interna.
 
@@ -67,3 +67,7 @@ Privada. Payload: `{ "interesses": [] }` ou `{ "interesses": ["<id válido do ca
 `npm start` e `npm run dev` iniciam `server.js` na porta `PORT` (padrão 3000), ouvindo `0.0.0.0`. Importar `server.js` exporta o Express sem iniciar servidor, permitindo testes HTTP em porta efêmera. Requer `DATABASE_URL` e `JWT_SECRET` locais; exemplos permanecem sem segredo. `GET /` é público e retorna somente mensagem de disponibilidade.
 
 `npm test` executa testes com mocks e ignora testes de banco por padrão. Testes de banco exigem `NODE_ENV=development` e `RUN_DATABASE_TESTS=true`: criam duas contas marcadas TESTE, sem apagar contas existentes ou exibir credenciais. Seed é manual, com `NODE_ENV=development`, `ALLOW_DEVELOPMENT_SEED=true`, `SEED_PASSWORD` local de 12 caracteres ou mais e até 72 bytes; nunca é executado no start. Mantém registros existentes e usa o Prisma Client compartilhado. Registros de assinatura no seed são exemplos legados de banco, sem confirmação de pagamento real.
+
+## POST /auth/logout
+
+Privada, sem dados de conta no corpo. Revoga somente a sessão autenticada, retorna 204 e impede reutilização do JWT. O aplicativo limpa o SecureStore. Se estiver sem conexão, informa que a revogação remota não foi confirmada. Expiração absoluta de uma hora continua no backend. Detalhes de cookies do painel e CSRF: moderacao.md.

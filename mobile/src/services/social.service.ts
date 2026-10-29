@@ -40,9 +40,9 @@ export const socialService = {
   async editForum(id: string, dados: { titulo: string; descricao: string; capa: string | null }) {
     return (await api.put<{ forum: SocialForum }>(`/api/foruns/${path(id)}`, dados)).data.forum;
   },
-  async reportPerson(id: string, motivo: string) { await api.post(`/api/denuncias/usuarias/${path(id)}`, { motivo }); },
+  async reportPerson(id: string, motivo: string, descricao?: string) { await api.post(`/api/denuncias/usuarias/${path(id)}`, { motivo, descricao }); },
   async deletePost(id: string) { await api.delete(`/api/postagens/${path(id)}`); },
-  async reportPost(id: string, motivo: string) { await api.post(`/api/denuncias/postagens/${path(id)}`, { motivo }); },
+  async reportPost(id: string, motivo: string, descricao?: string) { await api.post(`/api/denuncias/postagens/${path(id)}`, { motivo, descricao }); },
   async messages(id: string, pagina = 1, signal?: AbortSignal) {
     return (await api.get<{ mensagens: Message[] }>(`/api/chats/${path(id)}/mensagens`, {
       params: { pagina, limite: conversationPageSize }, signal,
@@ -55,5 +55,5 @@ export const socialService = {
   async deleteMessage(chatId: string, messageId: string) {
     await api.delete(`/api/chats/${path(chatId)}/mensagens/${path(messageId)}`);
   },
-  async reportMessage(id: string, motivo: string) { await api.post(`/api/denuncias/mensagens/${path(id)}`, { motivo }); },
+  async reportMessage(id: string, motivo: string, descricao?: string) { await api.post(`/api/denuncias/mensagens/${path(id)}`, { motivo, descricao }); },
 };
