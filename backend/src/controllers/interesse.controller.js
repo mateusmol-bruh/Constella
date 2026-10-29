@@ -5,8 +5,9 @@ const {
 } = require(
   "../services/interesse.service"
 );
+const { validarIdsInteresses } = require("../utils/interesses");
 
-async function listar(req, res) {
+async function listar(req, res, next) {
   try {
     const interesses =
       await listarInteresses();
@@ -17,19 +18,11 @@ async function listar(req, res) {
 
   } catch (error) {
 
-    console.error(
-      "Erro ao listar interesses:",
-      error
-    );
-
-    return res.status(500).json({
-      mensagem:
-        "Erro interno do servidor."
-    });
+    return next(error);
   }
 }
 
-async function listarMeus(req, res) {
+async function listarMeus(req, res, next) {
   try {
     const interesses =
       await listarInteressesDaUsuaria(
@@ -42,27 +35,20 @@ async function listarMeus(req, res) {
 
   } catch (error) {
 
-    console.error(
-      "Erro ao listar interesses da usuária:",
-      error
-    );
-
-    return res.status(500).json({
-      mensagem:
-        "Erro interno do servidor."
-    });
+    return next(error);
   }
 }
 
-async function atualizarMeus(req, res) {
+async function atualizarMeus(req, res, next) {
   try {
     const { interesses } =
       req.body || {};
 
-    if (!Array.isArray(interesses)) {
+    const erro = validarIdsInteresses(interesses);
+    if (erro) {
       return res.status(400).json({
         mensagem:
-          'O campo "interesses" deve ser um array.'
+          erro
       });
     }
 
@@ -90,15 +76,7 @@ async function atualizarMeus(req, res) {
       });
     }
 
-    console.error(
-      "Erro ao atualizar interesses:",
-      error
-    );
-
-    return res.status(500).json({
-      mensagem:
-        "Erro interno do servidor."
-    });
+    return next(error);
   }
 }
 

@@ -9,9 +9,10 @@ function autenticar(req, res, next) {
     });
   }
 
-  const [tipo, token] = authHeader.split(" ");
+  const partes = authHeader.split(" ");
+  const [tipo, token] = partes;
 
-  if (tipo !== "Bearer" || !token) {
+  if (tipo !== "Bearer" || !token || partes.length !== 2) {
     return res.status(401).json({
       mensagem: "Token inválido."
     });
@@ -23,7 +24,8 @@ function autenticar(req, res, next) {
       process.env.JWT_SECRET,
       {
         issuer: "constella",
-        audience: "constella-app"
+        audience: "constella-app",
+        algorithms: ["HS256"]
       }
     );
 
@@ -31,6 +33,12 @@ function autenticar(req, res, next) {
       return res.status(403).json({
         mensagem: "Acesso não autorizado."
       });
+    }
+
+    if (typeof payload.sub !== "string" || !/^[1-9]\d{0,18}$/.test(payload.sub) ||
+        BigInt(payload.sub) > 9223372036854775807n ||
+        typeof payload.exp !== "number" || typeof payload.iat !== "number") {
+      return res.status(401).json({ mensagem: "Token inválido ou expirado." });
     }
 
     req.usuarioId = payload.sub;

@@ -1,30 +1,9 @@
 
 const chatService = require("../services/chat.service");
+const { responderErroConversa } = require('../utils/conversation-error');
 
 function tratarErro(res, error) {
-  if (error.statusCode) {
-    return res.status(error.statusCode).json({
-      mensagem: error.message
-    });
-  }
-
-  if (error.code === "P2025") {
-    return res.status(404).json({
-      mensagem: "Registro não encontrado."
-    });
-  }
-
-  if (error.code === "P2003") {
-    return res.status(400).json({
-      mensagem: "Referência inválida no banco de dados."
-    });
-  }
-
-  console.error("Erro na API de chat:", error);
-
-  return res.status(500).json({
-    mensagem: "Erro interno do servidor."
-  });
+  return responderErroConversa(res, error, 'chat');
 }
 
 // Criar ou recuperar conversa
@@ -120,23 +99,24 @@ async function listarMensagens(req, res) {
 // Enviar mensagem
 async function enviarMensagem(req, res) {
   try {
-    const { conteudo } = req.body || {};
+    const { conteudo = "", imagem = null, resposta_id, envio_id } = req.body || {};
 
     if (
       typeof conteudo !== "string" ||
-      !conteudo.trim() ||
+      (!conteudo.trim() && !imagem) ||
+      (imagem !== null && typeof imagem !== "string") ||
       conteudo.trim().length > 1000
     ) {
       return res.status(400).json({
         mensagem:
-          "A mensagem deve possuir entre 1 e 1000 caracteres."
+          "Envie texto de até 1000 caracteres e/ou uma imagem válida."
       });
     }
 
     const mensagem = await chatService.enviarMensagem(
       req.usuarioId,
       req.params.id,
-      conteudo.trim()
+      conteudo.trim(), imagem, { resposta_id, envio_id }
     );
 
     return res.status(201).json({

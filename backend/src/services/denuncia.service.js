@@ -9,7 +9,7 @@ function erroHttp(statusCode, mensagem) {
 function validarId(valor, campo = "ID") {
   const texto = String(valor ?? "");
 
-  if (!/^[1-9]\d*$/.test(texto)) {
+  if (!/^[1-9]\d*$/.test(texto) || texto.length > 19 || BigInt(texto) > 9223372036854775807n) {
     throw erroHttp(400, `${campo} inválido.`);
   }
 
@@ -176,6 +176,16 @@ async function denunciarPostagem(
       400,
       "Você não pode denunciar sua própria postagem."
     );
+  }
+
+  const participacao = await prisma.usuaria_forum.findUnique({
+    where: {
+      id_for_id_usr: { id_for: postagem.id_for, id_usr: denunciante }
+    }
+  });
+
+  if (!participacao) {
+    throw erroHttp(403, "Você precisa participar do fórum para denunciar uma postagem.");
   }
 
   const moderadora =

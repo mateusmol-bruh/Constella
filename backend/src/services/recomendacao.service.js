@@ -108,7 +108,8 @@ async function recomendarUsuarias(idUsuario) {
       where: {
         id_usr: {
           not: idUsr
-        }
+        },
+        ...require("./bloqueio.service").filtroVisivel(idUsr)
       },
 
       select: {

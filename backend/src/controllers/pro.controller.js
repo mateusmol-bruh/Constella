@@ -71,8 +71,18 @@ async function buscar(req, res) {
   }
 }
 
+async function catalogo(req, res) {
+  try {
+    const conteudos = await proService.listarCatalogoPro();
+    return res.status(200).json({ conteudos });
+  } catch (error) {
+    return tratarErro(res, error);
+  }
+}
+
 module.exports = {
   status,
+  catalogo,
   listar,
   buscar
 };

@@ -1,5 +1,6 @@
 
 const prisma = require("../config/prisma");
+const replies = require('./resposta.service');
 
 function erroHttp(status, mensagem) {
   const erro = new Error(mensagem);
@@ -9,8 +10,11 @@ function erroHttp(status, mensagem) {
 
 // Valida IDs BigInt recebidos pela API.
 function validarId(valor, campo = "ID") {
+  const texto = String(valor ?? "");
   if (
-    !/^[1-9]\d*$/.test(String(valor ?? "")) ||
+    !/^[1-9]\d*$/.test(texto) ||
+    texto.length > 19 ||
+    BigInt(texto) > 9223372036854775807n ||
     typeof valor === "boolean"
   ) {
     throw erroHttp(400, `${campo} inválido.`);
@@ -69,6 +73,8 @@ function formatarMensagem(mensagem) {
     id_chat: mensagem.id_chat.toString(),
     id_usr_emissor: mensagem.id_usr_emissor.toString(),
     conteudo: mensagem.cont_msg,
+    imagem: mensagem.imagem_msg,
+    resposta: replies.preview(mensagem.resposta),
     dt_envio: mensagem.dt_envio
   };
 }
@@ -110,6 +116,7 @@ async function criarOuBuscarChat(idUsuario, idDestinataria) {
   const idB = validarId(idDestinataria, "Destinatária");
 
   await verificarConexao(idA, idB);
+  await require("./bloqueio.service").permitir(idA,idB);
 
   // Ordenação padronizada dos participantes.
   const [primeiro, segundo] =
@@ -194,6 +201,7 @@ async function listarChats(idUsuario) {
 
     resultado.push({
       ...formatarChat(chat),
+      ...await resumoChat(chat,idUsr),
       destinataria: participante
         ? {
             id: participante.id_usr.toString(),
@@ -204,7 +212,7 @@ async function listarChats(idUsuario) {
     });
   }
 
-  return resultado;
+  return resultado.sort((a,b)=>new Date(b.ultima_mensagem?.dt_envio || b.dt_inicio)-new Date(a.ultima_mensagem?.dt_envio || a.dt_inicio));
 }
 
 // GET /api/chats/:id
@@ -214,7 +222,9 @@ async function buscarChat(idUsuario, idChat) {
 
   const chat = await verificarAcessoChat(idConversa, idUsr);
 
-  return formatarChat(chat);
+  const other=chat.id_usr_01===idUsr?chat.id_usr_02:chat.id_usr_01;
+  const person=await prisma.usuaria.findUnique({where:{id_usr:other},select:{id_usr:true,nome_usr:true,foto_usr:true}});
+  return {...formatarChat(chat),...await require("./bloqueio.service").status(idUsr,other),destinataria:person?{id:person.id_usr.toString(),nome:person.nome_usr,foto:person.foto_usr}:null};
 }
 
 // GET /api/chats/:id/mensagens
@@ -238,7 +248,8 @@ async function listarMensagens(
       { id_msg: "desc" }
     ],
     skip: (pagina - 1) * limite,
-    take: limite
+    take: limite,
+    include: replies.replyInclude
   });
 
   return mensagens
@@ -247,20 +258,35 @@ async function listarMensagens(
 }
 
 // POST /api/chats/:id/mensagens
-async function enviarMensagem(idUsuario, idChat, conteudo) {
+async function enviarMensagem(idUsuario, idChat, conteudo, imagem = null, dados = {}) {
   const idUsr = validarId(idUsuario);
   const idConversa = validarId(idChat, "Chat");
+  const { resposta_id, envio_id } = replies.options(dados);
 
-  await verificarAcessoChat(idConversa, idUsr);
-
-  const mensagem = await prisma.mensagem.create({
+  const chat=await verificarAcessoChat(idConversa,idUsr);
+  await require("./bloqueio.service").permitir(idUsr,chat.id_usr_01===idUsr?chat.id_usr_02:chat.id_usr_01);
+  const mensagem = await prisma.$transaction(async tx => {
+    if (envio_id || imagem) await replies.lock(tx, idUsr);
+    if (envio_id) {
+      const existing = await tx.mensagem.findUnique({ where: { id_usr_emissor_envio_id: { id_usr_emissor: idUsr, envio_id } }, include: replies.replyInclude });
+      if (existing) return replies.sameAttempt(existing, idConversa, conteudo, imagem, resposta_id);
+    }
+    await replies.original(tx, resposta_id, idConversa);
+    if (imagem) await require('./anexo.service').validarAnexo(imagem, idUsr, tx);
+    const saved = await tx.mensagem.create({
     data: {
       id_chat: idConversa,
       id_usr_emissor: idUsr,
-      cont_msg: conteudo
-    }
+      cont_msg: conteudo,
+      imagem_msg: imagem,
+      ...(resposta_id !== null ? { resposta_id } : {}),
+      ...(envio_id ? { envio_id } : {})
+    }, include: replies.replyInclude
+    });
+    await require('./notificacao.service').enfileirar(tx, { chave: `mensagem:${saved.id_msg}`, tipo: 'chat', recurso: idConversa, autor: idUsr,
+      destinatarias: [chat.id_usr_01 === idUsr ? chat.id_usr_02 : chat.id_usr_01], foto: !!imagem });
+    return saved;
   });
-
   return formatarMensagem(mensagem);
 }
 
@@ -295,13 +321,21 @@ async function excluirMensagem(idUsuario, idChat, idMensagem) {
   }
 
   // Exclui apenas se ainda pertencer à usuária e ao chat
-  const resultado = await prisma.mensagem.deleteMany({
-    where: {
-      id_msg: idMsg,
-      id_chat: idConversa,
-      id_usr_emissor: idUsr
+  let resultado;
+  try {
+    resultado = await prisma.mensagem.deleteMany({
+      where: {
+        id_msg: idMsg,
+        id_chat: idConversa,
+        id_usr_emissor: idUsr
+      }
+    });
+  } catch (error) {
+    if (error.code === "P2003") {
+      throw erroHttp(409, "Esta mensagem possui registros relacionados e não pode ser excluída.");
     }
-  });
+    throw error;
+  }
 
   if (resultado.count === 0) {
     throw erroHttp(404, "Mensagem não encontrada.");
@@ -321,3 +355,12 @@ module.exports = {
   enviarMensagem,
   excluirMensagem
 };
+
+async function resumoChat(chat,user) {
+ const leitura=await prisma.chat_leitura.findUnique({where:{id_chat_id_usr:{id_chat:chat.id_chat,id_usr:user}}});
+ const [last,unread]=await Promise.all([
+  prisma.mensagem.findFirst({where:{id_chat:chat.id_chat},orderBy:[{dt_envio:'desc'},{id_msg:'desc'}],include:replies.replyInclude}),
+  prisma.mensagem.count({where:{id_chat:chat.id_chat,id_usr_emissor:{not:user},id_msg:{gt:leitura?.ultima_mensagem ?? 0n}}})
+ ]);
+ return {ultima_mensagem:last?formatarMensagem(last):null,nao_lidas:unread};
+}

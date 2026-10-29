@@ -23,6 +23,7 @@ model chat {
   id_usr_02                       BigInt
   usuaria_chat_id_usr_01Tousuaria usuaria    @relation("chat_id_usr_01Tousuaria", fields: [id_usr_01], references: [id_usr], onDelete: NoAction, onUpdate: NoAction, map: "fk_chat_usr_01")
   usuaria_chat_id_usr_02Tousuaria usuaria    @relation("chat_id_usr_02Tousuaria", fields: [id_usr_02], references: [id_usr], onDelete: NoAction, onUpdate: NoAction, map: "fk_chat_usr_02")
+  leituras chat_leitura[]
   mensagem                        mensagem[]
 }
 
@@ -137,6 +138,11 @@ model interesses {
 
 model mensagem {
   id_msg            BigInt              @id @default(autoincrement())
+  resposta_id       BigInt?
+  envio_id          String?             @db.VarChar(100)
+  resposta          mensagem?           @relation("respostas_mensagem", fields: [resposta_id], references: [id_msg], onDelete: SetNull, onUpdate: NoAction)
+  respostas         mensagem[]          @relation("respostas_mensagem")
+  imagem_msg        String? @db.VarChar(500)
   cont_msg          String
   dt_envio          DateTime            @default(now()) @db.Timestamp(6)
   id_chat           BigInt
@@ -144,6 +150,8 @@ model mensagem {
   denuncia_mensagem denuncia_mensagem[]
   chat              chat                @relation(fields: [id_chat], references: [id_chat], onDelete: NoAction, onUpdate: NoAction, map: "fk_mensagem_chat")
   usuaria           usuaria             @relation(fields: [id_usr_emissor], references: [id_usr], onDelete: NoAction, onUpdate: NoAction, map: "fk_mensagem_emissor")
+  @@unique([id_usr_emissor, envio_id])
+  @@index([resposta_id])
 }
 
 model moderadora {
@@ -159,6 +167,11 @@ model moderadora {
 
 model postagem {
   id_post           BigInt              @id @default(autoincrement())
+  resposta_id       BigInt?
+  envio_id          String?             @db.VarChar(100)
+  tipo_post         String              @default("MENSAGEM") @db.VarChar(30)
+  resposta          postagem?           @relation("respostas_postagem", fields: [resposta_id], references: [id_post], onDelete: SetNull, onUpdate: NoAction)
+  respostas         postagem[]          @relation("respostas_postagem")
   dt_post           DateTime            @default(now()) @db.Timestamp(6)
   cont_post         String
   img_post          String?             @db.VarChar(500)
@@ -167,6 +180,8 @@ model postagem {
   denuncia_postagem denuncia_postagem[]
   forum             forum               @relation(fields: [id_for], references: [id_for], onDelete: NoAction, onUpdate: NoAction, map: "fk_postagem_forum")
   usuaria           usuaria             @relation(fields: [id_usr], references: [id_usr], onDelete: NoAction, onUpdate: NoAction, map: "fk_postagem_usuario")
+  @@unique([id_usr, envio_id])
+  @@index([resposta_id])
 }
 
 model relatorio_moderacao {
@@ -186,6 +201,13 @@ model usuaria {
   foto_usr                                 String?                @db.VarChar(500)
   cpf_usr                                  String                 @unique @db.VarChar(14)
   status_verificacao                       Boolean                @default(false)
+  onboarding_concluido                      Boolean                @default(false)
+  apresentacao                             String?                @db.VarChar(500)
+  bloqueios_enviados bloqueio[] @relation("bloqueio_origem")
+  dispositivos_push dispositivo_push[]
+  notificacoes_push notificacao_push[]
+  bloqueios_recebidos bloqueio[] @relation("bloqueio_destino")
+  leituras chat_leitura[]
   assinatura                               assinatura?
   chat_chat_id_usr_01Tousuaria             chat[]                 @relation("chat_id_usr_01Tousuaria")
   chat_chat_id_usr_02Tousuaria             chat[]                 @relation("chat_id_usr_02Tousuaria")
@@ -224,6 +246,7 @@ model usuaria_conteudo_pro {
 }
 
 model usuaria_forum {
+  ultima_postagem_lida BigInt @default(0)
   id_for  BigInt
   id_usr  BigInt
   forum   forum   @relation(fields: [id_for], references: [id_for], onDelete: Cascade, onUpdate: NoAction, map: "fk_usuaria_forum_forum")
@@ -239,4 +262,51 @@ model usuaria_interesses {
   usuaria    usuaria    @relation(fields: [id_usr], references: [id_usr], onDelete: Cascade, onUpdate: NoAction, map: "fk_usuaria_interesses_usuario")
 
   @@id([id_usr, id_intr])
+}
+
+model chat_leitura {
+ id_chat BigInt
+ id_usr BigInt
+ ultima_mensagem BigInt @default(0)
+ chat chat @relation(fields:[id_chat],references:[id_chat],onDelete:Cascade,onUpdate:NoAction)
+ usuaria usuaria @relation(fields:[id_usr],references:[id_usr],onDelete:Cascade,onUpdate:NoAction)
+ @@id([id_chat,id_usr])
+}
+model bloqueio {
+ id_usr_origem BigInt
+ id_usr_destino BigInt
+ dt_bloqueio DateTime @default(now()) @db.Timestamp(6)
+ origem usuaria @relation("bloqueio_origem",fields:[id_usr_origem],references:[id_usr],onDelete:Cascade,onUpdate:NoAction)
+ destino usuaria @relation("bloqueio_destino",fields:[id_usr_destino],references:[id_usr],onDelete:Cascade,onUpdate:NoAction)
+ @@id([id_usr_origem,id_usr_destino])
+ @@index([id_usr_destino])
+}
+
+model dispositivo_push {
+ token String @id @db.VarChar(255)
+ id_usr BigInt
+ plataforma String @db.VarChar(10)
+ ativo Boolean @default(true)
+ atualizado_em DateTime @updatedAt @db.Timestamp(6)
+ usuaria usuaria @relation(fields:[id_usr],references:[id_usr],onDelete:Cascade,onUpdate:NoAction)
+ entregas notificacao_push[]
+ @@index([id_usr,ativo])
+}
+
+model notificacao_push {
+ id_push BigInt @id @default(autoincrement())
+ chave String @db.VarChar(160)
+ token String @db.VarChar(255)
+ id_usr BigInt
+ dados Json
+ estado String @default("PENDENTE") @db.VarChar(20)
+ tentativas Int @default(0)
+ ticket String? @db.VarChar(255)
+ erro String? @db.VarChar(80)
+ proxima_tentativa DateTime @default(now()) @db.Timestamp(6)
+ criado_em DateTime @default(now()) @db.Timestamp(6)
+ dispositivo dispositivo_push @relation(fields:[token],references:[token],onDelete:Cascade,onUpdate:NoAction)
+ usuaria usuaria @relation(fields:[id_usr],references:[id_usr],onDelete:Cascade,onUpdate:NoAction)
+ @@unique([chave,token])
+ @@index([estado,proxima_tentativa])
 }

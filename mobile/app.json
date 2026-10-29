@@ -1,0 +1,37 @@
+
+{
+  "expo": {
+    "name": "Constella",
+    "slug": "constella",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "constella",
+    "userInterfaceStyle": "automatic",
+    "android": {
+      "package": "com.constella.app",
+      "versionCode": 1,
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "output": "single"
+    },
+    "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#100D32"
+        }
+      ],
+      "expo-secure-store",
+      ["expo-notifications", { "color": "#A34FD3", "defaultChannel": "conversas" }],
+      ["expo-image-picker", {
+        "photosPermission": "O Constella acessa a foto que você escolher para seu perfil ou fórum.",
+        "cameraPermission": "O Constella usa a câmera quando você escolhe tirar uma foto para seu perfil ou fórum.",
+        "microphonePermission": false
+      }]
+    ],
+    "experiments": {
+      "reactCompiler": true
+    }
+  }
+}

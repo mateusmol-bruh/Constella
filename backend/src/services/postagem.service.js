@@ -1,5 +1,6 @@
 const prisma =
   require("../config/prisma");
+const replies = require('./resposta.service');
 
 function erroHttp(
   statusCode,
@@ -18,10 +19,11 @@ function validarId(
   valor,
   campo = "ID"
 ) {
+  const texto = String(valor ?? "");
   if (
-    !/^[1-9]\d*$/.test(
-      String(valor ?? "")
-    )
+    !/^[1-9]\d*$/.test(texto) ||
+    texto.length > 19 ||
+    BigInt(texto) > 9223372036854775807n
   ) {
     throw erroHttp(
       400,
@@ -42,12 +44,14 @@ function formatarPostagem(postagem) {
 
     imagem:
       postagem.img_post,
+    tipo: postagem.tipo_post === 'SAIDA' ? 'sistema' : 'mensagem',
+    resposta: replies.preview(postagem.resposta, true),
 
     dt_post:
       postagem.dt_post,
 
     autora:
-      postagem.usuaria
+      postagem.tipo_post !== 'SAIDA' && postagem.usuaria
         ? {
             id:
               postagem.usuaria
@@ -103,16 +107,26 @@ async function verificarParticipacao(
   if (!participacao) {
     throw erroHttp(
       403,
-      "Você precisa participar do fórum para publicar."
+      "Você precisa participar do fórum para acessar as postagens."
     );
   }
 }
 
 async function listarPostagens(
   idUsuario,
-  idForum
+  idForum,
+  pagina = 1,
+  limite = 50
 ) {
-  validarId(idUsuario);
+  const idUsr = validarId(idUsuario);
+
+  if (
+    !Number.isSafeInteger(pagina) || pagina < 1 ||
+    !Number.isSafeInteger(limite) || limite < 1 || limite > 50 ||
+    !Number.isSafeInteger((pagina - 1) * limite)
+  ) {
+    throw erroHttp(400, "Paginação inválida.");
+  }
 
   const idFor =
     validarId(
@@ -121,6 +135,7 @@ async function listarPostagens(
     );
 
   await verificarForum(idFor);
+  await verificarParticipacao(idUsr, idFor);
 
   const postagens =
     await prisma.postagem.findMany({
@@ -129,6 +144,7 @@ async function listarPostagens(
       },
 
       include: {
+        ...replies.replyInclude,
         usuaria: {
           select: {
             id_usr: true,
@@ -138,6 +154,8 @@ async function listarPostagens(
         }
       },
 
+      skip: (pagina - 1) * limite,
+      take: limite,
       orderBy: [
         {
           dt_post: "desc"
@@ -160,6 +178,7 @@ async function criarPostagem(
 ) {
   const idUsr =
     validarId(idUsuario);
+  const { resposta_id, envio_id } = replies.options(dados);
 
   const idFor =
     validarId(
@@ -187,10 +206,10 @@ async function criarPostagem(
       ? dados.imagem.trim()
       : null;
 
-  if (!conteudo) {
+  if ((!conteudo && !imagem) || conteudo.length > 1000) {
     throw erroHttp(
       400,
-      "O conteúdo da postagem é obrigatório."
+      "Envie texto de até 1000 caracteres e/ou uma imagem válida."
     );
   }
 
@@ -204,16 +223,28 @@ async function criarPostagem(
     );
   }
 
-  const postagem =
-    await prisma.postagem.create({
+  const postagem = await prisma.$transaction(async tx => {
+    await replies.lock(tx, idUsr);
+    // Confere novamente dentro da transação: não publica após uma saída concorrente.
+    if (!await tx.usuaria_forum.findUnique({ where: { id_for_id_usr: { id_for: idFor, id_usr: idUsr } } })) throw erroHttp(403, 'Você precisa participar do fórum para publicar.');
+    if (envio_id) {
+      const existing = await tx.postagem.findUnique({ where: { id_usr_envio_id: { id_usr: idUsr, envio_id } }, include: { ...replies.replyInclude, usuaria: { select: replies.publicAuthor } } });
+      if (existing) return replies.sameAttempt(existing, idFor, conteudo, imagem, resposta_id, true);
+    }
+    await replies.original(tx, resposta_id, idFor, true);
+    if (imagem) await require('./anexo.service').validarAnexo(imagem, idUsr, tx);
+    const saved = await tx.postagem.create({
       data: {
         cont_post: conteudo,
         img_post: imagem,
         id_usr: idUsr,
-        id_for: idFor
+        id_for: idFor,
+        ...(resposta_id !== null ? { resposta_id } : {}),
+        ...(envio_id ? { envio_id } : {})
       },
 
       include: {
+        ...replies.replyInclude,
         usuaria: {
           select: {
             id_usr: true,
@@ -224,9 +255,13 @@ async function criarPostagem(
       }
     });
 
-  return formatarPostagem(
-    postagem
-  );
+    if (require('./notificacao.service').enabled()) {
+      const members = await tx.usuaria_forum.findMany({ where: { id_for: idFor, id_usr: { not: idUsr } }, select: { id_usr: true } });
+      await require('./notificacao.service').enfileirar(tx, { chave: `postagem:${saved.id_post}`, tipo: 'forum', recurso: idFor, autor: idUsr, destinatarias: members.map(member => member.id_usr), foto: !!imagem });
+    }
+    return saved;
+  });
+  return formatarPostagem(postagem);
 }
 
 async function editarPostagem(
@@ -259,12 +294,15 @@ async function editarPostagem(
 
   if (
     postagem.id_usr !== idUsr
+    || postagem.tipo_post === 'SAIDA'
   ) {
     throw erroHttp(
       403,
       "Você só pode editar suas próprias postagens."
     );
   }
+
+  await verificarParticipacao(idUsr, postagem.id_for);
 
   const atualizacao = {};
 
@@ -320,7 +358,10 @@ async function editarPostagem(
   }
 
   const atualizada =
-    await prisma.postagem.update({
+    await prisma.$transaction(async tx => {
+    await replies.lock(tx, idUsr);
+    if (atualizacao.img_post && atualizacao.img_post !== postagem.img_post) await require('./anexo.service').validarAnexo(atualizacao.img_post, idUsr, tx);
+    return tx.postagem.update({
       where: {
         id_post: idPost
       },
@@ -328,6 +369,7 @@ async function editarPostagem(
       data: atualizacao,
 
       include: {
+        ...replies.replyInclude,
         usuaria: {
           select: {
             id_usr: true,
@@ -336,6 +378,7 @@ async function editarPostagem(
           }
         }
       }
+    });
     });
 
   return formatarPostagem(
@@ -372,12 +415,15 @@ async function excluirPostagem(
 
   if (
     postagem.id_usr !== idUsr
+    || postagem.tipo_post === 'SAIDA'
   ) {
     throw erroHttp(
       403,
       "Você só pode excluir suas próprias postagens."
     );
   }
+
+  await verificarParticipacao(idUsr, postagem.id_for);
 
   try {
     await prisma.postagem.delete({

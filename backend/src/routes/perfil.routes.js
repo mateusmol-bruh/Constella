@@ -5,10 +5,13 @@ const autenticar =
 
 const {
   obterPerfil,
-  editarPerfil
+  editarPerfil,
+  finalizarOnboarding
 } = require("../controllers/perfil.controller");
 
 const router = express.Router();
+
+router.put("/onboarding", autenticar, finalizarOnboarding);
 
 router.get(
   "/",
