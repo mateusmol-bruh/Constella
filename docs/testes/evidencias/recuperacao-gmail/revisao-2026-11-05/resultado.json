@@ -1,0 +1,75 @@
+{
+  "date": "2026-11-05",
+  "project": "Constella",
+  "scope": "Revisão da recuperação de senha Gmail/Nodemailer",
+  "tests": {
+    "backend": {
+      "tests": 127,
+      "pass": 115,
+      "fail": 0,
+      "skipped": 12
+    },
+    "database": {
+      "tests": 18,
+      "pass": 18,
+      "fail": 0,
+      "skipped": 0
+    },
+    "mobile": {
+      "tests": 68,
+      "pass": 68,
+      "fail": 0,
+      "skipped": 0
+    },
+    "totalPass": 201
+  },
+  "typecheckPassed": true,
+  "prisma": {
+    "schemaValid": true,
+    "statusUpToDate": true,
+    "noDrift": true,
+    "appliedMigrations": 9,
+    "noMigrationAppliedThisReview": true
+  },
+  "email": {
+    "actualGmailTlsAuthenticationPassed": true,
+    "actualEmailsSentThisReview": 0,
+    "inboxDeliveryConfirmed": false
+  },
+  "environmentPreservedThisReview": true,
+  "databaseCountsPreservedThisReview": true,
+  "databaseCounts": {
+    "usuaria": 30,
+    "moderadora": 6,
+    "conteudo": 6,
+    "conteudo_pro": 5,
+    "denuncia": 12,
+    "mensagem": 31,
+    "postagem": 21,
+    "sessao": 16,
+    "recuperacao_senha": 0,
+    "solicitacao_recuperacao_senha": 0,
+    "auditoria_recuperacao_senha": 0
+  },
+  "logoIdenticalToOfficialAsset": true,
+  "insomnia": {
+    "requests": 11,
+    "originalsPreserved": true
+  },
+  "noSecretsInChangedFiles": true,
+  "functionalSourceChangesThisReview": false,
+  "pending": [
+    "Envio para destinatário autorizado e confirmação na caixa de entrada/spam.",
+    "Teste manual do fluxo no Expo Go/aparelho físico."
+  ],
+  "logs": [
+    "review-2026-11-05-backend-tests.log",
+    "review-2026-11-05-database-tests.log",
+    "review-2026-11-05-mobile-tests.log",
+    "review-2026-11-05-typecheck.log",
+    "review-2026-11-05-smtp.log",
+    "review-2026-11-05-prisma-validate.log",
+    "review-2026-11-05-prisma-status.log",
+    "review-2026-11-05-prisma-diff.log"
+  ]
+}

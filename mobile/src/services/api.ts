@@ -22,7 +22,7 @@ export function setApiSession(token: string | null) { currentToken = token; }
 export function setSessionExpiredHandler(handler?: (message?: string) => void) { onExpired = handler; }
 api.interceptors.request.use(config => {
   if (!apiUrl || !/^https?:\/\//i.test(apiUrl)) throw new Error('API_NAO_CONFIGURADA');
-  if (currentToken && !/^\/api\/auth\/(login|cadastro)$/.test(config.url ?? '') && !config.url?.startsWith('/api/publico/')) config.headers.Authorization = `Bearer ${currentToken}`;
+  if (currentToken && !/^\/api\/auth\/(login|cadastro|forgot-password|verify-reset-code|reset-password)$/.test(config.url ?? '') && !config.url?.startsWith('/api/publico/')) config.headers.Authorization = `Bearer ${currentToken}`;
   else config.headers.delete('Authorization');
   return config;
 });
@@ -42,6 +42,8 @@ export function errorMessage(error: unknown): string {
     if (status === 404 && /^\/api\/(chats|foruns)(\/|$)/.test(error.config?.url ?? '')) return 'Esta conversa não foi encontrada ou não está mais disponível.';
     if (status === 404) return 'Esta informação não está mais disponível.';
     if (status === 429) return 'Muitas tentativas. Aguarde um pouco antes de tentar novamente.';
+    if (status === 503 && error.response.data?.codigo === 'RECUPERACAO_INDISPONIVEL') return 'A recuperação de senha está temporariamente indisponível. Tente novamente mais tarde.';
+    if (status === 503 && error.response.data?.codigo === 'RECUPERACAO_MIGRACAO_PENDENTE') return 'A recuperação de senha está em atualização. Tente novamente mais tarde.';
     if (status === 503 && error.response.data?.codigo === 'ONBOARDING_MIGRACAO_PENDENTE') return 'A configuração inicial da conta ainda está indisponível. Tente novamente mais tarde.';
     if (status === 503 && error.response.data?.codigo === 'CONVERSAS_ATUALIZACAO_PENDENTE') return 'As conversas estão em atualização no servidor. Tente novamente em instantes.';
     if (status === 503 && error.response.data?.codigo === 'CONVERSAS_TEMPORARIAMENTE_INDISPONIVEIS') return 'O serviço de conversas está temporariamente indisponível. Tente novamente em instantes.';

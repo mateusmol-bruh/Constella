@@ -2,6 +2,8 @@
 
 ## Escopo e estado final
 
+Nota de 30/10/2026: este relatório permanece histórico. A pendência de recuperação de senha foi tratada na [implementação Gmail](RECUPERACAO_SENHA.md), com resultados e limitações próprios.
+
 Implementação feita sobre o projeto existente, preservando React Navigation, componentes e identidade visual. Nenhuma alteração no schema do Prisma, migração, branch, commit, merge ou push nesta etapa. As modificações anteriores do workspace foram mantidas.
 
 ## Correções entregues

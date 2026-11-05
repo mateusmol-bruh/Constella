@@ -174,6 +174,8 @@ model mensagem {
 }
 
 model moderadora {
+  recuperacoes_senha solicitacao_recuperacao_senha[]
+  auditorias_recuperacao auditoria_recuperacao_senha[]
   banimentos usuaria[] @relation("banimentos")
   arquivos_pro arquivo_pro[]
   sessoes sessao[]
@@ -217,6 +219,8 @@ model relatorio_moderacao {
 }
 
 model usuaria {
+  recuperacao_senha recuperacao_senha?
+  solicitacoes_recuperacao solicitacao_recuperacao_senha[]
   banida Boolean @default(false)
   banida_em DateTime? @db.Timestamp(6)
   banida_motivo String? @db.VarChar(1000)
@@ -371,4 +375,58 @@ model arquivo_pro {
   imagens conteudo_pro[] @relation("imagem_pro")
   videos conteudo_pro[] @relation("video_pro")
   @@index([id_mod])
+}
+
+model recuperacao_senha {
+  id String @id @db.Uuid
+  usuaria_id BigInt @unique
+  codigo_hash String @db.VarChar(64)
+  expira_em DateTime @db.Timestamp(6)
+  utilizado_em DateTime? @db.Timestamp(6)
+  enviado_em DateTime? @db.Timestamp(6)
+  tentativas Int @default(0)
+  criado_em DateTime @default(now()) @db.Timestamp(6)
+  janela_inicio DateTime @default(now()) @db.Timestamp(6)
+  solicitacoes Int @default(1)
+  usuaria usuaria @relation(fields:[usuaria_id],references:[id_usr],onDelete:Cascade,onUpdate:NoAction)
+  @@index([expira_em])
+}
+
+// Estruturas históricas já aplicadas. O fluxo Gmail não as utiliza nem as remove.
+model solicitacao_recuperacao_senha {
+  id String @id @db.Uuid
+  usuaria_id BigInt
+  status String @default("PENDENTE") @db.VarChar(20)
+  codigo_hash String? @db.VarChar(64)
+  geracao_id String? @db.Uuid
+  expira_em DateTime? @db.Timestamp(6)
+  tentativas Int @default(0)
+  moderadora_id BigInt?
+  metodo_verificacao String? @db.VarChar(500)
+  procedimento_teste Boolean @default(false)
+  justificativa String? @db.VarChar(1000)
+  criado_em DateTime @default(now()) @db.Timestamp(6)
+  analisado_em DateTime? @db.Timestamp(6)
+  concluido_em DateTime? @db.Timestamp(6)
+  usuaria usuaria @relation(fields:[usuaria_id],references:[id_usr],onDelete:NoAction,onUpdate:NoAction)
+  moderadora moderadora? @relation(fields:[moderadora_id],references:[id_mod],onDelete:NoAction,onUpdate:NoAction)
+  historico auditoria_recuperacao_senha[]
+  @@index([status, criado_em])
+  @@index([usuaria_id, criado_em])
+  @@index([moderadora_id])
+}
+
+model auditoria_recuperacao_senha {
+  id String @id @db.Uuid
+  solicitacao_id String @db.Uuid
+  moderadora_id BigInt?
+  acao String @db.VarChar(30)
+  metodo_verificacao String? @db.VarChar(500)
+  procedimento_teste Boolean @default(false)
+  justificativa String? @db.VarChar(1000)
+  criado_em DateTime @default(now()) @db.Timestamp(6)
+  solicitacao solicitacao_recuperacao_senha @relation(fields:[solicitacao_id],references:[id],onDelete:NoAction,onUpdate:NoAction)
+  moderadora moderadora? @relation(fields:[moderadora_id],references:[id_mod],onDelete:NoAction,onUpdate:NoAction)
+  @@index([solicitacao_id, criado_em])
+  @@index([moderadora_id])
 }

@@ -5,6 +5,7 @@ const { login } = require("../controllers/auth.controller");
 const { cadastrar } = require("../controllers/cadastro.controller");
 
 const router = Router();
+router.use(require('./recuperacao-senha.routes'));
 
 const limitarTentativas = rateLimit({
   windowMs: 15 * 60 * 1000,

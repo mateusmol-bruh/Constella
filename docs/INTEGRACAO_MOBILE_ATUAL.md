@@ -4,6 +4,8 @@ Este relatório corresponde ao workspace atual. A primeira etapa preservou o bac
 
 ## Diagnóstico e correções
 
+Atualização de 30/10/2026: recuperação por Gmail/Nodemailer implementada com APIs, PostgreSQL e mobile. As pendências históricas dessa funcionalidade são substituídas pela [documentação atual e seus resultados](RECUPERACAO_SENHA.md). Recebimento externo depende de destinatário autorizado.
+
 Atualização posterior: consulte [a revisão funcional e a limpeza autorizada do banco](REVISAO_FUNCIONAL_2026-10-23.md). O novo relatório substitui os estados antigos de bloqueio de demonstração PRO e informa os dados efetivamente removidos/preservados.
 
 ### Fotos selecionadas como arquivo

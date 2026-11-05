@@ -1,6 +1,6 @@
 const prisma = require("../config/prisma");
 const bcrypt = require("bcryptjs");
-const { emitirSessao } = require("./sessao.service");
+const { emitirSessao, verificarJWT, hash, revogarSessao } = require("./sessao.service");
 const { camposOnboarding, estadoOnboarding } = require("../utils/onboarding");
 
 async function autenticarUsuaria(email, senha) {
@@ -29,6 +29,13 @@ async function autenticarUsuaria(email, senha) {
 
   if (usuaria.banida) throw Object.assign(new Error('Sua conta está banida. Entre em contato com a moderação.'), { statusCode:403, codigo:'CONTA_BANIDA' });
   const token = await emitirSessao("usuaria", usuaria.id_usr);
+
+  // Uma comparação antiga não pode criar uma sessão válida após um reset concorrente.
+  const atual = await prisma.usuaria.findUnique({where:{id_usr:usuaria.id_usr},select:{senha_usr:true}});
+  if (!atual || atual.senha_usr !== usuaria.senha_usr) {
+    await revogarSessao(hash(verificarJWT(token).jti));
+    return null;
+  }
 
   return {
     mensagem: "Login realizado com sucesso",

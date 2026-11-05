@@ -4,6 +4,8 @@ Raiz utilizada: `Desktop/Constella/`. A outra cópia indicada em algumas abas do
 
 ## Execução
 
+Atualização de 30/10/2026: recuperação de senha por Gmail/Nodemailer implementada conforme [documentação específica](RECUPERACAO_SENHA.md). As referências abaixo à ausência desse contrato descrevem o estado anterior.
+
 Em terminais separados, a partir da raiz:
 
 ```powershell

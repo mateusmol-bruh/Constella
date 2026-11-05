@@ -154,3 +154,9 @@ test("estado ausente de migration é desconhecido e não inferido por interesses
     onboarding_concluido: null, apresentacao: null
   });
 });
+
+test('login com comparação antiga não mantém sessão após redefinição concorrente',async()=>{
+  const previous=conta.senha_usr,create=prisma.sessao.create,password='senha-concorrencia-teste';conta.senha_usr=await bcrypt.hash(password,4);
+  try{prisma.sessao.create=async args=>{const row=await create(args);conta.senha_usr=await bcrypt.hash('nova-senha-concorrencia',4);return row;};const result=await api('/api/auth/login','POST',{email:conta.email_usr,senha:password},null);assert.equal(result.status,401);assert.ok([...prisma.sessao.rows.values()].at(-1).revogada_em);}
+  finally{prisma.sessao.create=create;conta.senha_usr=previous;}
+});

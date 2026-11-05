@@ -6,7 +6,7 @@ export type TabParamList = {
   Home: undefined; Conexoes: { aba?: 'requests'; evento?: string } | undefined; Perfil: undefined;
 };
 export type RootStackParamList = {
-  Splash: undefined; Login: undefined; Cadastro: undefined; VerificarConta: undefined;
+  Splash: undefined; Login: {senhaRedefinida?:boolean} | undefined; Cadastro: undefined; VerificarConta: undefined;
   ConstellaPro: undefined; DetalhePro: { id: string };
   ContaNecessaria: { recurso?: string } | undefined;
   Onboarding: undefined; SobreVoce: undefined; Interesses: { editar?: boolean } | undefined;

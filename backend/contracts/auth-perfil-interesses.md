@@ -20,6 +20,14 @@ Valida tipos, formato e limite do e-mail, presença de senha e limite de 72 byte
 
 Erros: 400 validação, 401 credenciais inválidas (mesma resposta para conta ausente e senha incorreta), 429 limite, 500 falha interna.
 
+## Recuperação de senha por e-mail
+
+Públicas, sem JWT: `POST /auth/forgot-password` recebe `{email}` e retorna 202 com `{message:"Se existir uma conta associada a este e-mail, você receberá as instruções de recuperação."}`, igualmente para conta existente/ausente. Gmail é remetente; destinatário vem da conta no PostgreSQL, sem limitação de provedor. O aceite não confirma entrega.
+
+`POST /auth/verify-reset-code` recebe `{email,codigo}` (string de seis dígitos) e retorna 200 com `message`, sem consumir ou renovar. `POST /auth/reset-password` recebe `{email,codigo,novaSenha}` e retorna 200 com `{message:"Sua senha foi redefinida com sucesso."}`. Código revalidado, senha bcrypt/consumo/revogação das sessões e push na mesma transação. Mantém banimento e onboarding. Política do cadastro e senha diferente da atual.
+
+Código inválido/expirado/usado/esgotado: 400 com `mensagem` genérica e `codigo: RECUPERACAO_CODIGO_INVALIDO`. Limites HTTP: 429; configuração ausente: 503/`RECUPERACAO_INDISPONIVEL`. HMAC com segredo independente, TTL dez minutos, cinco erros por geração, intervalo de 60 s e cinco emissões/hora persistidos. Contrato completo, logo CID, migrações reconciliadas, SMTP e testes: [documentação](../../docs/RECUPERACAO_SENHA.md).
+
 ## GET /perfil
 
 Privada; sem payload. 200: `{ "id_usr": "<id>", "nome_usr": "Conta de exemplo", "email_usr": "conta@example.invalid", "foto_usr": null, "status_verificacao": false, "onboarding_concluido": true, "apresentacao": "", "interesses": [] }`. Seleção vazia não é usada para inferir conclusão. Nunca retorna CPF nem hash.
