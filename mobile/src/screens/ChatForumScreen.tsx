@@ -16,6 +16,7 @@ export default function ChatForumScreen({ navigation, route }: ScreenProps<'Chat
       const posts = forum.participando ? await socialService.posts(id, 1, signal) : [];
       return { items: posts.map(map), title: forum.titulo, foto: forum.capa, canSend: !!forum.participando, canDelete: forum.criadora?.id === user?.id, canLeave: !!forum.participando && !!forum.criadora && forum.criadora.id !== user?.id, subtitle: forum.quantidade_membros === undefined ? 'Comunidade' : forum.quantidade_membros + ' membros' };
     }}
+    loadMembers={() => socialService.forumMembers(id)}
     send={async (text, image, options) => map(await socialService.sendPost(id, text, image, options))}
     markRead={(last, signal) => socialService.read('forum', id, last, signal)}
     join={() => socialService.joinForum(id)}

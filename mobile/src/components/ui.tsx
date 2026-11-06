@@ -10,13 +10,13 @@ import { Icon, type IconName } from './Icon';
 import { useAuth } from '../constexts/AuthContext';
 import { colors, fontFamily, space, ui } from '../styles/theme';
 
-export function Screen({ children, scroll = true, centered = false, paper = false, waves = false, bottomSafe = false }: {
-  children: ReactNode; scroll?: boolean; centered?: boolean; paper?: boolean; waves?: boolean; bottomSafe?: boolean;
+export function Screen({ children, scroll = true, centered = false, paper = false, waves = false, bottomSafe = false, bottomPadding = space.md }: {
+  children: ReactNode; scroll?: boolean; centered?: boolean; paper?: boolean; waves?: boolean; bottomSafe?: boolean; bottomPadding?: number;
 }) {
   const { isGuest } = useAuth();
   const focused = useIsFocused();
   const { width } = useWindowDimensions();
-  const content = <View style={[styles.content, centered && styles.centered, { paddingHorizontal: screenGutter(width) }]}>{children}</View>;
+  const content = <View style={[styles.content, centered && styles.centered, { paddingHorizontal: screenGutter(width), paddingBottom: bottomPadding }]}>{children}</View>;
   return <SpaceBackground waves={waves}>
     {focused && <StatusBar style={paper ? 'dark' : 'light'} />}
     <SafeAreaView style={[styles.fill, paper && { backgroundColor: colors.paper }]} edges={bottomSafe ? ['top', 'left', 'right', 'bottom'] : ['top', 'left', 'right']}>

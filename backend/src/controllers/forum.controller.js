@@ -55,6 +55,15 @@ async function buscar(req, res) {
   }
 }
 
+async function membros(req, res) {
+  try {
+    const membros = await forumService.listarMembros(req.usuarioId, req.params.id);
+    return res.status(200).json({ membros });
+  } catch (error) {
+    return tratarErro(res, error);
+  }
+}
+
 async function criar(req, res) {
   try {
     const forum =
@@ -148,6 +157,7 @@ module.exports = {
   listar,
   meus,
   buscar,
+  membros,
   criar,
   editar,
   entrar,

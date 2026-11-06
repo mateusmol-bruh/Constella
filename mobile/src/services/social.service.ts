@@ -4,6 +4,7 @@ import type { Conversation, Person, Forum, Message, Post, SendOptions } from '..
 
 export const conversationPageSize = 50;
 export type SocialForum = Forum & { criadora?: { id: string; nome: string; foto?: string | null } };
+export interface ForumMember { id: string; nome: string; foto?: string | null }
 const path = (id: string) => encodeURIComponent(id);
 
 // Fóruns usam postagens; IDs de fórum nunca são usados como IDs de chat.
@@ -17,6 +18,9 @@ export const socialService = {
   async block(id: string, blocked: boolean) { return (blocked ? await api.post(`/api/bloqueios/${path(id)}`) : await api.delete(`/api/bloqueios/${path(id)}`)).data as { bloqueada: boolean; interacao_bloqueada: boolean }; },
   async forum(id: string, signal?: AbortSignal) {
     return (await api.get<{ forum: SocialForum }>(`/api/foruns/${path(id)}`, { signal })).data.forum;
+  },
+  async forumMembers(id: string, signal?: AbortSignal) {
+    return (await api.get<{ membros: ForumMember[] }>(`/api/foruns/${path(id)}/membros`, { signal })).data.membros;
   },
   async posts(id: string, pagina = 1, signal?: AbortSignal) {
     const { data } = await api.get<{ postagens: Post[] }>(`/api/foruns/${path(id)}/postagens`, {
