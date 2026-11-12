@@ -1,9 +1,11 @@
 const {
   buscarPerfil,
-  atualizarPerfil
+  atualizarPerfil,
+  concluirOnboarding
 } = require("../services/perfil.service");
+const { validarIdsInteresses } = require("../utils/interesses");
 
-async function obterPerfil(req, res) {
+async function obterPerfil(req, res, next) {
   try {
     const perfil = await buscarPerfil(
       req.usuarioId
@@ -18,29 +20,24 @@ async function obterPerfil(req, res) {
     return res.status(200).json(perfil);
 
   } catch (error) {
-    console.error(
-      "Erro ao buscar perfil:",
-      error
-    );
-
-    return res.status(500).json({
-      mensagem: "Erro interno do servidor."
-    });
+    return next(error);
   }
 }
 
-async function editarPerfil(req, res) {
+async function editarPerfil(req, res, next) {
   try {
     const {
       nome,
       email,
-      foto
+      foto,
+      apresentacao
     } = req.body || {};
 
     if (
       nome === undefined &&
       email === undefined &&
-      foto === undefined
+      foto === undefined &&
+      apresentacao === undefined
     ) {
       return res.status(400).json({
         mensagem:
@@ -98,12 +95,17 @@ async function editarPerfil(req, res) {
       });
     }
 
+    if (apresentacao !== undefined && (typeof apresentacao !== "string" || apresentacao.length > 500)) {
+      return res.status(400).json({ mensagem: "A apresentação deve ter até 500 caracteres." });
+    }
+
     const perfil = await atualizarPerfil(
       req.usuarioId,
       {
         nome,
         email,
-        foto
+        foto,
+        apresentacao
       }
     );
 
@@ -129,18 +131,27 @@ async function editarPerfil(req, res) {
       });
     }
 
-    console.error(
-      "Erro ao atualizar perfil:",
-      error
-    );
+    return next(error);
+  }
+}
 
-    return res.status(500).json({
-      mensagem: "Erro interno do servidor."
-    });
+async function finalizarOnboarding(req, res, next) {
+  const { apresentacao, interesses } = req.body || {};
+  if (typeof apresentacao !== "string" || apresentacao.length > 500) {
+    return res.status(400).json({ mensagem: "A apresentação deve ser um texto com até 500 caracteres." });
+  }
+  const erro = validarIdsInteresses(interesses);
+  if (erro) return res.status(400).json({ mensagem: erro });
+  try {
+    const perfil = await concluirOnboarding(req.usuarioId, { apresentacao, interesses });
+    return res.status(200).json({ mensagem: "Onboarding concluído com sucesso.", perfil });
+  } catch (error) {
+    return next(error);
   }
 }
 
 module.exports = {
   obterPerfil,
-  editarPerfil
+  editarPerfil,
+  finalizarOnboarding
 };

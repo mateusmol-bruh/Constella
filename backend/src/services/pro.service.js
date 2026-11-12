@@ -1,5 +1,6 @@
 const prisma =
   require("../config/prisma");
+const { buscarStatusAssinatura } = require("./assinatura.service");
 
 function erroHttp(statusCode, mensagem) {
   const erro =
@@ -12,10 +13,11 @@ function erroHttp(statusCode, mensagem) {
 }
 
 function validarId(valor) {
+  const texto = String(valor ?? "");
   if (
-    !/^[1-9]\d*$/.test(
-      String(valor ?? "")
-    )
+    !/^[1-9]\d*$/.test(texto) ||
+    texto.length > 19 ||
+    BigInt(texto) > 9223372036854775807n
   ) {
     throw erroHttp(
       400,
@@ -30,6 +32,9 @@ function formatarConteudoPro(
   conteudo
 ) {
   return {
+    imagem: conteudo.imagem_pro ? require('./midia-pro.service').dto(conteudo.imagem_pro,String(conteudo.id_cont_pro)) : null,
+    video: conteudo.video_pro ? require('./midia-pro.service').dto(conteudo.video_pro,String(conteudo.id_cont_pro)) : null,
+    capa: conteudo.capa, categoria: conteudo.categoria, atualizado_em: conteudo.atualizado_em,
     id:
       conteudo.id_cont_pro
         .toString(),
@@ -61,42 +66,36 @@ function formatarConteudoPro(
 async function verificarStatusPro(
   idUsuario
 ) {
-  const idUsr =
-    validarId(idUsuario);
+  return buscarStatusAssinatura(idUsuario);
+}
 
-  const assinatura =
-    await prisma.assinatura.findUnique({
-      where: {
-        id_usr: idUsr
-      }
-    });
-
-  return {
-    pro:
-      Boolean(assinatura),
-
-    assinatura:
-      assinatura
-        ? {
-            id:
-              assinatura.id_ass
-                .toString(),
-
-            forma_pagamento:
-              assinatura.forma_pagto,
-
-            valor:
-              Number(
-                assinatura.valor
-              )
-          }
-        : null
-  };
+async function listarCatalogoPro() {
+  // Seleção explícita: material e anexos exclusivos não saem no catálogo.
+  const conteudos = await prisma.conteudo_pro.findMany({
+    where: { publicado: true },
+    select: {
+      id_cont_pro: true, capa: true, categoria: true, atualizado_em: true,
+      titulo_cont_pro: true,
+      desc_cont_pro: true,
+      duracao_cont_pro: true,
+      data_pub_cont_pro: true
+    },
+    orderBy: { data_pub_cont_pro: "desc" }
+  });
+  return conteudos.map((conteudo) => ({
+    id: conteudo.id_cont_pro.toString(), capa: conteudo.capa, categoria: conteudo.categoria, atualizado_em: conteudo.atualizado_em,
+    titulo: conteudo.titulo_cont_pro,
+    descricao: conteudo.desc_cont_pro,
+    duracao: conteudo.duracao_cont_pro?.toString() ?? null,
+    data_publicacao: conteudo.data_pub_cont_pro
+  }));
 }
 
 async function listarConteudosPro() {
   const conteudos =
     await prisma.conteudo_pro.findMany({
+    where: { publicado: true },
+      include: {imagem_pro:true,video_pro:true},
       orderBy: {
         data_pub_cont_pro: "desc"
       }
@@ -115,11 +114,11 @@ async function buscarConteudoPro(id) {
     await prisma.conteudo_pro.findUnique({
       where: {
         id_cont_pro:
-          idCont
-      }
+          idCont, publicado: true
+      }, include: {imagem_pro:true,video_pro:true}
     });
 
-  if (!conteudo) {
+  if (!conteudo || conteudo.publicado === false) {
     throw erroHttp(
       404,
       "Conteúdo Pro não encontrado."
@@ -133,6 +132,7 @@ async function buscarConteudoPro(id) {
 
 module.exports = {
   verificarStatusPro,
+  listarCatalogoPro,
   listarConteudosPro,
   buscarConteudoPro
 };

@@ -1,0 +1,38 @@
+{
+  "date": "2026-10-30",
+  "tests": {
+    "backend": {
+      "tests": 127,
+      "pass": 115,
+      "fail": 0,
+      "skipped": 12
+    },
+    "database": {
+      "tests": 18,
+      "pass": 18,
+      "fail": 0,
+      "skipped": 0
+    },
+    "mobile": {
+      "tests": 68,
+      "pass": 68,
+      "fail": 0,
+      "skipped": 0
+    }
+  },
+  "browser": {
+    "evidence": [
+      "E-mail: logo oficial renderiza, texto permanece legível e não há overflow em 320 px; código mascarado na prévia.",
+      "Login abre recuperação; validação e falha de rede não geram confirmação fictícia.",
+      "API gera código da conta correta; reenvio aguarda 60 segundos e código incorreto é recusado.",
+      "Confirmação diferente e senha fraca são bloqueadas no formulário antes da API.",
+      "Redefinição consome o código no PostgreSQL e retorna ao login; código fica fora de URL e storage.",
+      "Senha anterior falha e nova senha autentica no aplicativo real.",
+      "Revisão concluída com transporte capturado; fixtures revertidas sem envio externo ou dados de teste persistentes."
+    ],
+    "errors": []
+  },
+  "browserMailTransport": "Capturado, sem envio externo; código mascarado nas prévias.",
+  "screenshotsDate": "2026-10-30",
+  "copiedToDocumentationOn": "2026-11-05"
+}

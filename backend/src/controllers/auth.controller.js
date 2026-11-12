@@ -2,14 +2,17 @@ const {
   autenticarUsuaria
 } = require("../services/auth.service");
 
-async function login(req, res) {
+async function login(req, res, next) {
   const { email, senha } = req.body || {};
 
   if (
     typeof email !== "string" ||
     typeof senha !== "string" ||
     !email.trim() ||
-    !senha
+    !senha ||
+    email.trim().length > 255 ||
+    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) ||
+    Buffer.byteLength(senha, "utf8") > 72
   ) {
     return res.status(400).json({
       mensagem: "Email e senha são obrigatórios"
@@ -30,11 +33,7 @@ async function login(req, res) {
 
     return res.status(200).json(resultado);
   } catch (error) {
-  console.error("Erro interno no login:", error);
-
-  return res.status(500).json({
-    mensagem: "Erro interno do servidor"
-  });
+  return next(error);
 }
 }
 

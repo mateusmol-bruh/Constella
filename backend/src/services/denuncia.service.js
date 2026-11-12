@@ -9,7 +9,7 @@ function erroHttp(statusCode, mensagem) {
 function validarId(valor, campo = "ID") {
   const texto = String(valor ?? "");
 
-  if (!/^[1-9]\d*$/.test(texto)) {
+  if (!/^[1-9]\d*$/.test(texto) || texto.length > 19 || BigInt(texto) > 9223372036854775807n) {
     throw erroHttp(400, `${campo} inválido.`);
   }
 
@@ -44,7 +44,7 @@ async function buscarModeradora() {
     await prisma.moderadora.findFirst({
       orderBy: {
         id_mod: "asc"
-      }
+      }, select: { id_mod: true }
     });
 
   if (!moderadora) {
@@ -61,6 +61,7 @@ function formatarDenuncia(denuncia) {
   return {
     id_den: denuncia.id_den.toString(),
     motivo: denuncia.motivo_den,
+    descricao: denuncia.descricao,
     status: denuncia.status,
     dt_denuncia: denuncia.dt_denuncia,
     id_moderadora:
@@ -73,7 +74,7 @@ function formatarDenuncia(denuncia) {
 async function denunciarUsuaria(
   idDenunciante,
   idDenunciada,
-  motivo
+  motivo, descricao
 ) {
   const denunciante =
     validarId(idDenunciante);
@@ -84,8 +85,9 @@ async function denunciarUsuaria(
       "Usuária denunciada"
     );
 
-  const motivoLimpo =
-    validarMotivo(motivo);
+  const motivoLimpo = validarMotivo(motivo);
+  if(descricao!==undefined && descricao!==null && (typeof descricao!=="string" || descricao.trim().length>2000)) throw erroHttp(400,"A descrição deve ter até 2000 caracteres.");
+  const descricaoLimpa=typeof descricao==="string" ? descricao.trim()||null : null;
 
   if (denunciante === denunciada) {
     throw erroHttp(
@@ -118,6 +120,7 @@ async function denunciarUsuaria(
           await tx.denuncia.create({
             data: {
               motivo_den: motivoLimpo,
+              descricao: descricaoLimpa,
               status: "PENDENTE",
               id_mod: moderadora.id_mod,
               id_usr_denunciante:
@@ -143,7 +146,7 @@ async function denunciarUsuaria(
 async function denunciarPostagem(
   idDenunciante,
   idPostagem,
-  motivo
+  motivo, descricao
 ) {
   const denunciante =
     validarId(idDenunciante);
@@ -154,8 +157,9 @@ async function denunciarPostagem(
       "Postagem"
     );
 
-  const motivoLimpo =
-    validarMotivo(motivo);
+  const motivoLimpo = validarMotivo(motivo);
+  if(descricao!==undefined && descricao!==null && (typeof descricao!=="string" || descricao.trim().length>2000)) throw erroHttp(400,"A descrição deve ter até 2000 caracteres.");
+  const descricaoLimpa=typeof descricao==="string" ? descricao.trim()||null : null;
 
   const postagem =
     await prisma.postagem.findUnique({
@@ -178,6 +182,16 @@ async function denunciarPostagem(
     );
   }
 
+  const participacao = await prisma.usuaria_forum.findUnique({
+    where: {
+      id_for_id_usr: { id_for: postagem.id_for, id_usr: denunciante }
+    }
+  });
+
+  if (!participacao) {
+    throw erroHttp(403, "Você precisa participar do fórum para denunciar uma postagem.");
+  }
+
   const moderadora =
     await buscarModeradora();
 
@@ -188,6 +202,7 @@ async function denunciarPostagem(
           await tx.denuncia.create({
             data: {
               motivo_den: motivoLimpo,
+              descricao: descricaoLimpa,
               status: "PENDENTE",
               id_mod: moderadora.id_mod,
               id_usr_denunciante:
@@ -212,7 +227,7 @@ async function denunciarPostagem(
 async function denunciarMensagem(
   idDenunciante,
   idMensagem,
-  motivo
+  motivo, descricao
 ) {
   const denunciante =
     validarId(idDenunciante);
@@ -223,8 +238,9 @@ async function denunciarMensagem(
       "Mensagem"
     );
 
-  const motivoLimpo =
-    validarMotivo(motivo);
+  const motivoLimpo = validarMotivo(motivo);
+  if(descricao!==undefined && descricao!==null && (typeof descricao!=="string" || descricao.trim().length>2000)) throw erroHttp(400,"A descrição deve ter até 2000 caracteres.");
+  const descricaoLimpa=typeof descricao==="string" ? descricao.trim()||null : null;
 
   const mensagem =
     await prisma.mensagem.findUnique({
@@ -275,6 +291,7 @@ async function denunciarMensagem(
           await tx.denuncia.create({
             data: {
               motivo_den: motivoLimpo,
+              descricao: descricaoLimpa,
               status: "PENDENTE",
               id_mod: moderadora.id_mod,
               id_usr_denunciante:

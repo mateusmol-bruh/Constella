@@ -1,4 +1,5 @@
 const { cadastrarUsuaria } = require("../services/cadastro.service");
+const { estadoOnboarding } = require("../utils/onboarding");
 
 //Valida os dígitos verificadores de um CPF
 function validarCpf(cpf) {
@@ -22,7 +23,7 @@ function validarCpf(cpf) {
   );
 }
 
-async function cadastrar(req, res) {
+async function cadastrar(req, res, next) {
   try {
     const { nome, email, senha, cpf } = req.body || {};
 
@@ -99,7 +100,8 @@ async function cadastrar(req, res) {
         nome: resultado.usuaria.nome_usr,
         email: resultado.usuaria.email_usr,
         status_verificacao:
-          resultado.usuaria.status_verificacao
+          resultado.usuaria.status_verificacao,
+        ...estadoOnboarding(resultado.usuaria)
       },
 
       proxima_etapa: "interesses"
@@ -114,11 +116,7 @@ async function cadastrar(req, res) {
       });
     }
 
-    console.error("Erro ao cadastrar usuária:", error);
-
-    return res.status(500).json({
-      mensagem: "Erro interno do servidor."
-    });
+    return next(error);
   }
 }
 

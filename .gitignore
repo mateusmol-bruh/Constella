@@ -1,3 +1,15 @@
-backend/node_modules/
+# Dependências e artefatos gerados
+**/node_modules/
+**/.expo/
+**/.next/
+**/dist/
+**/build/
+**/web-build/
 
-backend/.env
+# Arquivos locais de ambiente; exemplos permanecem versionados
+**/.env
+**/.env.*
+!**/.env.example
+
+# Logs locais
+**/*.log

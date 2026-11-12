@@ -1,0 +1,304 @@
+/* Astronauta e estrelas adaptados do exemplo de JkHuger (Uiverse.io).
+   Classes isoladas em CSS Modules: não afetam a estrutura do Constella. */
+@keyframes snow {
+  0% { opacity: 0; transform: translateY(-72px); }
+  20% { opacity: .85; }
+  100% { opacity: .85; transform: translateY(260px); }
+}
+
+@keyframes astronautRotation {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes labelPulse {
+  0%, 100% { opacity: .65; }
+  50% { opacity: 1; }
+}
+
+.loader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  isolation: isolate;
+  width: 100%;
+  min-height: 260px;
+  overflow: hidden;
+  position: relative;
+  color: #fff7ff;
+}
+
+.fullscreen {
+  min-height: 100dvh;
+  background-image: url('/stars.svg'), linear-gradient(180deg, #151238, #21194d 32%, #433077 71%, #624292);
+  background-size: 1440px 900px, cover;
+  background-position: top center;
+}
+
+.section {
+  min-height: 270px;
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  height: 100dvh;
+  min-height: 0;
+  background: rgba(22, 16, 54, .85);
+  backdrop-filter: blur(5px);
+}
+
+.scene {
+  position: relative;
+  flex-shrink: 0;
+  overflow: hidden;
+  width: min(100%, 440px);
+  height: 214px;
+  pointer-events: none;
+}
+
+.fullscreen .scene, .overlay .scene { height: 290px; }
+
+.starField {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  will-change: transform, opacity;
+  animation: snow 5s linear infinite;
+}
+.starField1 { animation-delay: 0s; }
+.starField2 { animation-delay: -1.64s; }
+.starField3 { animation-delay: -2.3s; }
+.starField4 { animation-delay: -3.3s; }
+
+.star {
+  position: absolute;
+  z-index: 1;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #fff;
+  opacity: .7;
+
+  &::before, &::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    background: #fff;
+  }
+  &::before { width: 5px; height: 5px; top: 23px; left: 30px; opacity: .7; }
+  &::after { width: 6px; height: 6px; top: 56px; left: 14px; opacity: .85; }
+}
+.starPosition1 { top: 12%; left: 5%; }
+.starPosition2 { top: 43%; left: 21%; }
+.starPosition3 { top: 22%; left: 37%; }
+.starPosition4 { top: 51%; left: 52%; }
+.starPosition5 { top: 9%; left: 65%; }
+.starPosition6 { top: 34%; left: 79%; }
+.starPosition7 { top: 16%; left: 91%; }
+
+/* A figura continua com a geometria do exemplo (250 × 300),
+   dimensionada via sprite para ocupar só o centro da tela. */
+.sprite {
+  position: absolute;
+  z-index: 2;
+  top: 50%;
+  left: 50%;
+  width: 250px;
+  height: 300px;
+  transform: translate(-50%, -50%) scale(.57);
+  transform-origin: center;
+}
+.fullscreen .sprite, .overlay .sprite { transform: translate(-50%, -50%) scale(.77); }
+
+.astronaut {
+  position: relative;
+  width: 250px;
+  height: 300px;
+  transform-origin: center;
+  animation: astronautRotation 5s linear infinite;
+}
+
+.schoolbag {
+  width: 100px;
+  height: 150px;
+  position: absolute;
+  z-index: 1;
+  top: calc(50% - 75px);
+  left: calc(50% - 50px);
+  background: #9475b7;
+  border-radius: 50px 50px 0 0 / 30px 30px 0 0;
+}
+
+.head {
+  width: 97px;
+  height: 80px;
+  position: absolute;
+  z-index: 3;
+  background: linear-gradient(to right, #e3ddea 0 50%, #fff8ff 50% 100%);
+  border-radius: 50%;
+  top: 34px;
+  left: calc(50% - 47.5px);
+
+  &::after {
+    content: '';
+    width: 60px;
+    height: 50px;
+    position: absolute;
+    top: calc(50% - 25px);
+    left: calc(50% - 30px);
+    background: linear-gradient(to bottom, #bf84dc 0 50%, #8153c3 50% 100%);
+    border-radius: 15px;
+    box-shadow: inset 0 2px 2px rgba(255, 255, 255, .2);
+  }
+
+  &::before {
+    content: '';
+    width: 12px;
+    height: 25px;
+    position: absolute;
+    top: calc(50% - 12.5px);
+    left: -4px;
+    background: #806aa3;
+    border-radius: 5px;
+    box-shadow: 92px 0 0 #806aa3;
+  }
+}
+
+.body {
+  width: 85px;
+  height: 100px;
+  position: absolute;
+  z-index: 2;
+  top: 105px;
+  left: calc(50% - 41px);
+  background: linear-gradient(to right, #e3ddea 0 50%, #fff8ff 50% 100%);
+  border-radius: 40px / 20px;
+}
+
+.panel {
+  width: 60px;
+  height: 40px;
+  position: absolute;
+  top: 20px;
+  left: calc(50% - 30px);
+  background: #cbafe9;
+
+  &::before {
+    content: '';
+    width: 30px;
+    height: 5px;
+    position: absolute;
+    top: 9px;
+    left: 7px;
+    background: #fff8ff;
+    box-shadow: 0 9px 0 #fff8ff, 0 18px 0 #fff8ff;
+  }
+  &::after {
+    content: '';
+    width: 8px;
+    height: 8px;
+    position: absolute;
+    top: 9px;
+    right: 7px;
+    background: #fff8ff;
+    border-radius: 50%;
+    box-shadow: 0 14px 0 2px #fff8ff;
+  }
+}
+
+.arm {
+  width: 80px;
+  height: 30px;
+  position: absolute;
+  top: 121px;
+  z-index: 2;
+}
+.armLeft {
+  left: 30px;
+  background: #e3ddea;
+  border-radius: 0 0 0 39px;
+}
+.armRight {
+  right: 30px;
+  background: #fff8ff;
+  border-radius: 0 0 39px 0;
+}
+.armLeft::before, .armRight::before {
+  content: '';
+  width: 30px;
+  height: 70px;
+  position: absolute;
+  top: -40px;
+}
+.armLeft::before {
+  border-radius: 50px 50px 0 120px / 50px 50px 0 110px;
+  left: 0;
+  background: #e3ddea;
+}
+.armRight::before {
+  border-radius: 50px 50px 120px 0 / 50px 50px 110px 0;
+  right: 0;
+  background: #fff8ff;
+}
+.armLeft::after, .armRight::after {
+  content: '';
+  width: 30px;
+  height: 10px;
+  position: absolute;
+  top: -24px;
+}
+.armLeft::after { background: #a88ac5; left: 0; }
+.armRight::after { background: #dac1ef; right: 0; }
+
+.leg {
+  width: 30px;
+  height: 40px;
+  position: absolute;
+  z-index: 2;
+  bottom: 70px;
+}
+.legLeft { left: 76px; background: #e3ddea; transform: rotate(20deg); }
+.legRight { right: 73px; background: #fff8ff; transform: rotate(-20deg); }
+.legLeft::before, .legRight::before {
+  content: '';
+  width: 50px;
+  height: 25px;
+  position: absolute;
+  bottom: -26px;
+}
+.legLeft::before { left: -20px; background: #e3ddea; border-radius: 30px 0 0 0; border-bottom: 10px solid #a088c3; }
+.legRight::before { right: -20px; background: #fff8ff; border-radius: 0 30px 0 0; border-bottom: 10px solid #d3a9ea; }
+
+.message {
+  position: relative;
+  z-index: 3;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .4px;
+  line-height: 1.4;
+  margin: 2px 12px 0;
+  text-align: center;
+  color: #ffe3fc;
+  animation: labelPulse 2.4s ease-in-out infinite;
+}
+
+@media (max-width: 700px) {
+  .scene { height: 195px; }
+  .sprite { transform: translate(-50%, -50%) scale(.52); }
+  .fullscreen .scene, .overlay .scene { height: 255px; }
+  .fullscreen .sprite, .overlay .sprite { transform: translate(-50%, -50%) scale(.66); }
+}
+
+@media (max-height: 650px) and (min-width: 701px) {
+  .section { min-height: 195px; }
+  .section .scene { height: 160px; }
+  .section .sprite { transform: translate(-50%, -50%) scale(.46); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .starField, .astronaut, .message { animation: none; }
+  .starField { opacity: .85; }
+}

@@ -13,6 +13,8 @@ const postagemController =
 const router = express.Router();
 
 router.use(autenticar);
+router.get('/limites', forumController.limites);
+router.post("/:id/leitura", require("../controllers/leitura.controller").forum);
 
 router.get(
   "/",
@@ -32,6 +34,11 @@ router.post(
 router.get(
   "/:id",
   forumController.buscar
+);
+
+router.get(
+  "/:id/membros",
+  forumController.membros
 );
 
 router.put(

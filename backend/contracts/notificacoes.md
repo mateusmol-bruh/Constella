@@ -1,0 +1,47 @@
+# Push e limites de fóruns
+
+## Notificações
+
+- `PUT /api/notificacoes/dispositivo`: JWT obrigatório; corpo `{ "token": "ExpoPushToken[...]", "plataforma": "android" }` (ou `ios`). Resposta `{ "ativo": true }`. Associa o token exclusivamente à conta autenticada; nunca recebe `id_usr` do cliente. Token atualizado/reassociado cancela pendências da conta anterior. Serviço desativado: 503. Token/plataforma inválidos: 400. Limite de 20 solicitações/minuto por conta.
+- `DELETE /api/notificacoes/dispositivo`: mesmo JWT; corpo `{ "token": "ExpoPushToken[...]" }`. Desativa somente o token dessa conta e cancela entregas pendentes. Resposta `{ "ativo": false }`. Não apaga registros.
+- `CONSTELLA_PUSH_ENABLED=true` habilita registro, criação de entregas e worker do processo principal `server.js`. O padrão é desativado. Não ativar antes da migração/configuração do app.
+- `EXPO_PUSH_ACCESS_TOKEN` opcional fica exclusivamente no backend para enhanced push security do Expo.
+
+Eventos são inseridos na mesma transação de novas mensagens, novas postagens e solicitação/aceite de conexão. O evento identifica o recurso, a autora e a destinatária; não guarda conteúdo de mensagem na fila persistente. Não existe endpoint público para mandar push arbitrário.
+
+`dispositivo_push` guarda token, conta, plataforma e estado. `notificacao_push` é a fila persistente. A chave única `(chave, token)` impede duplicação de um evento para o mesmo dispositivo. A autora não é incluída entre destinatárias. Antes de enviar, verificam-se bloqueios, vínculo, leitura, estado do dispositivo e existência do conteúdo. Fóruns sem participação atual não geram entrega.
+
+O worker usa Expo Push API e consulta recibos. Ticket aceito vira `AGUARDANDO`; recibo positivo vira `ACEITA_PROVEDOR`, que **não comprova recebimento no aparelho**. Erros de token desativam o dispositivo. 429/5xx usam nova tentativa com espera crescente, até cinco tentativas. Falta de resposta ou interrupção durante envio vira `INCERTA`, evitando reenvio cego e possível duplicação. A entrega final continua sujeita ao Expo, FCM/APNs, conexão e configurações do aparelho.
+
+O mobile pede permissão por ação em Perfil, atualiza o token, apresenta aviso no primeiro plano quando a conversa correspondente não está aberta e abre o destino autenticado ao toque. O JWT e a configuração inicial da conta continuam obrigatórios. Eventos repetidos não abrem repetidamente a mesma tela; URLs arbitrárias no payload não são abertas.
+
+Logout com rede revoga o token antes de apagar a sessão local, invalidando também registros ainda esperando o token do sistema operacional. Se estiver offline, a saída local continua permitida; a próxima associação do token cancela pendências da conta anterior. Notificações já entregues ao sistema operacional não podem ser recolhidas por esse fluxo.
+
+Após revalidar acesso e o dispositivo atual, o worker lê o nome real da autora e
+uma prévia de até 160 caracteres para mensagens privadas. Fotos usam título
+específico. Fóruns informam título e autora; solicitações informam a solicitante.
+Esse texto é enviado ao Expo/FCM/APNs e pode aparecer na tela bloqueada conforme
+as configurações do aparelho. Não inclui foto ou bytes/URL de anexo privado.
+
+`collapseId` e `tag` agrupam/substituem notificações por conversa, sem alterar os
+contadores no banco. Chats exigem conexão ainda aceita; fóruns exigem participação
+e postagem comum ainda existente. Ao tocar em solicitação, abre `Conexoes` com
+`aba: "requests"` e atualiza a lista; um novo evento renova o conteúdo da tela.
+
+Respostas geram somente o evento normal da mensagem/postagem, sem push paralelo.
+Avisos de saída de fórum são eventos persistentes da conversa, sem broadcast push.
+
+## Criação de fóruns
+
+- `GET /api/foruns/limites`: `{ "criados": 1, "limite": 1, "pode_criar": false, "pro": false }`. Para acesso PRO validado pelo servidor: limite null.
+- `POST /api/foruns`: conta gratuita pode manter no máximo um fórum criado. Conta com acesso PRO pode criar outros. Regra usa o status do servidor e lock da conta na transação, protegendo contra concorrência. Payload `pro`/`ativo` do cliente não concede permissão.
+- Limite atingido: 403 com `codigo: "LIMITE_FORUNS_GRATUITO"` e mensagem amigável. Não remove nem altera fóruns existentes de contas acima do limite.
+- Demonstração PRO de desenvolvimento segue o status temporário existente do servidor. Não é pagamento ou assinatura real.
+
+## Listagem paginada
+
+`GET /api/foruns?filtro=explorar&pagina=1&limite=30&busca=design`: resposta `{ "foruns": [], "pagina": 1, "tem_mais": false }`. Limite de 1 a 50, paginação positiva; ordenação por data e ID. O filtro `meus` seleciona participações. Sem `pagina`, o contrato anterior de listagem é preservado. Contadores são calculados por lote, sem duas consultas extras para cada fórum.
+
+## Banco
+
+Migração aditiva `20261023000300_push`: cria somente `dispositivo_push` e `notificacao_push` com índices e FKs. Nenhuma migração anterior é removida e nenhum dado existente é apagado.

@@ -85,6 +85,7 @@ async function enviarSolicitacao(idUsuario, idDestino) {
     );
   }
 
+  await require("./bloqueio.service").permitir(solicitante,recebedora);
   const destinoExiste = await prisma.usuaria.findUnique({
     where: { id_usr: recebedora },
     select: { id_usr: true }
@@ -120,7 +121,14 @@ async function enviarSolicitacao(idUsuario, idDestino) {
     );
   }
 
-  const conexao = await prisma.conexao.create({
+  const conexao = await prisma.$transaction(async tx => {
+    await tx.$queryRaw`SELECT id_usr FROM usuaria WHERE id_usr IN (${solicitante}, ${recebedora}) ORDER BY id_usr FOR UPDATE`;
+    const duplicate = await tx.conexao.findFirst({ where: { OR: [
+      { id_user_solicit: solicitante, id_user_receb: recebedora },
+      { id_user_solicit: recebedora, id_user_receb: solicitante },
+    ] } });
+    if (duplicate) throw erroHttp('Já existe uma conexão ou solicitação entre essas usuárias.', 409);
+    const saved = await tx.conexao.create({
     data: {
       id_user_solicit: solicitante,
       id_user_receb: recebedora,
@@ -128,6 +136,9 @@ async function enviarSolicitacao(idUsuario, idDestino) {
     }
   });
 
+    await require('./notificacao.service').enfileirar(tx, { chave: `solicitacao:${saved.id_conexao}`, tipo: 'conexao', recurso: saved.id_conexao, autor: solicitante, destinatarias: [recebedora] });
+    return saved;
+  });
   return formatarConexao(conexao);
 }
 
@@ -225,7 +236,9 @@ async function responderSolicitacao(
     );
   }
 
-  const resultado = await prisma.conexao.updateMany({
+  await require("./bloqueio.service").permitir(recebedora,conexao.id_user_solicit);
+  const atualizada = await prisma.$transaction(async tx => {
+  const resultado = await tx.conexao.updateMany({
     where: {
       id_conexao: conexaoId,
       id_user_receb: recebedora,
@@ -243,10 +256,13 @@ async function responderSolicitacao(
     );
   }
 
-  const atualizada = await prisma.conexao.findUnique({
+  const saved = await tx.conexao.findUnique({
     where: { id_conexao: conexaoId }
   });
 
+  if (novoStatus === 'ACEITO') await require('./notificacao.service').enfileirar(tx, { chave: `aceite:${saved.id_conexao}`, tipo: 'conexao', recurso: saved.id_conexao, autor: recebedora, destinatarias: [saved.id_user_solicit] });
+  return saved;
+  });
   return formatarConexao(atualizada);
 }
 

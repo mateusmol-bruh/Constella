@@ -1,37 +1,27 @@
 const postagemService =
   require("../services/postagem.service");
+const { responderErroConversa } = require('../utils/conversation-error');
 
 function tratarErro(res, error) {
-  if (error.statusCode) {
-    return res
-      .status(error.statusCode)
-      .json({
-        mensagem:
-          error.message
-      });
-  }
-
-  console.error(
-    "Erro na API de postagens:",
-    error
-  );
-
-  return res.status(500).json({
-    mensagem:
-      "Erro interno do servidor."
-  });
+  return responderErroConversa(res, error, 'postagem');
 }
 
 async function listar(req, res) {
   try {
+    const pagina = Number(req.query.pagina ?? 1);
+    const limite = Number(req.query.limite ?? 50);
     const postagens =
       await postagemService
         .listarPostagens(
           req.usuarioId,
-          req.params.id
+          req.params.id,
+          pagina,
+          limite
         );
 
     return res.status(200).json({
+      pagina,
+      limite,
       postagens
     });
   } catch (error) {

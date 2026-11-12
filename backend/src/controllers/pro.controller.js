@@ -13,7 +13,7 @@ function tratarErro(res, error) {
 
   console.error(
     "Erro na API Pro:",
-    error
+    error.code || error.name || 'Error'
   );
 
   return res.status(500).json({
@@ -71,8 +71,18 @@ async function buscar(req, res) {
   }
 }
 
+async function catalogo(req, res) {
+  try {
+    const conteudos = await proService.listarCatalogoPro();
+    return res.status(200).json({ conteudos });
+  } catch (error) {
+    return tratarErro(res, error);
+  }
+}
+
 module.exports = {
   status,
+  catalogo,
   listar,
   buscar
 };

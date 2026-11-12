@@ -1,15 +1,41 @@
 function tratarErroGlobal(error, req, res, next) {
-  console.error("Erro não tratado:", error);
+  // Não registrar payload, SQL, tokens, hashes nem o erro bruto de drivers.
+  if (!error.statusCode || error.statusCode >= 500) {
+    console.error("Erro ao processar requisição:", error.code || error.name || "Error");
+  }
 
   if (res.headersSent) {
     return next(error);
   }
 
+  if (error.type === "entity.parse.failed") {
+    return res.status(400).json({ mensagem: "JSON inválido." });
+  }
+  if (error.type === "entity.too.large") {
+    return res.status(413).json({ mensagem: "Corpo da requisição muito grande." });
+  }
+
+  if (error.code === "P2022" && /onboarding_concluido|apresentacao/.test(String(error.meta?.column || ""))) {
+    return res.status(503).json({
+      codigo: "ONBOARDING_MIGRACAO_PENDENTE",
+      mensagem: "A persistência do onboarding aguarda migração autorizada no servidor."
+    });
+  }
+
+  if (error.code==='P2021' && /recuperacao_senha/.test(String(error.meta?.modelName||error.meta?.table||''))) {
+    return res.status(503).json({codigo:'RECUPERACAO_MIGRACAO_PENDENTE',mensagem:'A recuperação de senha aguarda atualização autorizada do banco.'});
+  }
+
+  if ((error.code==='P2021' && String(error.meta?.modelName||error.meta?.table||'').match(/sessao|arquivo_pro/)) ||
+      (error.code==='P2022' && /publicado|categoria|atualizado_em|descricao|id_mod|banida|imagem_pro_id|video_pro_id/.test(String(error.meta?.column||'')))) {
+    return res.status(503).json({codigo:'INTEGRACAO_MIGRACAO_PENDENTE',mensagem:'A integração administrativa aguarda atualização autorizada do banco.'});
+  }
   if (error.statusCode) {
     return res.status(error.statusCode).json({
       mensagem:
         error.message ||
-        "Erro ao processar a requisição."
+        "Erro ao processar a requisição.",
+      ...(error.codigo ? { codigo: error.codigo } : {})
     });
   }
 

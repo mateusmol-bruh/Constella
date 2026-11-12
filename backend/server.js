@@ -1,10 +1,15 @@
+require("dotenv").config({ quiet: true });
 
-require("dotenv").config();
+if (!process.env.JWT_SECRET) {
+  throw new Error("JWT_SECRET não configurado no servidor.");
+}
 
 const express = require("express");
 const cors = require("cors");
 
 const authRoutes = require("./src/routes/auth.routes");
+const publicoRoutes = require("./src/routes/publico.routes");
+const uploadRoutes = require("./src/routes/upload.routes");
 
 const perfilRoutes = require("./src/routes/perfil.routes");
 
@@ -45,7 +50,19 @@ const PORT = process.env.PORT || 3000;
 // Middlewares
 app.disable("x-powered-by");
 
-app.use(cors());
+const allowedOrigins=(process.env.CORS_ALLOWED_ORIGINS||'').split(',').map(s=>s.trim()).filter(Boolean);
+app.use(cors({credentials:true,origin(origin,callback){
+ if(!origin || allowedOrigins.includes(origin) || (process.env.NODE_ENV!=='production' && /^http:\/\/(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/.test(origin)))return callback(null,true);
+ return callback(Object.assign(new Error('Origem não autorizada.'),{statusCode:403}));
+}}));
+app.use((req,res,next)=>{res.set('X-Content-Type-Options','nosniff');res.set('Referrer-Policy','no-referrer');if(req.path.startsWith('/api/'))res.set('Cache-Control','no-store');next();});
+// O corpo maior só é lido após autenticação e CSRF da moderadora.
+app.use('/api/moderacao/capas',require('./src/middlewares/moderadora.middleware'),express.json({limit:'3mb'}));
+
+// Autentica antes de ler o corpo maior permitido somente para imagens.
+app.use('/api/uploads', uploadRoutes.router);
+app.get('/uploads/:nome', uploadRoutes.serveImage);
+app.use('/api/anexos', require('./src/routes/anexo.routes'));
 
 app.use(
   express.json({
@@ -56,6 +73,7 @@ app.use(
 //remove o header que denuncia Express e evita payload JSON absurdamente grande.
 
 // Rotas
+app.use("/api/publico", publicoRoutes);
 app.use("/api/auth", authRoutes);
 
 app.use(
@@ -72,7 +90,9 @@ app.use(
   "/api/conexoes", conexaoRoutes
 );
 
+app.use("/api/bloqueios", require("./src/routes/bloqueio.routes"));
 app.use("/api/chats", chatRoutes);
+app.use('/api/notificacoes', require('./src/routes/notificacao.routes'));
 
 app.use(
   "/api/usuarios",
@@ -133,7 +153,11 @@ app.use(notFound);
 app.use(tratarErroGlobal);
 
 // Inicialização do servidor
-app.listen(PORT, () => {
-  console.log(`Servidor rodando na porta ${PORT}`);
-});
+if (require.main === module) {
+  require('./src/services/push-worker.service').iniciar();
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`Servidor rodando na porta ${PORT}`);
+  });
+}
 
+module.exports = app;

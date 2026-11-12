@@ -1,9 +1,7 @@
 
 import "dotenv/config";
 
-import { Pool } from "pg";
-import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient } from "@prisma/client";
+import prisma from "../config/prisma";
 import bcrypt from "bcryptjs";
 
 const connectionString = process.env.DATABASE_URL;
@@ -11,10 +9,6 @@ const connectionString = process.env.DATABASE_URL;
 if (!connectionString) {
   throw new Error("DATABASE_URL não foi definida no arquivo .env");
 }
-
-const pool = new Pool({ connectionString });
-const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({ adapter });
 
 // =========================================================
 // FUNÇÕES AUXILIARES
@@ -58,15 +52,19 @@ async function garantirRelacionamentos<T>(
 // =========================================================
 
 async function main() {
-  if (process.env.NODE_ENV === "production") {
+  if (process.env.NODE_ENV !== "development" || process.env.ALLOW_DEVELOPMENT_SEED !== "true") {
     throw new Error(
-      "Este seed contém dados de teste e não pode ser executado em produção."
+      "Seed bloqueado: confirme banco de desenvolvimento com NODE_ENV=development e ALLOW_DEVELOPMENT_SEED=true."
     );
   }
 
   console.log("Iniciando seed do Constella...");
 
-  const senhaHash = await bcrypt.hash("Senha@123", 12);
+  const senha = process.env.SEED_PASSWORD;
+  if (!senha || senha.length < 12 || Buffer.byteLength(senha, "utf8") > 72) {
+    throw new Error("Configure SEED_PASSWORD local com pelo menos 12 caracteres e até 72 bytes. Não a versione.");
+  }
+  const senhaHash = await bcrypt.hash(senha, 12);
 
   // =========================================================
   // 1. MODERADORAS
@@ -923,23 +921,7 @@ async function main() {
   // FINALIZAÇÃO
   // =========================================================
 
-  console.log("Seed concluído com sucesso!");
-  console.log("");
-
-  console.log("Usuárias de teste:");
-  console.log("  beatriz@constella.dev");
-  console.log("  camila@constella.dev");
-  console.log("  larissa@constella.dev");
-  console.log("  mariana@constella.dev");
-  console.log("  sofia@constella.dev");
-
-  console.log("");
-  console.log("Senha de teste para contas recém-criadas: Senha@123");
-
-  console.log("");
-  console.log(`Mensagem de referência: ${msg1.id_msg.toString()}`);
-  console.log(`Postagem de referência: ${postBia.id_post.toString()}`);
-  console.log(`Postagem de referência: ${postCamila.id_post.toString()}`);
+  console.log("Seed de desenvolvimento concluído; registros existentes foram preservados. Nenhuma cobrança real foi realizada.");
 }
 
 // =========================================================
@@ -949,10 +931,9 @@ async function main() {
 main()
   .catch((error) => {
     console.error("Erro ao executar o seed:");
-    console.error(error);
+    console.error(error instanceof Error && !('code' in error) ? error.message : "Falha no banco. Revise a configuração local sem divulgar credenciais.");
     process.exitCode = 1;
   })
   .finally(async () => {
     await prisma.$disconnect();
-    await pool.end();
   });

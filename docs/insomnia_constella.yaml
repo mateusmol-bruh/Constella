@@ -93,6 +93,348 @@ collection:
             send: true
             store: true
           rebuildPath: true
+      - name: Recuperação de Senha
+        meta:
+          id: fld_5f83bf5eec544e2799536f29e3510793
+          created: 1793389560263
+          modified: 1793389560263
+          sortKey: 1793389560263
+          description: Gmail remetente no backend; destinatário da conta no PostgreSQL. Use somente contas de teste autorizadas. Credenciais e códigos reais não pertencem ao export.
+        children:
+          - url: '{{ _.base_url }}/api/auth/forgot-password'
+            name: 01 - Solicitar recuperação
+            meta:
+              id: req_7bf97e5b87104073b9c94883114ff469
+              created: 1793389560263
+              modified: 1793389560263
+              isPrivate: false
+              description: Conta de teste autorizada. 202 genérico, sem código na resposta. Confira a caixa de entrada e spam. Nenhum domínio destinatário é limitado artificialmente.
+              sortKey: 1793389560263
+            method: POST
+            body:
+              mimeType: application/json
+              text: |-
+                {
+                  "email": "{{ _.test_email }}"
+                }
+            headers:
+              - name: Content-Type
+                value: application/json
+            authentication:
+              type: none
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: false
+                store: false
+              rebuildPath: true
+          - url: '{{ _.base_url }}/api/auth/reset-password'
+            name: 02 - Redefinir senha
+            meta:
+              id: req_432702a68d6f40af8a8aa6ab3b8cc3e9
+              created: 1793389560263
+              modified: 1793389560263
+              isPrivate: false
+              description: Preencha reset_code somente no ambiente local com o código do e-mail autorizado. Consome uma única vez e revoga sessões anteriores.
+              sortKey: 1793389560264
+            method: POST
+            body:
+              mimeType: application/json
+              text: |-
+                {
+                  "email": "{{ _.test_email }}",
+                  "codigo": "{{ _.reset_code }}",
+                  "novaSenha": "{{ _.new_password }}"
+                }
+            headers:
+              - name: Content-Type
+                value: application/json
+            authentication:
+              type: none
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: false
+                store: false
+              rebuildPath: true
+          - url: '{{ _.base_url }}/api/auth/login'
+            name: 03 - Login com nova senha
+            meta:
+              id: req_334d6260b40f460c9ec9c6631cee0d0e
+              created: 1793389560263
+              modified: 1793389560263
+              isPrivate: false
+              description: 200 após redefinição. Não exporte a senha ou o JWT recebido.
+              sortKey: 1793389560265
+            method: POST
+            body:
+              mimeType: application/json
+              text: |-
+                {
+                  "email": "{{ _.test_email }}",
+                  "senha": "{{ _.new_password }}"
+                }
+            headers:
+              - name: Content-Type
+                value: application/json
+            authentication:
+              type: none
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: false
+                store: false
+              rebuildPath: true
+          - url: '{{ _.base_url }}/api/auth/forgot-password'
+            name: 04 - E-mail inválido
+            meta:
+              id: req_41944585711043e6982f46324991c10a
+              created: 1793389560263
+              modified: 1793389560263
+              isPrivate: false
+              description: 400 antes de gerar ou enviar código.
+              sortKey: 1793389560266
+            method: POST
+            body:
+              mimeType: application/json
+              text: |-
+                {
+                  "email": "email-invalido"
+                }
+            headers:
+              - name: Content-Type
+                value: application/json
+            authentication:
+              type: none
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: false
+                store: false
+              rebuildPath: true
+          - url: '{{ _.base_url }}/api/auth/reset-password'
+            name: 05 - Código incorreto
+            meta:
+              id: req_1b7c4b46c7094b70a58bd72ac166072c
+              created: 1793389560263
+              modified: 1793389560263
+              isPrivate: false
+              description: Use seis dígitos diferentes do código válido. Incrementa tentativas.
+              sortKey: 1793389560267
+            method: POST
+            body:
+              mimeType: application/json
+              text: |-
+                {
+                  "email": "{{ _.test_email }}",
+                  "codigo": "{{ _.wrong_code }}",
+                  "novaSenha": "{{ _.new_password }}"
+                }
+            headers:
+              - name: Content-Type
+                value: application/json
+            authentication:
+              type: none
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: false
+                store: false
+              rebuildPath: true
+          - url: '{{ _.base_url }}/api/auth/reset-password'
+            name: 06 - Código expirado
+            meta:
+              id: req_97fb8d15c92143f6acb0523cfec933d9
+              created: 1793389560263
+              modified: 1793389560263
+              isPrivate: false
+              description: Use um código cuja validade de dez minutos já terminou. Não há endpoint para mudar datas.
+              sortKey: 1793389560268
+            method: POST
+            body:
+              mimeType: application/json
+              text: |-
+                {
+                  "email": "{{ _.test_email }}",
+                  "codigo": "{{ _.expired_code }}",
+                  "novaSenha": "{{ _.new_password }}"
+                }
+            headers:
+              - name: Content-Type
+                value: application/json
+            authentication:
+              type: none
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: false
+                store: false
+              rebuildPath: true
+          - url: '{{ _.base_url }}/api/auth/reset-password'
+            name: 07 - Código já utilizado
+            meta:
+              id: req_f8ad98a8a08d459c8577bda7bf5a8aff
+              created: 1793389560263
+              modified: 1793389560263
+              isPrivate: false
+              description: Use o código consumido pela conta de teste; esperado 400 genérico.
+              sortKey: 1793389560269
+            method: POST
+            body:
+              mimeType: application/json
+              text: |-
+                {
+                  "email": "{{ _.test_email }}",
+                  "codigo": "{{ _.used_code }}",
+                  "novaSenha": "{{ _.new_password }}"
+                }
+            headers:
+              - name: Content-Type
+                value: application/json
+            authentication:
+              type: none
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: false
+                store: false
+              rebuildPath: true
+          - url: '{{ _.base_url }}/api/auth/reset-password'
+            name: 08 - Limite de tentativas
+            meta:
+              id: req_b760f93c0e3145dcb9d6a95564061898
+              created: 1793389560263
+              modified: 1793389560263
+              isPrivate: false
+              description: Repita com código incorreto até cinco erros persistidos; depois o correto também deve falhar. Há limites HTTP adicionais por IP/e-mail.
+              sortKey: 1793389560270
+            method: POST
+            body:
+              mimeType: application/json
+              text: |-
+                {
+                  "email": "{{ _.test_email }}",
+                  "codigo": "{{ _.wrong_code }}",
+                  "novaSenha": "{{ _.new_password }}"
+                }
+            headers:
+              - name: Content-Type
+                value: application/json
+            authentication:
+              type: none
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: false
+                store: false
+              rebuildPath: true
+          - url: '{{ _.base_url }}/api/auth/verify-reset-code'
+            name: 09 - Verificar código antes da nova senha
+            meta:
+              id: req_fa354a80a20545469f6e90e80b963451
+              created: 1793389560263
+              modified: 1793389560263
+              isPrivate: false
+              description: 200 não consome nem renova código; reset revalida tudo.
+              sortKey: 1793389560271
+            method: POST
+            body:
+              mimeType: application/json
+              text: |-
+                {
+                  "email": "{{ _.test_email }}",
+                  "codigo": "{{ _.reset_code }}"
+                }
+            headers:
+              - name: Content-Type
+                value: application/json
+            authentication:
+              type: none
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: false
+                store: false
+              rebuildPath: true
+          - url: '{{ _.base_url }}/api/auth/reset-password'
+            name: 10 - Senha fora da política
+            meta:
+              id: req_c166204818a84dc587d8d0a5021ec2e3
+              created: 1793389560263
+              modified: 1793389560263
+              isPrivate: false
+              description: 400 sem consumir o código.
+              sortKey: 1793389560272
+            method: POST
+            body:
+              mimeType: application/json
+              text: |-
+                {
+                  "email": "{{ _.test_email }}",
+                  "codigo": "{{ _.reset_code }}",
+                  "novaSenha": "curta"
+                }
+            headers:
+              - name: Content-Type
+                value: application/json
+            authentication:
+              type: none
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: false
+                store: false
+              rebuildPath: true
+          - url: '{{ _.base_url }}/api/auth/login'
+            name: 11 - Login com senha anterior
+            meta:
+              id: req_91918bd998644450a637867aa31fa07e
+              created: 1793389560263
+              modified: 1793389560263
+              isPrivate: false
+              description: 401 após reset concluído.
+              sortKey: 1793389560273
+            method: POST
+            body:
+              mimeType: application/json
+              text: |-
+                {
+                  "email": "{{ _.test_email }}",
+                  "senha": "{{ _.old_password }}"
+                }
+            headers:
+              - name: Content-Type
+                value: application/json
+            authentication:
+              type: none
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: false
+                store: false
+              rebuildPath: true
   - name: Perfil
     meta:
       id: fld_7ee680888ab346f8982782be2c0d38f2
@@ -1559,6 +1901,13 @@ environments:
     isPrivate: false
   data:
     base_url: "{{ _.scheme }}://{{ _.host }}{{ _.base_path }}"
+    test_email: conta@example.invalid
+    reset_code: ''
+    new_password: ''
+    old_password: ''
+    wrong_code: '000000'
+    expired_code: ''
+    used_code: ''
   subEnvironments:
     - name: OpenAPI env localhost:3000
       meta:

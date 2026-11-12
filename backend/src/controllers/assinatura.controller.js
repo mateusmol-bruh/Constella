@@ -24,16 +24,13 @@ function tratarErro(res, error) {
 
 async function buscar(req, res) {
   try {
-    const assinatura =
+    const resultado =
       await assinaturaService
-        .buscarAssinatura(
+        .buscarStatusAssinatura(
           req.usuarioId
         );
 
-    return res.status(200).json({
-      pro: Boolean(assinatura),
-      assinatura
-    });
+    return res.status(200).json(resultado);
 
   } catch (error) {
     return tratarErro(res, error);

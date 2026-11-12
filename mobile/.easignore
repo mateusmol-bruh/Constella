@@ -1,0 +1,17 @@
+node_modules/
+.expo/
+.git/
+.codex/
+dist/
+web-build/
+android/
+ios/
+.env
+.env.*
+!.env.example
+*.jks
+*.keystore
+*.p12
+*.key
+*.pem
+npm-debug.*
