@@ -1,4 +1,4 @@
-﻿import React, { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { Text } from 'react-native';
 import { Brand } from '../components/Brand';
 import { Button, Notice, Screen } from '../components/ui';
@@ -18,4 +18,3 @@ export default function VerificarContaScreen({ navigation }: ScreenProps<'Verifi
     <Button title="Sair da conta" variant="secondary" onPress={() => void auth.logout()} />
   </Screen>;
 }
-

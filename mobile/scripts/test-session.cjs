@@ -46,6 +46,10 @@ function mount(initialToken = null) {
       if (!(index in slots)) slots[index] = { current: initial };
       return slots[index];
     },
+    useCallback(callback) {
+      cursor++;
+      return callback;
+    },
     useEffect(effect) {
       const index = cursor++;
       if (!(index in slots)) { slots[index] = true; effects.push(effect); }

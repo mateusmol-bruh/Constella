@@ -1,4 +1,4 @@
-import axios from 'axios';
+import { isAxiosError } from 'axios';
 import { api, signalResourceChange } from './api';
 import type { Conversation, Person, Forum, Message, Post, SendOptions } from '../types/models';
 
@@ -36,7 +36,7 @@ export const socialService = {
     try { await api.post(`/api/foruns/${path(id)}/entrar`); }
     catch (cause) {
       // Entrar novamente após perda da resposta é seguro: o servidor confirma o vínculo existente.
-      if (!axios.isAxiosError(cause) || cause.response?.status !== 409) throw cause;
+      if (!isAxiosError(cause) || cause.response?.status !== 409) throw cause;
     }
   },
   async leaveForum(id: string) { await api.delete(`/api/foruns/${path(id)}/sair`); signalResourceChange(); },

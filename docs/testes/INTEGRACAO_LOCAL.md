@@ -106,4 +106,3 @@ Validação em Expo Go/aparelho físico ainda é necessária. Bibliotecas e SDK 
 - Contratos/revisão: `backend/contracts/auth-perfil-interesses.md`, `backend/contracts/revisao-integracao.md`, `backend/proposals/onboarding.md` e SQL de proposta arquivado.
 
 As alterações e exclusões já presentes antes desta tarefa foram preservadas. Não houve commit, publicação ou alteração na outra cópia do repositório.
-

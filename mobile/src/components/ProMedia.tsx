@@ -14,25 +14,22 @@ import { ConversationImage } from './ConversationImage';
 import { Button } from './ui';
 import { colors, ui } from '../styles/theme';
 function usePrivateSource(file: ProMediaFile) {
-  const [uri, setUri] = useState<string>(),
-    [error, setError] = useState(''),
+  const [result, setResult] = useState<{
+      key: string;
+      uri?: string;
+      error?: string;
+    }>(),
     [attempt, setAttempt] = useState(0);
+  const requestKey = `${file.url}:${attempt}`;
+  const valid =
+    /^\/api\/pro\/conteudos\/[1-9]\d*\/midias\/[a-f0-9-]{36}$/.test(
+      file.url,
+    );
   useEffect(() => {
+    if (!valid || Platform.OS !== 'web') return;
     let active = true,
       url: string | undefined;
     const controller = new AbortController();
-    setUri(undefined);
-    setError('');
-    if (
-      !/^\/api\/pro\/conteudos\/[1-9]\d*\/midias\/[a-f0-9-]{36}$/.test(file.url)
-    ) {
-      setError('Arquivo indisponível.');
-      return;
-    }
-    if (Platform.OS !== 'web') {
-      setUri(apiUrl + file.url);
-      return;
-    }
     // Web video/image elements cannot attach Bearer headers. Fetch with the authenticated client.
     void api
       .get<Blob>(file.url, {
@@ -43,18 +40,27 @@ function usePrivateSource(file: ProMediaFile) {
       .then((r) => {
         if (active) {
           url = URL.createObjectURL(r.data);
-          setUri(url);
+          setResult({ key: requestKey, uri: url });
         }
       })
       .catch((e) => {
-        if (active) setError(errorMessage(e));
+        if (active) setResult({ key: requestKey, error: errorMessage(e) });
       });
     return () => {
       active = false;
       controller.abort();
       if (url) URL.revokeObjectURL(url);
     };
-  }, [file.url, attempt]);
+  }, [file.url, requestKey, valid]);
+  const currentResult = result?.key === requestKey ? result : undefined;
+  const uri = !valid
+    ? undefined
+    : Platform.OS === 'web'
+      ? currentResult?.uri
+      : apiUrl + file.url;
+  const error = !valid
+    ? 'Arquivo indisponível.'
+    : currentResult?.error ?? '';
   return { uri, error, retry: () => setAttempt((v) => v + 1) };
 }
 function Player({ uri, file }: { uri: string; file: ProMediaFile }) {

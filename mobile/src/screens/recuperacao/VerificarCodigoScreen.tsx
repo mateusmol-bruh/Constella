@@ -32,9 +32,7 @@ export default function VerificarCodigoScreen({
     resolver: zodResolver(recoveryCodeSchema),
     defaultValues: { codigo: '' },
   });
-  const submit = handleSubmit(async (v) => {
-    if (busy.current) return;
-    busy.current = true;
+  const submitForm = handleSubmit(async (v) => {
     setError('');
     try {
       await passwordRecoveryService.verify(flow.email, v.codigo);
@@ -43,10 +41,15 @@ export default function VerificarCodigoScreen({
       navigation.navigate('NovaSenha');
     } catch (e) {
       if (active.current) setError(errorMessage(e));
-    } finally {
-      busy.current = false;
     }
   });
+  function submit() {
+    if (busy.current) return;
+    busy.current = true;
+    void submitForm().finally(() => {
+      busy.current = false;
+    });
+  }
   async function resend() {
     if (busy.current || wait > 0) return;
     busy.current = true;
@@ -90,7 +93,7 @@ export default function VerificarCodigoScreen({
         maxLength={6}
         autoCorrect={false}
         editable={!isSubmitting && !sending}
-        onSubmitEditing={() => void submit()}
+        onSubmitEditing={submit}
         returnKeyType="next"
       />
       <Notice text={error} />
@@ -98,7 +101,7 @@ export default function VerificarCodigoScreen({
         title="Continuar"
         loading={isSubmitting}
         disabled={sending}
-        onPress={() => void submit()}
+        onPress={submit}
       />
       <Button
         title={

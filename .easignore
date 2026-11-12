@@ -16,3 +16,8 @@ node_modules/
 **/*.p12
 **/*.pem
 **/*.key
+**/.next/
+**/dist/
+**/build/
+**/web-build/
+**/*.log

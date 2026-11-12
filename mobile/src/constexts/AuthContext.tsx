@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { authService, type RegisterInput } from '../services/auth.service';
@@ -34,20 +34,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const epoch = useRef(0);
   const mounted = useRef(true);
   const storageQueue = useRef(Promise.resolve());
-  function current(version: number) { return mounted.current && version === epoch.current; }
+  const current = useCallback(
+    (version: number) => mounted.current && version === epoch.current,
+    [],
+  );
   // Uma exclusão da sessão anterior deve terminar antes de salvar a próxima.
-  function updateStorage(operation: () => Promise<void>) {
+  const updateStorage = useCallback((operation: () => Promise<void>) => {
     const pending = storageQueue.current.then(operation);
     // Recupera somente a fila; a falha original de pending segue para o chamador.
     storageQueue.current = pending.then(() => undefined, () => undefined);
     return pending;
-  }
-  function applyProfile(profile: Profile) {
+  }, []);
+  const applyProfile = useCallback((profile: Profile) => {
     setNeedsOnboarding(typeof profile.onboarding_concluido === 'boolean' ? !profile.onboarding_concluido : null);
     setAbout(profile.onboarding_concluido ? profile.apresentacao ?? '' : '');
     setUser({ id: profile.id, nome: profile.nome, email: profile.email, onboarding_concluido: profile.onboarding_concluido });
-  }
-  async function restoreSession() {
+  }, []);
+  const restoreSession = useCallback(async () => {
     const version = ++epoch.current;
     setRestoring(true); setRestoreFailed(false); setNotice('');
     try {
@@ -61,7 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       if (current(version)) { setRestoreFailed(true); setNotice(errorMessage(error)); }
     } finally { if (current(version)) setRestoring(false); }
-  }
+  }, [applyProfile, current]);
   useEffect(() => {
     mounted.current = true;
     setSessionExpiredHandler((message) => {
@@ -74,8 +77,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
     });
     void Promise.resolve().then(() => { if (mounted.current) return restoreSession(); });
-    return () => { mounted.current = false; epoch.current++; setSessionExpiredHandler(undefined); };
-  }, []);
+    return () => { mounted.current = false; setSessionExpiredHandler(undefined); };
+  }, [current, restoreSession, updateStorage]);
   async function accept(result: AuthResponse, version: number) {
     if (!current(version)) throw new Error('Sessão alterada.');
     if (typeof result.token !== 'string' || !result.token || !result.usuaria?.id) throw new Error('Resposta de autenticação inválida.');

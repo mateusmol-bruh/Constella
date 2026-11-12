@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { Text } from 'react-native';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { FormField } from '../../components/FormField';
 import { Button, Header, Notice, Screen } from '../../components/ui';
@@ -25,17 +25,16 @@ export default function SolicitarRecuperacaoScreen({
   const {
     control,
     handleSubmit,
-    watch,
     formState: { isSubmitting },
   } = useForm({
     resolver: zodResolver(recoveryEmailSchema),
     defaultValues: { email: '' },
   });
+  const email = useWatch({ control, name: 'email' });
   const blocked =
-    wait > 0 && watch('email').trim().toLowerCase() === flow.email;
-  const submit = handleSubmit(async (v) => {
-    if (busy.current || blocked) return;
-    busy.current = true;
+    wait > 0 && email.trim().toLowerCase() === flow.email;
+  const submitForm = handleSubmit(async (v) => {
+    if (blocked) return;
     setError('');
     try {
       await passwordRecoveryService.request(v.email);
@@ -44,10 +43,15 @@ export default function SolicitarRecuperacaoScreen({
       navigation.navigate('Verificar');
     } catch (e) {
       if (active.current) setError(errorMessage(e));
-    } finally {
-      busy.current = false;
     }
   });
+  function submit() {
+    if (busy.current || blocked) return;
+    busy.current = true;
+    void submitForm().finally(() => {
+      busy.current = false;
+    });
+  }
   return (
     <Screen centered bottomSafe>
       <Header title="Esqueci minha senha" onBack={flow.login} />
@@ -65,7 +69,7 @@ export default function SolicitarRecuperacaoScreen({
         autoCapitalize="none"
         autoCorrect={false}
         editable={!isSubmitting}
-        onSubmitEditing={() => void submit()}
+        onSubmitEditing={submit}
         returnKeyType="send"
       />
       <Notice text={error} />
@@ -75,7 +79,7 @@ export default function SolicitarRecuperacaoScreen({
         }
         disabled={blocked}
         loading={isSubmitting}
-        onPress={() => void submit()}
+        onPress={submit}
       />
       <Button
         title="Voltar ao login"

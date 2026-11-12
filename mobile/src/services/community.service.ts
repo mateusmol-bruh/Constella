@@ -18,11 +18,11 @@ export const communityService = {
   async myInterests() { return (await api.get<{ interesses: InterestDTO[] }>('/api/interesses/meus')).data.interesses.map(interest); },
   async saveInterests(ids: string[]) { await api.put('/api/interesses/meus', { interesses: ids }); },
   async recommendedPeople(): Promise<Person[]> {
-    const { data } = await api.get<{ recomendacoes: Array<{ id: string; nome: string; foto?: string | null; interesses_em_comum: Interest[] }> }>('/api/recomendacoes/usuarios');
+    const { data } = await api.get<{ recomendacoes: { id: string; nome: string; foto?: string | null; interesses_em_comum: Interest[] }[] }>('/api/recomendacoes/usuarios');
     return data.recomendacoes.map(item => ({ ...item, interesses: item.interesses_em_comum }));
   },
   async recommendedForums(): Promise<Forum[]> {
-    const { data } = await api.get<{ recomendacoes: Array<Omit<Forum, 'id_for'> & { id: string }> }>('/api/recomendacoes/foruns');
+    const { data } = await api.get<{ recomendacoes: (Omit<Forum, 'id_for'> & { id: string })[] }>('/api/recomendacoes/foruns');
     return data.recomendacoes.map(item => ({ ...item, id_for: item.id }));
   },
   async people(busca?: string) { return (await api.get<{ usuarias: Person[] }>('/api/usuarios', { params: { busca: busca?.trim() || undefined } })).data.usuarias; },

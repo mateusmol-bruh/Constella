@@ -48,4 +48,3 @@ export async function uploadImage(image: SelectedImage, privada = false, signal?
   if (!(privada ? /^\/api\/anexos\/[1-9]\d*-[a-f0-9-]+\.(jpg|png)$/ : /^\/uploads\/[a-f0-9-]+\.(jpg|png|webp)$/).test(data.caminho)) throw new Error('IMAGEM_RESPOSTA_INVALIDA');
   return data.caminho;
 }
-

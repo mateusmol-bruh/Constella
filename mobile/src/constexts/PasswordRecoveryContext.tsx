@@ -35,13 +35,16 @@ export function usePasswordRecovery() {
 }
 export function useRecoveryWait() {
   const { lastRequest } = usePasswordRecovery(),
-    [now, setNow] = useState(Date.now());
+    [now, setNow] = useState<number | null>(null);
   useEffect(() => {
-    setNow(Date.now());
+    const initial = setTimeout(() => setNow(Date.now()), 0);
     const timer = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(timer);
+    return () => {
+      clearTimeout(initial);
+      clearInterval(timer);
+    };
   }, [lastRequest]);
-  return recoveryCooldown(lastRequest, now);
+  return recoveryCooldown(lastRequest, now ?? lastRequest);
 }
 export function useRecoveryActive() {
   const active = useRef(false);

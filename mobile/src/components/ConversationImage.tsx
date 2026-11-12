@@ -28,32 +28,38 @@ export function ConversationImage({
 }) {
   const [size, setSize] = React.useState({ width: 1, height: 1 });
   const [open, setOpen] = React.useState(false);
-  const [failed, setFailed] = React.useState(false);
-  const [loading, setLoading] = React.useState(true);
   const [attempt, setAttempt] = React.useState(0);
   const privateFile =
     uri.startsWith('/api/anexos/') || uri.startsWith('/api/pro/');
-  const [webUri, setWebUri] = React.useState<string>();
+  const requestKey = `${uri}:${attempt}`;
+  const [imageState, setImageState] = React.useState<{
+    key: string;
+    failed: boolean;
+    loading: boolean;
+  }>();
+  const failed = imageState?.key === requestKey ? imageState.failed : false;
+  const loading = imageState?.key === requestKey ? imageState.loading : true;
+  const [webSource, setWebSource] = React.useState<{
+    key: string;
+    uri: string;
+  }>();
+  const webUri = webSource?.key === requestKey ? webSource.uri : undefined;
   React.useEffect(() => {
-    setFailed(false);
-    setLoading(true);
     if (Platform.OS !== 'web' || !privateFile) return;
     let active = true,
       url: string | undefined;
     const controller = new AbortController();
-    setWebUri(undefined);
     void api
       .get<Blob>(uri, { responseType: 'blob', signal: controller.signal })
       .then((response) => {
         if (active) {
           url = URL.createObjectURL(response.data);
-          setWebUri(url);
+          setWebSource({ key: requestKey, uri: url });
         }
       })
       .catch(() => {
         if (active) {
-          setLoading(false);
-          setFailed(true);
+          setImageState({ key: requestKey, loading: false, failed: true });
         }
       });
     return () => {
@@ -61,7 +67,7 @@ export function ConversationImage({
       controller.abort();
       if (url) URL.revokeObjectURL(url);
     };
-  }, [uri, privateFile, attempt]);
+  }, [uri, privateFile, requestKey]);
   const source = {
     uri: Platform.OS === 'web' && privateFile ? webUri : mediaUrl(uri),
     headers:
@@ -76,7 +82,7 @@ export function ConversationImage({
         onLongPress={onLongPress}
       >
         <Image
-          key={attempt}
+          key={requestKey}
           source={source}
           accessibilityLabel={accessibilityLabel}
           resizeMode="contain"
@@ -94,11 +100,11 @@ export function ConversationImage({
             const height =
               loaded?.source?.height ?? loaded?.target?.naturalHeight;
             if (width && height) setSize({ width, height });
-            setLoading(false);
+            setImageState({ key: requestKey, loading: false, failed: false });
           }}
           onError={() => {
-            setLoading(false);
-            setFailed(true);
+            if (Platform.OS === 'web' && privateFile && !webUri) return;
+            setImageState({ key: requestKey, loading: false, failed: true });
           }}
         />
         {loading && (
@@ -112,8 +118,6 @@ export function ConversationImage({
         <Pressable
           accessibilityRole="button"
           onPress={() => {
-            setFailed(false);
-            setLoading(true);
             setAttempt((value) => value + 1);
           }}
         >

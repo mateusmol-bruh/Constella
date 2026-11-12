@@ -29,9 +29,7 @@ export default function NovaSenhaScreen({
     resolver: zodResolver(recoveryPasswordSchema),
     defaultValues: { novaSenha: '', confirmarSenha: '' },
   });
-  const submit = handleSubmit(async (v) => {
-    if (busy.current) return;
-    busy.current = true;
+  const submitForm = handleSubmit(async (v) => {
     setError('');
     try {
       await passwordRecoveryService.reset(flow.email, flow.codigo, v.novaSenha);
@@ -40,10 +38,15 @@ export default function NovaSenhaScreen({
       flow.success();
     } catch (e) {
       if (active.current) setError(errorMessage(e));
-    } finally {
-      busy.current = false;
     }
   });
+  function submit() {
+    if (busy.current) return;
+    busy.current = true;
+    void submitForm().finally(() => {
+      busy.current = false;
+    });
+  }
   return (
     <Screen centered bottomSafe>
       <Header
@@ -78,14 +81,14 @@ export default function NovaSenhaScreen({
         autoComplete="new-password"
         textContentType="newPassword"
         editable={!isSubmitting}
-        onSubmitEditing={() => void submit()}
+        onSubmitEditing={submit}
         returnKeyType="done"
       />
       <Notice text={error} />
       <Button
         title="Redefinir senha"
         loading={isSubmitting}
-        onPress={() => void submit()}
+        onPress={submit}
       />
       <Button
         title="Informar outro código"

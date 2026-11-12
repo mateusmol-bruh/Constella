@@ -1,8 +1,8 @@
-import axios from 'axios';
+import axios, { create, isAxiosError } from 'axios';
 
 const configuredUrl = process.env.EXPO_PUBLIC_API_URL?.trim();
 export const apiUrl = configuredUrl?.replace(/\/+$/, '').replace(/\/api$/i, '');
-export const api = axios.create({ baseURL: apiUrl, timeout: 15000 });
+export const api = create({ baseURL: apiUrl, timeout: 15000 });
 let currentToken: string | null = null;
 let onExpired: ((message?: string) => void) | undefined;
 let logoutCleanup: (() => Promise<void>) | undefined;
@@ -16,7 +16,7 @@ export async function revokeCurrentSession(): Promise<boolean> {
  const token=currentToken;
  if(!token || !apiUrl) return true;
  try { await axios.post(apiUrl+'/api/auth/logout', {}, { headers: { Authorization: 'Bearer '+token }, timeout:8000 }); return true; }
- catch(error) { return axios.isAxiosError(error) && error.response?.status===401; }
+ catch(error) { return isAxiosError(error) && error.response?.status===401; }
 }
 export function setApiSession(token: string | null) { currentToken = token; }
 export function setSessionExpiredHandler(handler?: (message?: string) => void) { onExpired = handler; }
@@ -27,12 +27,12 @@ api.interceptors.request.use(config => {
   return config;
 });
 api.interceptors.response.use(response => response, (error: unknown) => {
-  if (axios.isAxiosError(error) && (error.response?.status === 401 || (error.response?.status === 403 && error.response.data?.codigo === 'CONTA_BANIDA')) && currentToken &&
+  if (isAxiosError(error) && (error.response?.status === 401 || (error.response?.status === 403 && error.response.data?.codigo === 'CONTA_BANIDA')) && currentToken &&
       error.config?.headers.Authorization === `Bearer ${currentToken}`) onExpired?.(error.response?.data?.codigo === 'CONTA_BANIDA' ? 'Sua conta está banida.' : undefined);
   return Promise.reject(error);
 });
 export function errorMessage(error: unknown): string {
-  if (axios.isAxiosError<{ mensagem?: string; codigo?: string }>(error)) {
+  if (isAxiosError<{ mensagem?: string; codigo?: string }>(error)) {
     const status = error.response?.status;
     if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') return 'O servidor demorou para responder. Tente novamente.';
     if (!error.response) return 'Não foi possível conectar. Verifique sua conexão e tente novamente.';
