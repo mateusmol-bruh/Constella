@@ -38,7 +38,7 @@ function validateImage(encoded) {
   if (!extension || !width || !height || width > 10000 || height > 10000 || width * height > 20000000) {
     throw invalid('Escolha uma imagem JPG ou PNG válida de até 20 megapixels.');
   }
-  return { data, extension };
+  return { data, extension, width, height };
 }
 
 async function saveImage(encoded) {

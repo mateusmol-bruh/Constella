@@ -1,9 +1,9 @@
-import React, { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { authService, type RegisterInput } from '../services/auth.service';
 import { communityService } from '../services/community.service';
-import { cleanupSessionNotifications, errorMessage, setApiSession, setSessionExpiredHandler } from '../services/api';
+import { cleanupSessionNotifications, revokeCurrentSession, errorMessage, setApiSession, setSessionExpiredHandler } from '../services/api';
 import type { AuthResponse, AuthUser, Profile } from '../types/models';
 
 interface AuthState {
@@ -34,20 +34,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const epoch = useRef(0);
   const mounted = useRef(true);
   const storageQueue = useRef(Promise.resolve());
-  function current(version: number) { return mounted.current && version === epoch.current; }
+  const current = useCallback(
+    (version: number) => mounted.current && version === epoch.current,
+    [],
+  );
   // Uma exclusão da sessão anterior deve terminar antes de salvar a próxima.
-  function updateStorage(operation: () => Promise<void>) {
+  const updateStorage = useCallback((operation: () => Promise<void>) => {
     const pending = storageQueue.current.then(operation);
     // Recupera somente a fila; a falha original de pending segue para o chamador.
     storageQueue.current = pending.then(() => undefined, () => undefined);
     return pending;
-  }
-  function applyProfile(profile: Profile) {
+  }, []);
+  const applyProfile = useCallback((profile: Profile) => {
     setNeedsOnboarding(typeof profile.onboarding_concluido === 'boolean' ? !profile.onboarding_concluido : null);
     setAbout(profile.onboarding_concluido ? profile.apresentacao ?? '' : '');
     setUser({ id: profile.id, nome: profile.nome, email: profile.email, onboarding_concluido: profile.onboarding_concluido });
-  }
-  async function restoreSession() {
+  }, []);
+  const restoreSession = useCallback(async () => {
     const version = ++epoch.current;
     setRestoring(true); setRestoreFailed(false); setNotice('');
     try {
@@ -61,21 +64,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       if (current(version)) { setRestoreFailed(true); setNotice(errorMessage(error)); }
     } finally { if (current(version)) setRestoring(false); }
-  }
+  }, [applyProfile, current]);
   useEffect(() => {
     mounted.current = true;
-    setSessionExpiredHandler(() => {
+    setSessionExpiredHandler((message) => {
       const version = ++epoch.current;
       setApiSession(null); setUser(null); setIsGuest(false); setAbout(''); setNeedsOnboarding(null);
       setRestoring(false); setRestoreFailed(false);
-      setNotice('Sua sessão expirou. Entre novamente.');
+      setNotice(message || 'Sua sessão expirou. Entre novamente.');
       void updateStorage(storage.clear).catch(() => {
         if (current(version)) setNotice('Entre novamente para renovar sua sessão.');
       });
     });
     void Promise.resolve().then(() => { if (mounted.current) return restoreSession(); });
-    return () => { mounted.current = false; epoch.current++; setSessionExpiredHandler(undefined); };
-  }, []);
+    return () => { mounted.current = false; setSessionExpiredHandler(undefined); };
+  }, [current, restoreSession, updateStorage]);
   async function accept(result: AuthResponse, version: number) {
     if (!current(version)) throw new Error('Sessão alterada.');
     if (typeof result.token !== 'string' || !result.token || !result.usuaria?.id) throw new Error('Resposta de autenticação inválida.');
@@ -100,12 +103,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
   async function logout() {
     const version = ++epoch.current;
+    const revocation = revokeCurrentSession();
     // Revoga o dispositivo ainda com o JWT desta conta. Falha de rede não retém a sessão local.
     try { await cleanupSessionNotifications(); } catch { /* Será sincronizado no próximo login. */ }
     try { await updateStorage(storage.clear); }
     catch { if (current(version)) setNotice('Não foi possível sair com segurança. Tente novamente.'); return; }
+    const revoked=await revocation;
     if (!current(version)) return;
-    setApiSession(null); setUser(null); setIsGuest(false); setAbout(''); setNeedsOnboarding(null); setNotice('');
+    setApiSession(null); setUser(null); setIsGuest(false); setAbout(''); setNeedsOnboarding(null); setNotice(revoked ? '' : 'Você saiu deste aparelho. Não foi possível confirmar o encerramento da sessão no servidor.');
     setRestoring(false); setRestoreFailed(false);
   }
   async function retryAccount() {

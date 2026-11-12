@@ -5,6 +5,7 @@ const { login } = require("../controllers/auth.controller");
 const { cadastrar } = require("../controllers/cadastro.controller");
 
 const router = Router();
+router.use(require('./recuperacao-senha.routes'));
 
 const limitarTentativas = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -28,4 +29,7 @@ const limitarCadastros = rateLimit({
 
 router.post("/login", limitarTentativas, login);
 router.post("/cadastro", limitarCadastros, cadastrar);
+router.post('/logout', require('../middlewares/auth.middleware'), async(req,res,next)=>{
+ try{await require('../services/sessao.service').revogarSessao(req.sessaoId);return res.status(204).end();}catch(error){return next(error);}
+});
 module.exports = router;

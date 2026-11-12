@@ -40,6 +40,7 @@ function mountChat(conversationKey, items = [], permissions = {}, callbacks = {}
     '@react-navigation/native':{ useFocusEffect(callback) { focus = callback; } },
     axios:require('axios'),
     './Artwork':{ Avatar:'Avatar' },
+    './ReportFields':{ ReportFields:'ReportFields' },
     './ForumCover':{ ForumCover:'ForumCover' },
     './ConversationImage':{ ConversationImage:'ConversationImage' },
     './PersonModal':{ PersonModal:'PersonModal' },
@@ -304,4 +305,20 @@ test('conversa vazia e reabertura não são tratadas como falha',async()=>{
     const state=find(app.render(),'ResourceState');assert.equal(state.props.error,'');assert.ok(state.props.empty);
     assert.equal(find(app.render(),'FlatList').props.data.length,0);app.unmount();
   }
+});
+
+for (const mode of ['forum','private']) test(mode+': alinhamento, autora, avatar, imagem e resposta preservam o modo de conversa',async()=>{
+ const own={id:'own',authorId:'1',author:'Minha autora',text:'Postagem própria\ncom quebra',date:'2026-10-29T12:00:00Z',image:'/api/anexos/teste.png',reply:{id:'ref',autora:{id:'2',nome:'Outra autora',foto:null},conteudo:'Original',imagem:null}};
+ const received={...own,id:'received',authorId:'2',author:'Outra autora'};
+ const app=mountChat(mode+':layout',[own,received],{},{mode});await tick();
+ const list=find(app.render(),'FlatList');
+ for(const item of [own,received]){
+  const row=list.props.renderItem({item});
+  assert.equal(row.props.style.flexDirection,mode==='private'&&item.authorId==='1'?'row-reverse':'row');
+  const serialized=JSON.stringify(row);
+  if(mode==='forum'||item.authorId==='2') {assert.ok(find(row,'Avatar'));assert.ok(serialized.includes(item.author));}
+  else assert.equal(find(row,'Avatar'),undefined);
+  assert.ok(find(row,'ConversationImage'));assert.ok(serialized.includes('Original'));
+ }
+ app.unmount();
 });

@@ -17,6 +17,7 @@ export interface ProStatus {
 }
 
 export interface ProCatalogItem {
+  capa?: string | null; categoria?: string | null; atualizado_em?: string;
   id: string;
   titulo: string;
   descricao: string | null;
@@ -24,7 +25,9 @@ export interface ProCatalogItem {
   data_publicacao: string;
 }
 
+export interface ProMediaFile {id:string;tipo:'imagem'|'video';nome:string;mime:string;tamanho:number;largura:number;altura:number;duracao:number|null;url:string;}
 export interface ProContent extends ProCatalogItem {
+  imagem?: ProMediaFile|null; video?: ProMediaFile|null;
   material: string | null;
   anexos: number | null;
 }

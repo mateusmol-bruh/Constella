@@ -13,6 +13,7 @@ const prismaPath = require.resolve("../src/config/prisma");
 require.cache[prismaPath] = {
   id: prismaPath, filename: prismaPath, loaded: true,
   exports: {
+    sessao: require("./helpers/sessoes")(),
     forum: leitura, postagem: leitura, chat: leitura, mensagem: leitura,
     usuaria: leitura, conteudo: leitura, conteudo_pro: leitura, assinatura: leitura
   }
@@ -20,7 +21,7 @@ require.cache[prismaPath] = {
 const originalSecret = process.env.JWT_SECRET;
 process.env.JWT_SECRET = "chave-exclusiva-dos-testes-de-limites";
 const token = jwt.sign({ tipo: "usuaria" }, process.env.JWT_SECRET, {
-  subject: "1", issuer: "constella", audience: "constella-app", expiresIn: "1m"
+  jwtid: "a".repeat(64), subject: "1", issuer: "constella", audience: "constella-app", expiresIn: "1m"
 });
 const app = express();
 app.use(express.json());
@@ -29,6 +30,7 @@ for (const [prefix, route] of [
   ["denuncias", "denuncia"], ["usuarios", "usuario"], ["conteudos", "conteudo"]
 ]) app.use(`/api/${prefix}`, require(`../src/routes/${route}.routes`));
 
+app.use(require('../src/middlewares/error.middleware'));
 const assinatura = require("../src/services/assinatura.service");
 const pro = require("../src/services/pro.service");
 const MAX_ID = "9223372036854775807";

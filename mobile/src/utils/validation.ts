@@ -18,10 +18,11 @@ export function utf8Bytes(value: string): number {
 }
 export const emailSchema = z.string().trim().email('Informe um e-mail válido.').max(255, 'Use até 255 caracteres.');
 export const loginSchema = z.object({ email: emailSchema, senha: z.string().min(1, 'Informe sua senha.') });
+export const passwordSchema = z.string().min(8, 'Use pelo menos 8 caracteres.').refine(value => utf8Bytes(value) <= 72, 'A senha deve ter até 72 bytes.');
 export const registerSchema = z.object({
   nome: z.string().trim().min(1, 'Informe seu nome.').max(255, 'Use até 255 caracteres.'),
   email: emailSchema,
-  senha: z.string().min(8, 'Use pelo menos 8 caracteres.').refine(value => utf8Bytes(value) <= 72, 'A senha deve ter até 72 bytes.'),
+  senha: passwordSchema,
   cpf: z.string().refine(value => /^(\d{11}|\d{3}\.\d{3}\.\d{3}-\d{2})$/.test(value) && validCpf(value), 'Informe um CPF válido.'),
   confirmarSenha: z.string(),
 }).refine(value => value.senha === value.confirmarSenha, { path: ['confirmarSenha'], message: 'As senhas precisam ser iguais.' });

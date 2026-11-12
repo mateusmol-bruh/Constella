@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { View } from 'react-native';
 import { SvgXml } from 'react-native-svg';
 import { logoXml } from '../constants/logo';
@@ -10,4 +10,3 @@ export function Brand({ width = 250, variant = 'primary' }: { width?: number; va
     <SvgXml xml={compact ? compactLogoXml : logoXml} width="100%" height="100%" />
   </View>;
 }
-

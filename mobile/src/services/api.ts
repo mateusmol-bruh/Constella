@@ -1,10 +1,10 @@
-import axios from 'axios';
+import axios, { create, isAxiosError } from 'axios';
 
 const configuredUrl = process.env.EXPO_PUBLIC_API_URL?.trim();
 export const apiUrl = configuredUrl?.replace(/\/+$/, '').replace(/\/api$/i, '');
-export const api = axios.create({ baseURL: apiUrl, timeout: 15000 });
+export const api = create({ baseURL: apiUrl, timeout: 15000 });
 let currentToken: string | null = null;
-let onExpired: (() => void) | undefined;
+let onExpired: ((message?: string) => void) | undefined;
 let logoutCleanup: (() => Promise<void>) | undefined;
 export function setLogoutCleanup(callback?: () => Promise<void>) { logoutCleanup = callback; }
 export async function cleanupSessionNotifications() { await logoutCleanup?.(); }
@@ -12,21 +12,27 @@ const resourceListeners = new Set<() => void>();
 export function signalResourceChange() { resourceListeners.forEach(listener => listener()); }
 export function subscribeResourceChanges(listener: () => void) { resourceListeners.add(listener); return () => { resourceListeners.delete(listener); }; }
 export function imageAuthHeaders() { return currentToken ? { Authorization: `Bearer ${currentToken}` } : undefined; }
+export async function revokeCurrentSession(): Promise<boolean> {
+ const token=currentToken;
+ if(!token || !apiUrl) return true;
+ try { await axios.post(apiUrl+'/api/auth/logout', {}, { headers: { Authorization: 'Bearer '+token }, timeout:8000 }); return true; }
+ catch(error) { return isAxiosError(error) && error.response?.status===401; }
+}
 export function setApiSession(token: string | null) { currentToken = token; }
-export function setSessionExpiredHandler(handler?: () => void) { onExpired = handler; }
+export function setSessionExpiredHandler(handler?: (message?: string) => void) { onExpired = handler; }
 api.interceptors.request.use(config => {
   if (!apiUrl || !/^https?:\/\//i.test(apiUrl)) throw new Error('API_NAO_CONFIGURADA');
-  if (currentToken && !config.url?.startsWith('/api/auth/') && !config.url?.startsWith('/api/publico/')) config.headers.Authorization = `Bearer ${currentToken}`;
+  if (currentToken && !/^\/api\/auth\/(login|cadastro|forgot-password|verify-reset-code|reset-password)$/.test(config.url ?? '') && !config.url?.startsWith('/api/publico/')) config.headers.Authorization = `Bearer ${currentToken}`;
   else config.headers.delete('Authorization');
   return config;
 });
 api.interceptors.response.use(response => response, (error: unknown) => {
-  if (axios.isAxiosError(error) && error.response?.status === 401 && currentToken &&
-      error.config?.headers.Authorization === `Bearer ${currentToken}`) onExpired?.();
+  if (isAxiosError(error) && (error.response?.status === 401 || (error.response?.status === 403 && error.response.data?.codigo === 'CONTA_BANIDA')) && currentToken &&
+      error.config?.headers.Authorization === `Bearer ${currentToken}`) onExpired?.(error.response?.data?.codigo === 'CONTA_BANIDA' ? 'Sua conta está banida.' : undefined);
   return Promise.reject(error);
 });
 export function errorMessage(error: unknown): string {
-  if (axios.isAxiosError<{ mensagem?: string; codigo?: string }>(error)) {
+  if (isAxiosError<{ mensagem?: string; codigo?: string }>(error)) {
     const status = error.response?.status;
     if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') return 'O servidor demorou para responder. Tente novamente.';
     if (!error.response) return 'Não foi possível conectar. Verifique sua conexão e tente novamente.';
@@ -36,6 +42,8 @@ export function errorMessage(error: unknown): string {
     if (status === 404 && /^\/api\/(chats|foruns)(\/|$)/.test(error.config?.url ?? '')) return 'Esta conversa não foi encontrada ou não está mais disponível.';
     if (status === 404) return 'Esta informação não está mais disponível.';
     if (status === 429) return 'Muitas tentativas. Aguarde um pouco antes de tentar novamente.';
+    if (status === 503 && error.response.data?.codigo === 'RECUPERACAO_INDISPONIVEL') return 'A recuperação de senha está temporariamente indisponível. Tente novamente mais tarde.';
+    if (status === 503 && error.response.data?.codigo === 'RECUPERACAO_MIGRACAO_PENDENTE') return 'A recuperação de senha está em atualização. Tente novamente mais tarde.';
     if (status === 503 && error.response.data?.codigo === 'ONBOARDING_MIGRACAO_PENDENTE') return 'A configuração inicial da conta ainda está indisponível. Tente novamente mais tarde.';
     if (status === 503 && error.response.data?.codigo === 'CONVERSAS_ATUALIZACAO_PENDENTE') return 'As conversas estão em atualização no servidor. Tente novamente em instantes.';
     if (status === 503 && error.response.data?.codigo === 'CONVERSAS_TEMPORARIAMENTE_INDISPONIVEIS') return 'O serviço de conversas está temporariamente indisponível. Tente novamente em instantes.';

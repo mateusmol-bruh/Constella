@@ -97,10 +97,10 @@ test('visualizador privado mantém JWT, ajusta proporção e abre a imagem intei
   const filename=path.resolve(__dirname,'../src/components/ConversationImage.tsx');
   const code=ts.transpileModule(fs.readFileSync(filename,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,jsx:ts.JsxEmit.React,esModuleInterop:true}}).outputText;
   let cursor=0;const states=[];
-  const react={createElement:(type,props,...children)=>({type,props:{...props,children}}),useState(initial){const index=cursor++;if(!(index in states))states[index]=initial;return [states[index],value=>states[index]=typeof value==='function'?value(states[index]):value];}};
-  const deps={react:{__esModule:true,default:react,...react},'react-native':Object.fromEntries(['ActivityIndicator','Image','Modal','Pressable','Text','View'].map(name=>[name,name])),'react-native-safe-area-context':{SafeAreaView:'SafeAreaView'},'../services/api':{imageAuthHeaders:()=>({Authorization:'Bearer teste'})},'../utils/media':{mediaUrl:value=>`https://api.invalid${value}`},'../utils/layout':{fitImage:(w,h,mw,mh)=>({width:Math.min(mw,mh*w/h),height:Math.min(mh,mw*h/w)})}};
+  const react={useEffect(){},createElement:(type,props,...children)=>({type,props:{...props,children}}),useState(initial){const index=cursor++;if(!(index in states))states[index]=initial;return [states[index],value=>states[index]=typeof value==='function'?value(states[index]):value];}};
+  const deps={react:{__esModule:true,default:react,...react},'react-native':{Platform:{OS:'android'},...Object.fromEntries(['ActivityIndicator','Image','Modal','Pressable','Text','View'].map(name=>[name,name]))},'react-native-safe-area-context':{SafeAreaView:'SafeAreaView'},'../services/api':{imageAuthHeaders:()=>({Authorization:'Bearer teste'})},'../utils/media':{mediaUrl:value=>`https://api.invalid${value}`},'../utils/layout':{fitImage:(w,h,mw,mh)=>({width:Math.min(mw,mh*w/h),height:Math.min(mh,mw*h/w)})}};
   const module={exports:{}};vm.runInNewContext(code,{module,exports:module.exports,require:name=>deps[name]});
-  const render=()=>{cursor=0;return module.exports.ConversationImage({uri:'/api/anexos/imagem.jpg',maxWidth:200});};
+  const render=(uri='/api/anexos/imagem.jpg')=>{cursor=0;return module.exports.ConversationImage({uri,maxWidth:200});};
   function nodes(tree,type){if(!tree||typeof tree!=='object')return [];return [...(tree.type===type?[tree]:[]),...(Array.isArray(tree)?tree:tree.props?.children??[]).flatMap(child=>nodes(child,type))];}
   let tree=render(),image=nodes(tree,'Image')[0];
   assert.equal(image.props.source.headers.Authorization,'Bearer teste');assert.equal(image.props.resizeMode,'contain');
@@ -109,4 +109,8 @@ test('visualizador privado mantém JWT, ajusta proporção e abre a imagem intei
   nodes(tree,'Pressable')[0].props.onPress();tree=render();assert.equal(nodes(tree,'Modal')[0].props.visible,true);
   assert.equal(nodes(tree,'Image')[1].props.resizeMode,'contain');
   nodes(tree,'Modal')[0].props.onRequestClose();assert.equal(nodes(render(),'Modal')[0].props.visible,false);
+  image.props.onLoad({nativeEvent:{target:{naturalWidth:2000,naturalHeight:1000}}});
+  image=nodes(render(),'Image')[0];assert.equal(image.props.style.width/image.props.style.height,2);
+  assert.doesNotThrow(()=>image.props.onLoad({nativeEvent:{}}));
+  assert.equal(nodes(render('/api/pro/conteudos/1/midias/arquivo'),'Image')[0].props.source.headers.Authorization,'Bearer teste');
 });

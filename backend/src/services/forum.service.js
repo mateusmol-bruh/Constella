@@ -181,6 +181,28 @@ async function buscarForum(
   );
 }
 
+async function listarMembros(idUsuario, idForum) {
+  const idUsr = validarId(idUsuario);
+  const idFor = validarId(idForum, "Fórum");
+  const forum = await prisma.forum.findUnique({ where: { id_for: idFor }, select: { id_for: true } });
+
+  if (!forum) throw erroHttp(404, "Fórum não encontrado.");
+
+  const participacao = await prisma.usuaria_forum.findUnique({
+    where: { id_for_id_usr: { id_for: idFor, id_usr: idUsr } },
+    select: { id_usr: true }
+  });
+  if (!participacao) throw erroHttp(403, "Você precisa participar do fórum para consultar os membros.");
+
+  const registros = await prisma.usuaria_forum.findMany({
+    where: { id_for: idFor },
+    select: { usuaria: { select: { id_usr: true, nome_usr: true, foto_usr: true } } },
+    orderBy: { usuaria: { nome_usr: 'asc' } }
+  });
+
+  return registros.map(({ usuaria }) => ({ id: usuaria.id_usr.toString(), nome: usuaria.nome_usr, foto: usuaria.foto_usr }));
+}
+
 async function criarForum(
   idUsuario,
   dados
@@ -653,6 +675,7 @@ module.exports = {
   listarForuns,
   listarMeusForuns,
   buscarForum,
+  listarMembros,
   criarForum,
   editarForum,
   entrarForum,

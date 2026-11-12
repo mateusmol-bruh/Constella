@@ -28,6 +28,7 @@ function mount(initialToken = null) {
   const api = {
     setApiSession(value) { token = value; },
     cleanupSessionNotifications: async () => {},
+    revokeCurrentSession: async () => true,
     setSessionExpiredHandler(handler) { expired = handler; },
     errorMessage(error) { return error.message; },
   };
@@ -44,6 +45,10 @@ function mount(initialToken = null) {
       const index = cursor++;
       if (!(index in slots)) slots[index] = { current: initial };
       return slots[index];
+    },
+    useCallback(callback) {
+      cursor++;
+      return callback;
     },
     useEffect(effect) {
       const index = cursor++;
@@ -89,7 +94,7 @@ function mount(initialToken = null) {
   for (const effect of effects) cleanups.push(effect());
   return {
     state, secureStore, authService, communityService,
-    expire() { assert.equal(typeof expired, 'function'); expired(); },
+    expire(message) { assert.equal(typeof expired, 'function'); expired(message); },
     stored() { return stored; }, token() { return token; },
     unmount() { for (const cleanup of cleanups) cleanup?.(); },
   };
@@ -278,4 +283,11 @@ test('falha ao trocar de conta não mantém identidade nem JWT da conta anterior
   assert.equal(app.token(), null);
   assert.equal(app.stored(), null);
   app.unmount();
+});
+
+test('banimento invalida a sessão local, remove SecureStore e preserva a mensagem do servidor',async()=>{
+ const app=mount();await tick();await app.state().login('teste','teste');
+ app.expire('Sua conta está banida.');await tick();
+ assert.equal(app.state().user,null);assert.equal(app.token(),null);assert.equal(app.stored(),null);
+ assert.match(app.state().notice,/conta está banida/);app.unmount();
 });

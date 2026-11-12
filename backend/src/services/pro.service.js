@@ -32,6 +32,9 @@ function formatarConteudoPro(
   conteudo
 ) {
   return {
+    imagem: conteudo.imagem_pro ? require('./midia-pro.service').dto(conteudo.imagem_pro,String(conteudo.id_cont_pro)) : null,
+    video: conteudo.video_pro ? require('./midia-pro.service').dto(conteudo.video_pro,String(conteudo.id_cont_pro)) : null,
+    capa: conteudo.capa, categoria: conteudo.categoria, atualizado_em: conteudo.atualizado_em,
     id:
       conteudo.id_cont_pro
         .toString(),
@@ -69,8 +72,9 @@ async function verificarStatusPro(
 async function listarCatalogoPro() {
   // Seleção explícita: material e anexos exclusivos não saem no catálogo.
   const conteudos = await prisma.conteudo_pro.findMany({
+    where: { publicado: true },
     select: {
-      id_cont_pro: true,
+      id_cont_pro: true, capa: true, categoria: true, atualizado_em: true,
       titulo_cont_pro: true,
       desc_cont_pro: true,
       duracao_cont_pro: true,
@@ -79,7 +83,7 @@ async function listarCatalogoPro() {
     orderBy: { data_pub_cont_pro: "desc" }
   });
   return conteudos.map((conteudo) => ({
-    id: conteudo.id_cont_pro.toString(),
+    id: conteudo.id_cont_pro.toString(), capa: conteudo.capa, categoria: conteudo.categoria, atualizado_em: conteudo.atualizado_em,
     titulo: conteudo.titulo_cont_pro,
     descricao: conteudo.desc_cont_pro,
     duracao: conteudo.duracao_cont_pro?.toString() ?? null,
@@ -90,6 +94,8 @@ async function listarCatalogoPro() {
 async function listarConteudosPro() {
   const conteudos =
     await prisma.conteudo_pro.findMany({
+    where: { publicado: true },
+      include: {imagem_pro:true,video_pro:true},
       orderBy: {
         data_pub_cont_pro: "desc"
       }
@@ -108,11 +114,11 @@ async function buscarConteudoPro(id) {
     await prisma.conteudo_pro.findUnique({
       where: {
         id_cont_pro:
-          idCont
-      }
+          idCont, publicado: true
+      }, include: {imagem_pro:true,video_pro:true}
     });
 
-  if (!conteudo) {
+  if (!conteudo || conteudo.publicado === false) {
     throw erroHttp(
       404,
       "Conteúdo Pro não encontrado."

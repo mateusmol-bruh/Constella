@@ -1,69 +1,129 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Eye, FileText, PlusCircle, Trash2 } from 'lucide-react';
 import Shell from '@/components/Shell';
-import AstroLoader from '@/components/AstroLoader';
-import { withVisibleLoading } from '@/lib/loading';
 import { Panel, Notice } from '@/components/Panel';
+import AstroLoader from '@/components/AstroLoader';
 import { useSession } from '@/components/SessionProvider';
 import { getDashboard } from '@/lib/api';
-
-function Action({ href, icon: Icon, label }) {
-  return (
-    <Link href={href} className="item-action" aria-label={label}>
-      <span className="action-pill" aria-hidden="true">
-        <Icon size={20} strokeWidth={2} />
-      </span>
-      <span className="action-tooltip" aria-hidden="true">{label}</span>
-    </Link>
-  );
-}
-function Empty({children}) {return <p className="empty-inline">{children}</p>;}
 export default function Painel() {
-  const {session}=useSession();
-  const [data,setData]=useState(null);
-  const [error,setError]=useState('');
-  const [loading,setLoading]=useState(true);
-  useEffect(()=>{
+  const { session } = useSession();
+  const [data, setData] = useState(null),
+    [error, setError] = useState(''),
+    [loading, setLoading] = useState(true);
+  const load = useCallback(async () => {
     if (!session) return;
-    let active=true;
-    withVisibleLoading(() => getDashboard(session)).then(result=>{if(active)setData(result);}).catch(e=>{if(active)setError(e.message);}).finally(()=>{if(active)setLoading(false);});
-    return ()=>{active=false;};
-  },[session]);
-  const resumo=data?.resumo||{};
-  const pending=(data?.denuncias||[]).filter(x=>x.status==='PENDENTE');
-  return <Shell dashboard>
-    <Notice message={error}/>
-    {loading ? <AstroLoader label="Carregando informações do painel…" /> : data ? (
-      <div className="dashboard-grid">
-        <div className="dashboard-side">
-          <Panel title="Resumo Rápido"><div className="summary-list">
-            <p>Denúncias pendentes: <strong>{resumo.denunciasPendentes ?? pending.length}</strong></p>
-            <p>Fóruns ativos: <strong>{resumo.forunsAtivos ?? data.foruns.length}</strong></p>
-            <p>Conteúdos postados: <strong>{resumo.conteudosPostados ?? '—'}</strong></p>
-          </div></Panel>
-          <div className="quick-links">
-            <Link className="quick-link" href="/moderadora/criar-conteudo"><span>Criar conteúdo</span><PlusCircle size={27}/></Link>
-            <Link className="quick-link" href="/moderadora/gerar-relatorio"><span>Gerar relatório</span><PlusCircle size={27}/></Link>
-            <Link className="quick-link" href="/moderadora/ver-relatorios"><span>Ver Relatórios</span><FileText size={27}/></Link>
-          </div>
-        </div>
-        <div className="dashboard-main">
-          <Panel title="Denúncias" className="list-panel"><div className="list-rows">
-            {pending.length===0 ? <Empty>Nenhuma denúncia pendente.</Empty> : pending.slice(0,3).map(d=><div className="data-row" key={d.id}>
-              <span className="row-name" title={d.denunciante?.email}>{d.denunciante?.email||'Denúncia sem remetente'}</span>
-              <div className="row-actions"><Action href={`/moderadora/denuncias/${d.id}`} icon={Eye} label="Detalhes"/><Action href={`/moderadora/denuncias/${d.id}?acao=banir`} icon={Trash2} label="Banir"/></div>
-            </div>)}
-          </div></Panel>
-          <Panel title="Fóruns" className="list-panel"><div className="list-rows">
-            {(data.foruns||[]).length===0 ? <Empty>Nenhum fórum encontrado.</Empty> : data.foruns.map(f=><div className="data-row" key={f.id}>
-              <span className="row-name" title={f.titulo}>Fórum : {f.titulo}</span>
-              <div className="row-actions"><Action href={`/moderadora/foruns/${f.id}`} icon={Eye} label="Ver"/><Action href={`/moderadora/foruns/${f.id}?acao=excluir`} icon={Trash2} label="Deletar"/></div>
-            </div>)}
-          </div></Panel>
-        </div>
+    try {
+      const d = await getDashboard();
+      setData(d);
+      setError('');
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [session]);
+  useEffect(() => {
+    let active = true,
+      timer;
+    async function cycle() {
+      await load();
+      if (active) timer = setTimeout(cycle, 30000);
+    }
+    void cycle();
+    const focus = () => void load();
+    window.addEventListener('focus', focus);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+      window.removeEventListener('focus', focus);
+    };
+  }, [load]);
+  const r = data?.resumo;
+  return (
+    <Shell dashboard>
+      <div className="list-toolbar">
+        <h1>Painel de moderação</h1>
+        <button type="button" onClick={load}>
+          Atualizar
+        </button>
       </div>
-    ) : <button className="retry-button" onClick={()=>window.location.reload()}>Tentar novamente</button>}
-  </Shell>;
+      <Notice message={error} />
+      {loading ? (
+        <AstroLoader label="Carregando dados reais…" />
+      ) : (
+        data && (
+          <>
+            <div className="metric-grid">
+              {[
+                ['Usuárias', r.usuarias],
+                ['Fóruns', r.forunsAtivos],
+                ['Gratuitos publicados', r.conteudosPostados],
+                ['PRO publicados', r.conteudosPro],
+                ['Denúncias pendentes', r.denunciasPendentes],
+                ['Em análise', r.denunciasEmAnalise],
+                ['Resolvidas', r.denunciasResolvidas],
+                ['Denúncias recebidas', r.denuncias],
+              ].map(([name, value]) => (
+                <div className="metric-card" key={name}>
+                  <span>{name}</span>
+                  <strong>{value}</strong>
+                </div>
+              ))}
+            </div>
+            <div className="dashboard-grid">
+              <div className="dashboard-side">
+                <Panel title="Ações">
+                  <div className="quick-links">
+                    <Link className="quick-link" href="/moderadora/criar-conteudo">
+                      Criar conteúdo
+                    </Link>
+                    <Link className="quick-link" href="/moderadora/gerar-relatorio">
+                      Gerar relatório
+                    </Link>
+                  </div>
+                </Panel>
+              </div>
+              <div className="dashboard-main">
+                <Panel title="Denúncias pendentes">
+                  <div className="list-rows">
+                    {data.denuncias.length ? (
+                      data.denuncias.map((d) => (
+                        <Link
+                          className="data-row"
+                          key={d.id}
+                          href={'/moderadora/denuncias/' + d.id}
+                        >
+                          <span className="row-name">
+                            #{d.id} · {d.motivo}
+                          </span>
+                          <span>Analisar →</span>
+                        </Link>
+                      ))
+                    ) : (
+                      <p>Nenhuma denúncia pendente.</p>
+                    )}
+                  </div>
+                  <Link href="/moderadora/denuncias">Ver todas as denúncias →</Link>
+                </Panel>
+                <Panel title="Fóruns recentes">
+                  {data.foruns.length ? (
+                    data.foruns.map((f) => (
+                      <Link className="data-row" key={f.id} href={'/moderadora/foruns/' + f.id}>
+                        <span className="row-name">{f.titulo}</span>
+                        <span>Consultar →</span>
+                      </Link>
+                    ))
+                  ) : (
+                    <p>Nenhum fórum cadastrado.</p>
+                  )}
+                  <Link href="/moderadora/foruns">Ver todos os fóruns →</Link>
+                </Panel>
+              </div>
+            </div>
+          </>
+        )
+      )}
+    </Shell>
+  );
 }

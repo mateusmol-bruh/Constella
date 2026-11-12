@@ -1,4 +1,4 @@
-import axios from 'axios';
+import { create } from 'axios';
 import { apiUrl } from './api';
 import type { Content, Forum } from '../types/models';
 import type { ProCatalogItem } from '../types/pro';
@@ -11,7 +11,7 @@ export interface PublicProPresentation {
 
 // Mesma origem da API. Este cliente é só de leitura e nunca recebe JWT,
 // inclusive quando a apresentação pública é aberta por uma conta autenticada.
-export const apiPublic = axios.create({ baseURL: apiUrl, timeout: 15000 });
+export const apiPublic = create({ baseURL: apiUrl, timeout: 15000 });
 apiPublic.interceptors.request.use(config => {
   if (!apiUrl || !/^https?:\/\//i.test(apiUrl)) throw new Error('API_NAO_CONFIGURADA');
   if (config.method !== 'get' || !config.url?.startsWith('/api/publico/')) throw new Error('CONSULTA_PUBLICA_INVALIDA');

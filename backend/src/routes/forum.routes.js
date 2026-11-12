@@ -36,6 +36,11 @@ router.get(
   forumController.buscar
 );
 
+router.get(
+  "/:id/membros",
+  forumController.membros
+);
+
 router.put(
   "/:id",
   forumController.editar

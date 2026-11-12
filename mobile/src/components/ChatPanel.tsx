@@ -1,3 +1,4 @@
+import { ReportFields } from './ReportFields';
 import React, { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, AppState, FlatList, Image, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -5,7 +6,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { CanceledError, isAxiosError, isCancel } from 'axios';
 import { selectImage, uploadImage, type SelectedImage } from '../services/image.service';
 import { PersonModal } from './PersonModal';
-import { Sheet } from './Social';
+import { CollectionRow, Sheet } from './Social';
 import { chatImageWidth } from '../utils/layout';
 import { Avatar } from './Artwork';
 import { ForumCover } from './ForumCover';
@@ -16,19 +17,21 @@ import { Button, Notice, ResourceState, Screen } from './ui';
 import { useAuth } from '../constexts/AuthContext';
 import { errorMessage } from '../services/api';
 import type { ReplyPreview, SendOptions } from '../types/models';
-import { conversationPageSize } from '../services/social.service';
+import { conversationPageSize, type ForumMember } from '../services/social.service';
 import { colors, fontFamily, ui } from '../styles/theme';
 
 export interface ChatItem { id: string; authorId: string; author: string; foto?: string | null; text: string; image?: string | null; date: string; reply?: ReplyPreview | null; system?: boolean }
 export interface ChatFeed { items: ChatItem[]; canSend: boolean; subtitle: string; canLeave?: boolean; canDelete?: boolean; title?: string; foto?: string | null; personId?: string; blocked?: boolean }
 interface ChatPanelProps {
+  mode?: 'private' | 'forum';
   conversationKey: string; title: string; foto?: string | null; onBack: () => void;
   loader: (signal?: AbortSignal) => Promise<ChatFeed>; send: (text: string, image?: string, options?: SendOptions) => Promise<ChatItem>;
+  loadMembers?: () => Promise<ForumMember[]>;
   markRead?: (last: string, signal?: AbortSignal) => Promise<void>;
   join?: () => Promise<void>; leave?: () => Promise<void>;
   destroy?: () => Promise<void>; edit?: () => void;
   earlier?: (page: number, signal?: AbortSignal) => Promise<ChatItem[]>;
-  remove?: (item: ChatItem) => Promise<void>; report?: (item: ChatItem, reason: string) => Promise<void>;
+  remove?: (item: ChatItem) => Promise<void>; report?: (item: ChatItem, reason: string, description?: string) => Promise<void>;
 }
 interface FocusRun {
   active: boolean; busy: boolean; pages: number;
@@ -73,10 +76,17 @@ export function ChatPanel(props: ChatPanelProps) {
   const [hasEarlier, setHasEarlier] = useState(false);
   const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
   const [reason, setReason] = useState('');
+  const [description,setDescription]=useState('');
   const [image, setImage] = useState<SelectedImage | null>(null);
   const [picking, setPicking] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [selectedPersonId, setSelectedPersonId] = useState<string>();
+  const [returnToMembers, setReturnToMembers] = useState(false);
+  const [membersOpen, setMembersOpen] = useState(false);
+  const [members, setMembers] = useState<ForumMember[]>([]);
+  const [membersLoading, setMembersLoading] = useState(false);
+  const [membersError, setMembersError] = useState('');
   const [imageSources, setImageSources] = useState(false);
   const [forumActions, setForumActions] = useState(false);
   const [replying, setReplying] = useState<ChatItem | null>(null);
@@ -148,7 +158,7 @@ export function ChatPanel(props: ChatPanelProps) {
     const current: FocusRun = { active: !!user, busy: false, pages: 1 };
     run.current = current;
     setFeed(undefined); setText(''); setImage(null); setProfileOpen(false); setLoadError(''); setSyncError(''); setActionError(''); setNotice('');
-    setHasEarlier(false); setSending(false); setPicking(false); setUploading(false); setImageSources(false); setForumActions(false); setConfirmation(null); setReason(''); setLoading(true);
+    setHasEarlier(false); setSending(false); setPicking(false); setUploading(false); setImageSources(false); setForumActions(false); setConfirmation(null); setReason(''); setDescription(''); setLoading(true);
     setReplying(null); setMessageActions(null); setHighlighted(null); setSendFailed(false); attempt.current = null; scrollTarget.current = null;
     if (user) void refresh(current);
     else setLoading(false);
@@ -313,8 +323,8 @@ export function ChatPanel(props: ChatPanelProps) {
         notify('Mensagem excluída.');
       });
     } else if (target.kind === 'report' && callbacks.current.report) {
-      await mutate(() => callbacks.current.report!(target.item, reason.trim()), () => {
-        setConfirmation(null); setReason(''); setNotice('Denúncia enviada para análise da moderação.');
+      await mutate(() => callbacks.current.report!(target.item, reason.trim(), description.trim()), () => {
+        setConfirmation(null); setReason(''); setDescription(''); setNotice('Denúncia enviada para análise da moderação.');
         notify('Denúncia enviada à moderação.');
       });
     }
@@ -325,12 +335,19 @@ export function ChatPanel(props: ChatPanelProps) {
     if (!feed?.canSend || item.system || sending) return;
     setReplying(item); setMessageActions(null); input.current?.focus();
   }
+  async function loadForumMembers() {
+    if (!props.loadMembers) return;
+    setMembersLoading(true); setMembersError(''); setMembers([]);
+    try { setMembers(await props.loadMembers()); }
+    catch (cause) { setMembersError(errorMessage(cause)); }
+    finally { setMembersLoading(false); }
+  }
   const { title, foto, onBack, join, leave, earlier, remove, report } = props;
   return <Screen paper scroll={false} bottomSafe>
     <View style={[ui.row, { gap: 8, paddingBottom: 12, borderBottomWidth: 1, borderColor: '#E4D9ED' }]}>
       <Pressable onPress={onBack} accessibilityRole="button" accessibilityLabel="Voltar" style={{ minWidth: 44, minHeight: 44, justifyContent: 'center' }}><Icon name="back" /></Pressable>
       {props.conversationKey.startsWith('forum:') ? <ForumCover title={feed?.title ?? title} foto={feed?.foto} size={44} /> : <Pressable accessibilityRole="button" accessibilityLabel="Ver perfil da usuária" disabled={!feed?.personId} onPress={() => setProfileOpen(true)}><Avatar nome={title} foto={foto} size={44} /></Pressable>}
-      <Pressable style={{ flex: 1 }} accessibilityRole={feed?.personId ? "button" : undefined} accessibilityLabel={feed?.personId ? "Ver perfil de " + title : undefined} disabled={!feed?.personId} onPress={() => setProfileOpen(true)}><Text numberOfLines={2} style={[ui.dark, { fontWeight: '700' }]}>{feed?.title ?? title}</Text><Text style={[ui.dark, { fontSize: 11 }]}>{feed?.subtitle ?? 'Conversa'}</Text></Pressable>
+      {props.loadMembers ? <View style={{ flex: 1 }}><Text numberOfLines={2} style={[ui.dark, { fontWeight: '700' }]}>{feed?.title ?? title}</Text>{feed?.canSend ? <Pressable accessibilityRole="button" accessibilityLabel="Ver participantes do fórum" accessibilityState={{ disabled: membersLoading, busy: membersLoading }} disabled={membersLoading} onPress={() => { setMembersOpen(true); void loadForumMembers(); }} style={{ minHeight: 28, flexDirection: 'row', alignItems: 'center', gap: 4 }}><Icon name="profile" size={14} color={colors.ink} /><Text style={[ui.dark, { fontSize: 11 }]}>{feed.subtitle}</Text></Pressable> : <Text style={[ui.dark, { fontSize: 11 }]}>{feed?.subtitle ?? 'Comunidade'}</Text>}</View> : <Pressable style={{ flex: 1 }} accessibilityRole={feed?.personId ? "button" : undefined} accessibilityLabel={feed?.personId ? "Ver perfil de " + title : undefined} disabled={!feed?.personId} onPress={() => setProfileOpen(true)}><Text numberOfLines={2} style={[ui.dark, { fontWeight: '700' }]}>{feed?.title ?? title}</Text><Text style={[ui.dark, { fontSize: 11 }]}>{feed?.subtitle ?? 'Conversa'}</Text></Pressable>}
       {(feed?.canLeave || feed?.canDelete) && <Pressable accessibilityRole="button" accessibilityLabel="Opções do fórum" disabled={busy} onPress={() => setForumActions(true)} style={{ minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' }}><Icon name="edit" size={20} /></Pressable>}
       <Pressable accessibilityRole="button" accessibilityLabel="Atualizar mensagens" accessibilityState={{ busy, disabled: busy }} disabled={busy} onPress={() => { if (run.current) void refresh(run.current); }} style={{ minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' }}><Icon name="refresh" size={21} /></Pressable>
     </View>
@@ -346,12 +363,14 @@ export function ChatPanel(props: ChatPanelProps) {
       ListFooterComponent={earlier && hasEarlier ? <Button title="Mensagens anteriores" variant="secondary" small loading={reading} disabled={sending} onPress={() => void loadEarlier()} /> : undefined}
       renderItem={({ item }) => {
         if (item.system) return <View style={{ alignSelf: 'center', backgroundColor: '#EEDFF5', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 6, maxWidth: '90%' }}><Text style={{ fontFamily, color: '#7A678D', textAlign: 'center', fontSize: 12 }}>{item.text}</Text></View>;
-        const mine = item.authorId === user?.id;
-        return <View style={{ flexDirection: mine ? 'row-reverse' : 'row', gap: 8, alignItems: 'flex-end' }}>
-          {!mine && <Avatar nome={item.author} foto={item.foto} size={30} />}
-          <View style={{ maxWidth: '80%', gap: 4, alignItems: mine ? 'flex-end' : 'flex-start' }}>
-            {!mine && <Text style={{ color: colors.ink, fontSize: 11, paddingLeft: 5 }}>{item.author}</Text>}
-            <Pressable accessibilityLabel="Opções da mensagem" accessibilityRole="button" onLongPress={() => setMessageActions(item)} style={{ backgroundColor: mine ? colors.ink : '#CA7CCB', padding: 14, borderRadius: 20, borderBottomRightRadius: mine ? 4 : 20, borderBottomLeftRadius: mine ? 20 : 4, borderWidth: 2, borderColor: highlighted === item.id ? colors.orchid : 'transparent', gap: 6 }}>
+        const mine = user?.id != null && String(item.authorId) === String(user.id);
+        const outgoing = mine;
+        const showAuthor = !mine || props.mode === 'forum';
+        return <View style={{ alignSelf: props.mode === 'forum' ? outgoing ? 'flex-end' : 'flex-start' : undefined, flexDirection: outgoing && props.mode !== 'forum' ? 'row-reverse' : 'row', gap: 8, alignItems: 'flex-end' }}>
+          {showAuthor && <Avatar nome={item.author} foto={item.foto} size={30} />}
+          <View style={{ maxWidth: '80%', gap: 4, alignItems: outgoing ? 'flex-end' : 'flex-start' }}>
+            {showAuthor && <Text style={{ color: colors.ink, fontSize: 11, paddingLeft: 5 }}>{item.author}</Text>}
+            <Pressable accessibilityLabel="Opções da mensagem" accessibilityRole="button" onLongPress={() => setMessageActions(item)} style={{ backgroundColor: outgoing ? props.mode === 'forum' ? colors.purple : colors.ink : '#CA7CCB', padding: 14, borderRadius: 20, borderBottomRightRadius: outgoing ? 4 : 20, borderBottomLeftRadius: outgoing ? 20 : 4, borderWidth: 2, borderColor: highlighted === item.id ? colors.orchid : 'transparent', gap: 6 }}>
               {item.reply && <Pressable accessibilityRole="button" accessibilityLabel={`Localizar mensagem de ${item.reply.autora.nome}`} onPress={() => void locateOriginal(item.reply!.id)} style={{ borderLeftWidth: 3, borderColor: '#EEDFF5', backgroundColor: '#FFFFFF22', borderRadius: 6, padding: 8 }}><Text numberOfLines={1} style={{ color: colors.paper, fontWeight: '700', fontSize: 12 }}>{item.reply.autora.nome}</Text><Text numberOfLines={2} style={{ color: colors.paper, fontSize: 12 }}>{item.reply.imagem ? 'Foto' + (item.reply.conteudo ? ' · ' : '') : ''}{item.reply.conteudo}</Text></Pressable>}
               {item.image && <ConversationImage uri={item.image} maxWidth={imageWidth} onLongPress={() => setMessageActions(item)} />}
               {!!item.text && <Text selectable style={{ fontFamily, color: colors.paper, fontSize: 15, lineHeight: 21 }}>{item.text}</Text>}
@@ -359,7 +378,7 @@ export function ChatPanel(props: ChatPanelProps) {
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
               <Text style={{ color: '#7A678D', fontSize: 10 }}>{new Date(item.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</Text>
               {feed?.canSend && <Pressable accessibilityRole="button" accessibilityLabel="Responder a esta mensagem" disabled={sending} onPress={() => chooseReply(item)} style={{ minHeight: 36, justifyContent: 'center' }}><Text style={{ color: colors.purple, fontSize: 11 }}>Responder</Text></Pressable>}
-              {(mine ? remove : report) && <Pressable accessibilityRole="button" accessibilityLabel={mine ? 'Excluir esta mensagem' : 'Denunciar esta mensagem'} disabled={busy} onPress={() => { setActionError(''); setReason(''); setConfirmation({ kind: mine ? 'delete' : 'report', item }); }} style={{ minHeight: 36, justifyContent: 'center' }}><Text style={{ color: colors.purple, fontSize: 11 }}>{mine ? 'Excluir' : 'Denunciar'}</Text></Pressable>}
+              {(mine ? remove : report) && <Pressable accessibilityRole="button" accessibilityLabel={mine ? 'Excluir esta mensagem' : 'Denunciar esta mensagem'} disabled={busy} onPress={() => { setActionError(''); setReason(''); setDescription(''); setConfirmation({ kind: mine ? 'delete' : 'report', item }); }} style={{ minHeight: 36, justifyContent: 'center' }}><Text style={{ color: colors.purple, fontSize: 11 }}>{mine ? 'Excluir' : 'Denunciar'}</Text></Pressable>}
             </View>
           </View>
         </View>;
@@ -384,7 +403,7 @@ export function ChatPanel(props: ChatPanelProps) {
     {image && props.conversationKey.startsWith('forum:') && <Button title="Refazer foto" variant="secondary" small disabled={busy} onPress={() => void pickImage('camera')} />}
     <Sheet visible={messageActions !== null} title="Mensagem" onClose={() => setMessageActions(null)}>
       {feed?.canSend && <Button title="Responder" disabled={sending} onPress={() => { if (messageActions) chooseReply(messageActions); }} />}
-      {messageActions && (messageActions.authorId === user?.id ? remove : report) && <Button title={messageActions.authorId === user?.id ? 'Excluir mensagem' : 'Denunciar mensagem'} variant="secondary" disabled={busy} onPress={() => { if (messageActions) { setReason(''); setConfirmation({ kind: messageActions.authorId === user?.id ? 'delete' : 'report', item: messageActions }); setMessageActions(null); } }} />}
+      {messageActions && (messageActions.authorId === user?.id ? remove : report) && <Button title={messageActions.authorId === user?.id ? 'Excluir mensagem' : 'Denunciar mensagem'} variant="secondary" disabled={busy} onPress={() => { if (messageActions) { setReason(''); setDescription(''); setConfirmation({ kind: messageActions.authorId === user?.id ? 'delete' : 'report', item: messageActions }); setMessageActions(null); } }} />}
     </Sheet>
     <Sheet visible={imageSources} title="Adicionar foto" onClose={() => setImageSources(false)}><Button title="Tirar foto" icon="camera" onPress={() => void pickImage('camera')} /><Button title="Escolher da galeria" variant="secondary" onPress={() => void pickImage('library')} /></Sheet>
     <Sheet visible={forumActions} title="Opções do fórum" onClose={() => setForumActions(false)}>
@@ -392,13 +411,18 @@ export function ChatPanel(props: ChatPanelProps) {
       {feed?.canDelete && props.edit && <Button title="Editar fórum" variant="secondary" onPress={() => { setForumActions(false); props.edit?.(); }} />}
       {feed?.canDelete && props.destroy && <Button title="Excluir fórum" variant="secondary" onPress={() => { setForumActions(false); setActionError(''); setConfirmation({ kind: 'deleteForum' }); }} />}
     </Sheet>
+    {props.loadMembers && <Sheet visible={membersOpen} title="Participantes do fórum" onClose={() => setMembersOpen(false)}>
+      <ResourceState loading={membersLoading} error={membersError} empty={!membersLoading && !membersError && !members.length ? 'Nenhuma participante encontrada.' : false} onRetry={() => void loadForumMembers()} dark />
+      {members.map(member => <CollectionRow key={member.id} title={member.nome} subtitle="Participante do fórum" foto={member.foto} onPress={() => { setReturnToMembers(true); setSelectedPersonId(member.id); setMembersOpen(false); }} />)}
+    </Sheet>}
     {profileOpen && feed?.personId && <PersonModal id={feed.personId} onChanged={person => setFeed(previous => previous ? { ...previous, blocked: person.interacao_bloqueada, canSend: !person.interacao_bloqueada } : previous)} onClose={() => { setProfileOpen(false); if (run.current) void refresh(run.current, true); }} />}
+    {selectedPersonId && <PersonModal key={selectedPersonId} id={selectedPersonId} onClose={() => { setSelectedPersonId(undefined); if (returnToMembers) setMembersOpen(true); setReturnToMembers(false); }} />}
     <Modal visible={!!confirmation} transparent animationType="fade" onRequestClose={() => { if (!sending) setConfirmation(null); }}>
       <SafeAreaView style={{ flex: 1, backgroundColor: '#150B2B99', padding: 16 }}><KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, justifyContent: 'center' }}><ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}>
         <View style={{ width: '100%', maxWidth: 460, alignSelf: 'center', backgroundColor: colors.paper, borderRadius: 24, padding: 24, gap: 16 }}>
           <Text accessibilityRole="header" style={[ui.dark, { fontSize: 21, fontWeight: '700' }]}>{confirmation?.kind === 'report' ? 'Denunciar mensagem' : confirmation?.kind === 'leave' ? 'Sair do fórum?' : confirmation?.kind === 'deleteForum' ? 'Excluir fórum?' : 'Excluir mensagem?'}</Text>
           <Text style={ui.dark}>{confirmation?.kind === 'report' ? 'Descreva o motivo para a moderação analisar.' : confirmation?.kind === 'leave' ? 'Para ler ou publicar novamente, será necessário participar do fórum.' : confirmation?.kind === 'deleteForum' ? 'A exclusão é permanente. Fóruns com postagens não podem ser excluídos.' : 'Esta mensagem será excluída da conversa.'}</Text>
-          {confirmation?.kind === 'report' && <TextInput accessibilityLabel="Motivo da denúncia" value={reason} onChangeText={setReason} placeholder="Digite o motivo" placeholderTextColor="#7B6593" multiline maxLength={255} editable={!sending} style={{ fontFamily, color: colors.ink, minHeight: 100, borderWidth: 1, borderColor: '#C0A7D4', borderRadius: 10, padding: 12, textAlignVertical: 'top' }} />}
+          {confirmation?.kind === 'report' && <ReportFields dark reason={reason} onReason={setReason} description={description} onDescription={setDescription} busy={sending}/>}
           <Notice text={actionError} dark />
           <Button title={confirmation?.kind === 'report' ? 'Enviar denúncia' : confirmation?.kind === 'leave' ? 'Sair do fórum' : 'Excluir'} loading={sending} disabled={reading || (confirmation?.kind === 'report' && !reason.trim())} onPress={() => void confirmAction()} />
           <Button title="Cancelar" variant="secondary" disabled={sending} onPress={() => { setConfirmation(null); setActionError(''); }} />

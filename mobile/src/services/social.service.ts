@@ -1,9 +1,10 @@
-import axios from 'axios';
+import { isAxiosError } from 'axios';
 import { api, signalResourceChange } from './api';
 import type { Conversation, Person, Forum, Message, Post, SendOptions } from '../types/models';
 
 export const conversationPageSize = 50;
 export type SocialForum = Forum & { criadora?: { id: string; nome: string; foto?: string | null } };
+export interface ForumMember { id: string; nome: string; foto?: string | null }
 const path = (id: string) => encodeURIComponent(id);
 
 // Fóruns usam postagens; IDs de fórum nunca são usados como IDs de chat.
@@ -17,6 +18,9 @@ export const socialService = {
   async block(id: string, blocked: boolean) { return (blocked ? await api.post(`/api/bloqueios/${path(id)}`) : await api.delete(`/api/bloqueios/${path(id)}`)).data as { bloqueada: boolean; interacao_bloqueada: boolean }; },
   async forum(id: string, signal?: AbortSignal) {
     return (await api.get<{ forum: SocialForum }>(`/api/foruns/${path(id)}`, { signal })).data.forum;
+  },
+  async forumMembers(id: string, signal?: AbortSignal) {
+    return (await api.get<{ membros: ForumMember[] }>(`/api/foruns/${path(id)}/membros`, { signal })).data.membros;
   },
   async posts(id: string, pagina = 1, signal?: AbortSignal) {
     const { data } = await api.get<{ postagens: Post[] }>(`/api/foruns/${path(id)}/postagens`, {
@@ -32,7 +36,7 @@ export const socialService = {
     try { await api.post(`/api/foruns/${path(id)}/entrar`); }
     catch (cause) {
       // Entrar novamente após perda da resposta é seguro: o servidor confirma o vínculo existente.
-      if (!axios.isAxiosError(cause) || cause.response?.status !== 409) throw cause;
+      if (!isAxiosError(cause) || cause.response?.status !== 409) throw cause;
     }
   },
   async leaveForum(id: string) { await api.delete(`/api/foruns/${path(id)}/sair`); signalResourceChange(); },
@@ -40,9 +44,9 @@ export const socialService = {
   async editForum(id: string, dados: { titulo: string; descricao: string; capa: string | null }) {
     return (await api.put<{ forum: SocialForum }>(`/api/foruns/${path(id)}`, dados)).data.forum;
   },
-  async reportPerson(id: string, motivo: string) { await api.post(`/api/denuncias/usuarias/${path(id)}`, { motivo }); },
+  async reportPerson(id: string, motivo: string, descricao?: string) { await api.post(`/api/denuncias/usuarias/${path(id)}`, { motivo, descricao }); },
   async deletePost(id: string) { await api.delete(`/api/postagens/${path(id)}`); },
-  async reportPost(id: string, motivo: string) { await api.post(`/api/denuncias/postagens/${path(id)}`, { motivo }); },
+  async reportPost(id: string, motivo: string, descricao?: string) { await api.post(`/api/denuncias/postagens/${path(id)}`, { motivo, descricao }); },
   async messages(id: string, pagina = 1, signal?: AbortSignal) {
     return (await api.get<{ mensagens: Message[] }>(`/api/chats/${path(id)}/mensagens`, {
       params: { pagina, limite: conversationPageSize }, signal,
@@ -55,5 +59,5 @@ export const socialService = {
   async deleteMessage(chatId: string, messageId: string) {
     await api.delete(`/api/chats/${path(chatId)}/mensagens/${path(messageId)}`);
   },
-  async reportMessage(id: string, motivo: string) { await api.post(`/api/denuncias/mensagens/${path(id)}`, { motivo }); },
+  async reportMessage(id: string, motivo: string, descricao?: string) { await api.post(`/api/denuncias/mensagens/${path(id)}`, { motivo, descricao }); },
 };

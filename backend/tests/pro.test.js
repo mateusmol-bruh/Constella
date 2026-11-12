@@ -9,6 +9,7 @@ let falharConsulta = false;
 const consultas = { assinatura: 0, catalogo: 0, material: 0, escritas: 0 };
 const prismaPath = require.resolve("../src/config/prisma");
 require.cache[prismaPath] = { id: prismaPath, filename: prismaPath, loaded: true, exports: {
+  sessao: require("./helpers/sessoes")(),
   assinatura: {
     async findUnique() {
       consultas.assinatura++;
@@ -32,7 +33,7 @@ require.cache[prismaPath] = { id: prismaPath, filename: prismaPath, loaded: true
 
 const originalSecret = process.env.JWT_SECRET;
 process.env.JWT_SECRET = "chave-apenas-para-testes-locais-pro";
-const token = jwt.sign({ tipo: "usuaria" }, process.env.JWT_SECRET, { subject: "1", issuer: "constella", audience: "constella-app", expiresIn: "1m" });
+const token = jwt.sign({ tipo: "usuaria" }, process.env.JWT_SECRET, { jwtid: "a".repeat(64), subject: "1", issuer: "constella", audience: "constella-app", expiresIn: "1m" });
 const app = express();
 app.use(express.json());
 app.use("/api/pro", require("../src/routes/pro.routes"));
@@ -149,7 +150,7 @@ test('demonstração só libera catálogo exclusivo para a conta que ativou, sem
     assert.equal(activated.status,200); assert.equal(activated.data.demonstracao,true); assert.equal(activated.data.assinatura,null);
     const content=await request('/api/pro/conteudos');
     assert.equal(content.status,200); assert.equal(content.data.conteudos[0].material,'material-exclusivo-de-teste');
-    const other=jwt.sign({tipo:'usuaria'},process.env.JWT_SECRET,{subject:'2',issuer:'constella',audience:'constella-app',expiresIn:'1m'});
+    const other=jwt.sign({tipo:'usuaria'},process.env.JWT_SECRET,{jwtid:'b'.repeat(64),subject:'2',issuer:'constella',audience:'constella-app',expiresIn:'1m'});
     assert.equal((await request('/api/pro/conteudos',{headers:{Authorization:`Bearer ${other}`}})).status,403);
     assert.equal(consultas.escritas,0);
     await request('/api/pro/demonstracao',{method:'POST',body:JSON.stringify({ativar:false})});

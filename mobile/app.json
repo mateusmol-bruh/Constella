@@ -1,4 +1,3 @@
-
 {
   "expo": {
     "name": "Constella",
@@ -10,7 +9,11 @@
     "android": {
       "package": "com.constella.app",
       "versionCode": 1,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/constella-adaptive-foreground.png",
+        "backgroundColor": "#100D32"
+      }
     },
     "web": {
       "output": "single"
@@ -19,19 +22,32 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#100D32"
+          "backgroundColor": "#100D32",
+          "image": "./assets/images/constella-adaptive-foreground.png",
+          "imageWidth": 280,
+          "resizeMode": "contain"
         }
       ],
       "expo-secure-store",
-      ["expo-notifications", { "color": "#A34FD3", "defaultChannel": "conversas" }],
-      ["expo-image-picker", {
-        "photosPermission": "O Constella acessa a foto que você escolher para seu perfil ou fórum.",
-        "cameraPermission": "O Constella usa a câmera quando você escolhe tirar uma foto para seu perfil ou fórum.",
-        "microphonePermission": false
-      }]
+      [
+        "expo-notifications",
+        {
+          "color": "#A34FD3",
+          "defaultChannel": "conversas"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "O Constella acessa a foto que você escolher para seu perfil ou fórum.",
+          "cameraPermission": "O Constella usa a câmera quando você escolhe tirar uma foto para seu perfil ou fórum.",
+          "microphonePermission": false
+        }
+      ]
     ],
     "experiments": {
       "reactCompiler": true
-    }
+    },
+    "icon": "./assets/images/constella-icon.png"
   }
 }

@@ -12,7 +12,7 @@ import { loginSchema } from '../utils/validation';
 import { colors, ui } from '../styles/theme';
 import type { ScreenProps } from '../types/navigation';
 
-export default function LoginScreen({ navigation }: ScreenProps<'Login'>) {
+export default function LoginScreen({ navigation, route }: ScreenProps<'Login'>) {
   const auth = useAuth();
   const [error, setError] = useState('');
   const { control, handleSubmit, formState: { isSubmitting } } = useForm<z.infer<typeof loginSchema>>({
@@ -34,8 +34,9 @@ export default function LoginScreen({ navigation }: ScreenProps<'Login'>) {
     {auth.restoring ? <ActivityIndicator accessibilityLabel="Recuperando sessão" color={colors.paper} /> : <>
       <FormField control={control} name="email" label="E-mail" icon="mail" keyboardType="email-address" autoCapitalize="none" autoComplete="email" textContentType="emailAddress" />
       <FormField control={control} name="senha" label="Senha" icon="lock" password autoCapitalize="none" autoComplete="current-password" onSubmitEditing={() => void submit()} returnKeyType="go" />
-      <TextLink title="Esqueceu sua senha?" onPress={() => navigation.navigate('RecuperarSenha')} />
-      <Notice text={error || auth.notice} />
+      <TextLink title="Esqueci minha senha" onPress={() => navigation.navigate('RecuperarSenha')} />
+      {route.params?.senhaRedefinida && !error && <Text accessibilityRole="alert" style={ui.body}>Sua senha foi redefinida com sucesso. Entre com sua nova senha.</Text>}
+      <Notice text={error || (route.params?.senhaRedefinida ? undefined : auth.notice)} />
       {auth.restoreFailed && <Button title="Tentar recuperar sessão" variant="secondary" loading={auth.restoring} onPress={() => void auth.retrySession()} />}
       <Button title="Entrar" loading={isSubmitting} onPress={() => void submit()} />
       <TextLink title="Ainda não possui uma conta? Registre-se" onPress={() => navigation.navigate('Cadastro')} />

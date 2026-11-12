@@ -128,7 +128,7 @@ test('denúncia de participante segue o contrato e cria vínculo para a moderaç
   });
   const result = await service('denuncia', prisma).denunciarPostagem('2', '9', '  Motivo  ');
   assert.equal(result.status, 'PENDENTE');
-  assert.deepEqual(captured[0], { motivo_den: 'Motivo', status: 'PENDENTE', id_mod: 5n, id_usr_denunciante: 2n });
+  assert.deepEqual(captured[0], { motivo_den: 'Motivo', descricao: null, status: 'PENDENTE', id_mod: 5n, id_usr_denunciante: 2n });
   assert.deepEqual(captured[1], { id_den: 6n, id_post: 9n });
 });
 

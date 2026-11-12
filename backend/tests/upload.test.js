@@ -9,13 +9,14 @@ process.env.JWT_SECRET = randomBytes(32).toString('hex');
 process.env.UPLOADS_DIR = path.join(os.tmpdir(), `constella-upload-test-${randomBytes(8).toString('hex')}`);
 let accountExists = true;
 require.cache[require.resolve('../src/config/prisma')] = { exports:{
+  sessao:require('./helpers/sessoes')(),
   usuaria:{ async findUnique() { return accountExists ? {id_usr:1n} : null; } },
 } };
 const { validateImage } = require('../src/services/upload.service');
 const app = require('../server');
 const png = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a4F8AAAAASUVORK5CYII=';
 const token = jwt.sign({sub:'1',tipo:'usuaria'},process.env.JWT_SECRET,{
-  issuer:'constella',audience:'constella-app',expiresIn:'1h',
+  jwtid:'a'.repeat(64),issuer:'constella',audience:'constella-app',expiresIn:'1h',
 });
 let server, origin;
 before(async()=>{
