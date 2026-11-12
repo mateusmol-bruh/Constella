@@ -97,6 +97,24 @@ export async function getForuns(session, pagina = 1) {
 export async function getForum(session, id) {
   return (await request('/foruns/' + encodeURIComponent(id))).forum;
 }
+export async function getForumUsers(session, id, pagina = 1) {
+  return (
+    await request(
+      '/foruns/' +
+        encodeURIComponent(id) +
+        '/usuarias?' +
+        new URLSearchParams({ pagina: String(pagina), limite: '50' }),
+    )
+  ).usuarias;
+}
+export const removeForumUser = (session, forumId, userId, justificativa) =>
+  request(
+    '/foruns/' +
+      encodeURIComponent(forumId) +
+      '/usuarias/' +
+      encodeURIComponent(userId),
+    { method: 'DELETE', body: { justificativa } },
+  ).then((r) => r.usuaria);
 export async function editForum(session, id, data) {
   return (
     await request('/foruns/' + encodeURIComponent(id), {

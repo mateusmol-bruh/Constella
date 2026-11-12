@@ -111,6 +111,21 @@ const foruns = wrap(async (req, res) =>
 const forum = wrap(async (req, res) =>
   res.json({ forum: await service.buscarForum(req.params.id) }),
 );
+const usuariasForum = wrap(async (req, res) =>
+  res.json({
+    usuarias: await service.listarUsuariasForum(req.params.id, req.query),
+  }),
+);
+const removerUsuariaForum = wrap(async (req, res) =>
+  res.json({
+    usuaria: await service.removerUsuariaForum(
+      req.moderadoraId,
+      req.params.id,
+      req.params.usuariaId,
+      req.body?.justificativa,
+    ),
+  }),
+);
 const editarForum = wrap(async (req, res) =>
   res.json({ forum: await service.editarForum(req.moderadoraId, req.params.id, req.body || {}) }),
 );
@@ -138,6 +153,8 @@ module.exports = {
   resumo,
   foruns,
   forum,
+  usuariasForum,
+  removerUsuariaForum,
   editarForum,
   excluirForum,
   usuarias,

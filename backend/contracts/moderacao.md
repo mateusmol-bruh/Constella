@@ -35,3 +35,9 @@ POST /api/moderacao/relatorios recebe {titulo,conteudo}. GET retorna os 200 regi
 - Conteúdo PRO aceita `imagem_pro_id`/`video_pro_id` opcionais (UUID ou null). Omitir na edição preserva a referência; null remove. Pelo menos texto ou mídia obrigatórios. Capa pública continua separada em `capa`.
 - GET /api/pro/conteudos/:id/midias/:arquivo: sessão de usuária + PRO validado + publicação/vínculo; Range autorizado por requisição, Cache-Control private/no-store. Catálogo público não inclui referências privadas.
 - Arquivos no armazenamento local `UPLOADS_DIR/pro`; tabela arquivo_pro só guarda metadados. Remoção/substituição de referência não apaga binário automaticamente.
+
+## Fóruns
+
+- GET /foruns/:id/usuarias?pagina=1&limite=50: lista participantes do fórum com ID, nome e foto; IDs são paginados e o fórum precisa existir.
+- DELETE /foruns/:id/usuarias/:usuariaId: recebe `{justificativa:string}` obrigatória (1..2000 caracteres), remove somente o vínculo da usuária com o fórum e registra descrição e justificativa em `relatorio_moderacao`. Não bane a conta, não apaga postagens e a usuária pode entrar novamente.
+- DELETE /foruns/:id continua permitido somente se o fórum não tiver participantes nem postagens.

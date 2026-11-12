@@ -176,13 +176,135 @@ async function atualizarStatus(mod, value, status, decisao) {
   });
 }
 async function listarRelatorios(mod) {
-  return (
-    await prisma.relatorio_moderacao.findMany({
-      where: { id_mod: id(mod) },
-      orderBy: [{ dt_acao: 'desc' }, { id_relat: 'desc' }],
-      take: 200,
+  const rows = await prisma.relatorio_moderacao.findMany({
+    where: { id_mod: id(mod) },
+    orderBy: [{ dt_acao: 'desc' }, { id_relat: 'desc' }],
+    take: 200,
+  });
+  const forumActions = rows
+    .map((row) => {
+      const [description, ...savedTitle] = row.desc.split('\n');
+      let match;
+      if (row.acao === 'REMOVER_USUARIA_FORUM') {
+        match =
+          /^Usuária ([1-9]\d{0,18}) removida do fórum ([1-9]\d{0,18})\.$/.exec(description);
+        if (match)
+          return {
+            row,
+            type: 'removal',
+            userId: match[1],
+            forumId: match[2],
+            savedTitle: savedTitle[0] || '',
+            justification: (() => {
+              const index = savedTitle.findIndex((line) =>
+                line.startsWith('Justificativa:'),
+              );
+              return index < 0
+                ? undefined
+                : [
+                    savedTitle[index].slice('Justificativa:'.length).trim(),
+                    ...savedTitle.slice(index + 1),
+                  ]
+                    .join('\n')
+                    .trim();
+            })(),
+          };
+        match = /^(.+) \(@([^)]*)\) foi removida do fórum ([1-9]\d{0,18})\.$/.exec(description);
+        if (match)
+          return {
+            row,
+            type: 'removal',
+            name: match[1],
+            username: match[2],
+            forumId: match[3],
+            savedTitle: savedTitle[0] || '',
+          };
+      }
+      if (row.acao === 'EDICAO_FORUM') {
+        match = /^Fórum ([1-9]\d{0,18}) editado pela moderadora\.$/.exec(description);
+        if (match)
+          return {
+            row,
+            type: 'edit',
+            forumId: match[1],
+            savedTitle: savedTitle.join('\n'),
+          };
+      }
+      if (row.acao === 'EXCLUSAO_FORUM') {
+        match = /^Fórum vazio ([1-9]\d{0,18}) excluído\.$/.exec(description);
+        if (match)
+          return {
+            row,
+            type: 'delete',
+            forumId: match[1],
+            savedTitle: savedTitle.join('\n'),
+          };
+      }
+      return null;
     })
-  ).map((r) => ({ id: String(r.id_relat), acao: r.acao, descricao: r.desc, data: r.dt_acao }));
+    .filter(Boolean);
+  const userIds = [
+    ...new Set(
+      forumActions
+        .filter((action) => action.userId)
+        .map((action) => BigInt(action.userId)),
+    ),
+  ];
+  const users = userIds.length
+    ? await prisma.usuaria.findMany({
+        where: { id_usr: { in: userIds } },
+        select: { id_usr: true, nome_usr: true, email_usr: true },
+      })
+    : [];
+  const usersById = new Map(users.map((user) => [String(user.id_usr), user]));
+  const forumIds = [...new Set(forumActions.map((action) => BigInt(action.forumId)))];
+  const forums = forumIds.length
+    ? await prisma.forum.findMany({
+        where: { id_for: { in: forumIds } },
+        select: { id_for: true, titulo_for: true },
+      })
+    : [];
+  const forumsById = new Map(forums.map((forum) => [String(forum.id_for), forum]));
+  const descriptions = new Map(
+    forumActions.map((action) => {
+      const forum =
+        forumsById.get(action.forumId)?.titulo_for || action.savedTitle;
+      const forumLabel = forum ? `fórum "${forum}"` : 'fórum indisponível';
+      if (action.type === 'removal') {
+        const user = action.userId ? usersById.get(action.userId) : null;
+        const username = user
+          ? user.email_usr.slice(0, user.email_usr.lastIndexOf('@')).toLowerCase()
+          : action.username;
+        const name = user?.nome_usr || action.name;
+        const identity = name
+          ? name + (username ? ' (@' + username + ')' : '')
+          : 'Usuária';
+        return [
+          action.row.id_relat,
+          identity +
+            ' foi removida do ' +
+            forumLabel +
+            '.' +
+            (action.justification ? '\nJustificativa: ' + action.justification : ''),
+        ];
+      }
+      if (action.type === 'edit')
+        return [
+          action.row.id_relat,
+          forum ? `Fórum "${forum}" editado pela moderadora.` : 'Fórum editado; título indisponível.',
+        ];
+      return [
+        action.row.id_relat,
+        forum ? `Fórum "${forum}" excluído.` : 'Fórum excluído; título indisponível.',
+      ];
+    }),
+  );
+  return rows.map((r) => ({
+    id: String(r.id_relat),
+    acao: r.acao,
+    descricao: descriptions.get(r.id_relat) || r.desc,
+    data: r.dt_acao,
+  }));
 }
 async function criarRelatorio(mod, data) {
   const title = texto(data.titulo, 'Título', 100),
@@ -458,12 +580,85 @@ async function buscarForum(value) {
     })),
   };
 }
+async function listarUsuariasForum(value, query = {}) {
+  const forumId = id(value);
+  const forum = await prisma.forum.findUnique({
+    where: { id_for: forumId },
+    select: { id_for: true },
+  });
+  if (!forum) throw erro(404, 'Fórum não encontrado.');
+  const rows = await prisma.usuaria_forum.findMany({
+    where: { id_for: forumId },
+    select: {
+      usuaria: {
+        select: { id_usr: true, nome_usr: true, foto_usr: true },
+      },
+    },
+    orderBy: { usuaria: { nome_usr: 'asc' } },
+    ...pagina(query),
+  });
+  return rows.map(({ usuaria }) => ({
+    id: String(usuaria.id_usr),
+    nome: usuaria.nome_usr,
+    foto: usuaria.foto_usr,
+  }));
+}
+async function removerUsuariaForum(mod, forumValue, userValue, justificativaValue) {
+  const forumId = id(forumValue),
+    userId = id(userValue);
+  if (
+    typeof justificativaValue !== 'string' ||
+    !justificativaValue.trim() ||
+    justificativaValue.trim().length > 2000
+  )
+    throw erro(400, 'Informe uma justificativa de até 2000 caracteres.');
+  const justificativa = justificativaValue.trim();
+  return prisma.$transaction(async (tx) => {
+    const forum = await tx.forum.findUnique({
+      where: { id_for: forumId },
+      select: { id_for: true, titulo_for: true },
+    });
+    if (!forum) throw erro(404, 'Fórum não encontrado.');
+    const membership = await tx.usuaria_forum.findUnique({
+      where: { id_for_id_usr: { id_for: forumId, id_usr: userId } },
+      select: { id_usr: true },
+    });
+    if (!membership) throw erro(404, 'Usuária não participa deste fórum.');
+    const removed = await tx.usuaria_forum.deleteMany({
+      where: { id_for: forumId, id_usr: userId },
+    });
+    if (!removed.count) throw erro(404, 'Usuária não participa deste fórum.');
+    await auditoria(
+      tx,
+      mod,
+      'REMOVER_USUARIA_FORUM',
+      'Usuária ' +
+        String(userId) +
+        ' removida do fórum ' +
+        String(forumId) +
+        '.\n' +
+        forum.titulo_for +
+        '\nJustificativa: ' +
+        justificativa,
+    );
+    return { id: String(userId) };
+  });
+}
 async function editarForum(mod, value, d) {
   const titulo_for = texto(d.titulo, 'Título', 255),
     desc_for = texto(d.descricao, 'Descrição', 255, false);
   await prisma.$transaction(async (tx) => {
-    await tx.forum.update({ where: { id_for: id(value) }, data: { titulo_for, desc_for } });
-    await auditoria(tx, mod, 'EDICAO_FORUM', 'Fórum ' + value + ' editado pela moderadora.');
+    const updated = await tx.forum.update({
+      where: { id_for: id(value) },
+      data: { titulo_for, desc_for },
+      select: { titulo_for: true },
+    });
+    await auditoria(
+      tx,
+      mod,
+      'EDICAO_FORUM',
+      'Fórum ' + value + ' editado pela moderadora.\n' + updated.titulo_for,
+    );
   });
   return buscarForum(value);
 }
@@ -471,7 +666,11 @@ async function excluirForum(mod, value) {
   return prisma.$transaction(async (tx) => {
     const f = await tx.forum.findUnique({
       where: { id_for: id(value) },
-      select: { id_for: true, _count: { select: { postagem: true, usuaria_forum: true } } },
+      select: {
+        id_for: true,
+        titulo_for: true,
+        _count: { select: { postagem: true, usuaria_forum: true } },
+      },
     });
     if (!f) throw erro(404, 'Fórum não encontrado.');
     if (f._count.postagem || f._count.usuaria_forum)
@@ -480,7 +679,12 @@ async function excluirForum(mod, value) {
         'Este fórum tem participantes ou postagens. A exclusão não está disponível para preservar o histórico.',
       );
     await tx.forum.delete({ where: { id_for: f.id_for } });
-    await auditoria(tx, mod, 'EXCLUSAO_FORUM', 'Fórum vazio ' + value + ' excluído.');
+    await auditoria(
+      tx,
+      mod,
+      'EXCLUSAO_FORUM',
+      'Fórum vazio ' + value + ' excluído.\n' + f.titulo_for,
+    );
   });
 }
 async function listarUsuarias(query = {}) {
@@ -509,6 +713,8 @@ module.exports = {
   resumo,
   listarForuns,
   buscarForum,
+  listarUsuariasForum,
+  removerUsuariaForum,
   editarForum,
   excluirForum,
   listarUsuarias,

@@ -753,6 +753,16 @@ th {
 .media-actions button,.dialog-actions button { min-height:42px; padding:9px 14px; border:1px solid #c4a0d7; background:#f8f0ff; color:#493378; border-radius:9px; }
 .account-status { display:inline-block; border:1px solid #bca5dc; border-radius:16px; padding:4px 10px; font-size:13px; background:#453268; }
 .account-status.is-banned { background:#76354d; border-color:#f4a6c5; }
+.forum-members { margin-top:28px; }
+.forum-members h2 { font-size:18px; margin:0 0 12px; }
+.forum-member-list { display:grid; gap:8px; }
+.forum-member-row { display:flex; align-items:center; justify-content:space-between; gap:14px; min-height:54px; padding:7px 10px; border-bottom:1px solid rgba(239,224,255,.55); }
+.forum-member-profile { display:flex; align-items:center; gap:10px; min-width:0; }
+.forum-member-profile img,.forum-member-profile>span:first-child { width:36px; height:36px; border-radius:50%; flex:0 0 36px; object-fit:cover; }
+.forum-member-profile>span:first-child { display:grid; place-items:center; background:rgba(255,255,255,.16); }
+.forum-member-profile>span:last-child { overflow:hidden; text-overflow:ellipsis; }
+.forum-member-remove { border:1px solid rgba(255,255,255,.45); border-radius:7px; background:rgba(118,53,77,.75); color:#fff; padding:8px 11px; flex-shrink:0; }
+.forum-member-remove:not(:disabled):hover { background:#91445f; }
 .user-summary { margin:24px 0; }
 .ban-form { display:grid; gap:18px; max-width:720px; margin:28px 0; }
 .ban-form textarea { width:100%; min-height:110px; resize:vertical; }

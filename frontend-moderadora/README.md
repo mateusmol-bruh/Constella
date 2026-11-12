@@ -15,7 +15,7 @@ A migração 20261029000100_moderacao_sessoes foi aplicada em desenvolvimento co
 
 ## Funcionalidades
 
-Dashboard com contagens do banco; conteúdos gratuitos/PRO com rascunho, publicação, edição, categoria e capa; denúncias com análise e decisão auditada; consulta/edição de fóruns; consulta limitada de usuárias; relatórios próprios e histórico.
+Dashboard com contagens do banco; conteúdos gratuitos/PRO com rascunho, publicação, edição, categoria e capa; denúncias com análise e decisão auditada; consulta/edição de fóruns, listagem de participantes e remoção de participante sem banir a conta; consulta limitada de usuárias; relatórios próprios e histórico.
 
 Capas usam o upload validado do Express (JPG/PNG, até 2 MB). O arquivo fica em backend/uploads, e o banco guarda caminho relativo. Não usar Cloudinary unsigned para materiais protegidos. Upload de vídeo/arquivos PRO exige infraestrutura privada e não é oferecido por este editor.
 

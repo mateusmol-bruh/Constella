@@ -1,17 +1,25 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Shell from '@/components/Shell';
 import AstroLoader from '@/components/AstroLoader';
 import { withVisibleLoading } from '@/lib/loading';
 import { Panel, GradientButton, Notice } from '@/components/Panel';
 import { useSession } from '@/components/SessionProvider';
-import { getForum, editForum, deleteForum, mediaUrl } from '@/lib/api';
+import {
+  getForum,
+  getForumUsers,
+  removeForumUser,
+  editForum,
+  deleteForum,
+  mediaUrl,
+} from '@/lib/api';
 
 export default function DetalhesForum() {
   const { id } = useParams();
   const router = useRouter();
   const { session } = useSession();
+  const remocaoDialog = useRef(null);
   const [acao, setAcao] = useState(null);
   useEffect(() => {
     setAcao(new URLSearchParams(window.location.search).get('acao'));
@@ -24,6 +32,15 @@ export default function DetalhesForum() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const [usuarias, setUsuarias] = useState([]);
+  const [usuariasPagina, setUsuariasPagina] = useState(1);
+  const [usuariasLoading, setUsuariasLoading] = useState(true);
+  const [usuariasError, setUsuariasError] = useState('');
+  const [removendo, setRemovendo] = useState(null);
+  const [usuariaParaRemover, setUsuariaParaRemover] = useState(null);
+  const [justificativaRemocao, setJustificativaRemocao] = useState('');
+  const [erroRemocao, setErroRemocao] = useState('');
+  const [usuariasReload, setUsuariasReload] = useState(0);
   useEffect(() => {
     if (!session) return;
     let active = true;
@@ -45,6 +62,25 @@ export default function DetalhesForum() {
       active = false;
     };
   }, [session, id]);
+  useEffect(() => {
+    if (!session) return;
+    let active = true;
+    setUsuariasLoading(true);
+    setUsuariasError('');
+    getForumUsers(session, id, usuariasPagina)
+      .then((result) => {
+        if (active) setUsuarias(result);
+      })
+      .catch((e) => {
+        if (active) setUsuariasError(e.message);
+      })
+      .finally(() => {
+        if (active) setUsuariasLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [session, id, usuariasPagina, usuariasReload]);
   async function salvar(e) {
     e.preventDefault();
     setSaving(true);
@@ -78,6 +114,38 @@ export default function DetalhesForum() {
     } catch (e) {
       setError(e.message);
       setSaving(false);
+    }
+  }
+  function iniciarRemocao(usuaria) {
+    setUsuariaParaRemover(usuaria);
+    setJustificativaRemocao('');
+    setErroRemocao('');
+    remocaoDialog.current?.showModal();
+  }
+  async function confirmarRemocao() {
+    const usuaria = usuariaParaRemover;
+    const justificativa = justificativaRemocao.trim();
+    if (!usuaria || !justificativa || removendo !== null) return;
+    setRemovendo(usuaria.id);
+    setUsuariasError('');
+    setErroRemocao('');
+    try {
+      await withVisibleLoading(() =>
+        removeForumUser(session, id, usuaria.id, justificativa),
+      );
+      remocaoDialog.current?.close();
+      setUsuariaParaRemover(null);
+      setJustificativaRemocao('');
+      setNotice(`${usuaria.nome} foi removida do fórum. Ela poderá entrar novamente.`);
+      if (usuarias.length === 1 && usuariasPagina > 1) {
+        setUsuariasPagina((page) => page - 1);
+      } else {
+        setUsuariasReload((version) => version + 1);
+      }
+    } catch (e) {
+      setErroRemocao(e.message);
+    } finally {
+      setRemovendo(null);
     }
   }
   const posts = forum?.posts || [];
@@ -181,14 +249,116 @@ export default function DetalhesForum() {
                     Excluir fórum
                   </GradientButton>
                 </div>
+                <p className="forum-delete-note">
+                  Para preservar o histórico, somente fóruns sem participantes e sem postagens podem
+                  ser excluídos.
+                </p>
               </div>
             </div>
+            <section className="forum-members" aria-labelledby="forum-members-title">
+              <h2 id="forum-members-title">Usuárias no fórum</h2>
+              <Notice message={usuariasError} />
+              {usuariasLoading ? (
+                <AstroLoader label="Carregando participantes…" />
+              ) : usuarias.length ? (
+                <>
+                  <div className="forum-member-list">
+                    {usuarias.map((usuaria) => {
+                      const foto = mediaUrl(usuaria.foto);
+                      return (
+                        <div className="forum-member-row" key={usuaria.id}>
+                          <div className="forum-member-profile">
+                            {foto ? (
+                              <img src={foto} alt="" />
+                            ) : (
+                              <span aria-hidden="true">
+                                {(usuaria.nome || 'U').slice(0, 1)}
+                              </span>
+                            )}
+                            <span>{usuaria.nome}</span>
+                          </div>
+                          <button
+                            type="button"
+                            className="forum-member-remove"
+                            disabled={removendo !== null}
+                            onClick={() => iniciarRemocao(usuaria)}
+                          >
+                            Remover do fórum
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="pagination">
+                    <button
+                      type="button"
+                      disabled={usuariasPagina === 1}
+                      onClick={() => setUsuariasPagina((page) => page - 1)}
+                    >
+                      Anterior
+                    </button>
+                    <span>Página {usuariasPagina}</span>
+                    <button
+                      type="button"
+                      disabled={usuarias.length < 50}
+                      onClick={() => setUsuariasPagina((page) => page + 1)}
+                    >
+                      Próxima
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <p>Nenhuma usuária participa deste fórum.</p>
+              )}
+            </section>
             <Notice message={error} />
             <Notice message={notice} type="success" />
           </>
         ) : (
           <Notice message={error} />
         )}
+        <dialog
+          ref={remocaoDialog}
+          className="admin-dialog"
+          aria-labelledby="remove-forum-user-title"
+          onCancel={(event) => {
+            if (removendo !== null) event.preventDefault();
+          }}
+        >
+          <h2 id="remove-forum-user-title">Confirmar remoção</h2>
+          <p>
+            Remover {usuariaParaRemover?.nome || 'esta usuária'} deste fórum? Ela poderá entrar
+            novamente depois.
+          </p>
+          <label className="form-label">
+            Justificativa da remoção
+            <textarea
+              required
+              maxLength={2000}
+              placeholder="Explique o motivo da remoção desta usuária..."
+              value={justificativaRemocao}
+              onChange={(event) => setJustificativaRemocao(event.target.value)}
+              disabled={removendo !== null}
+            />
+          </label>
+          <Notice message={erroRemocao} />
+          <div className="dialog-actions">
+            <button
+              type="button"
+              disabled={removendo !== null}
+              onClick={() => remocaoDialog.current?.close()}
+            >
+              Cancelar
+            </button>
+            <GradientButton
+              type="button"
+              disabled={removendo !== null || !justificativaRemocao.trim()}
+              onClick={() => void confirmarRemocao()}
+            >
+              {removendo !== null ? 'Removendo…' : 'Confirmar remoção'}
+            </GradientButton>
+          </div>
+        </dialog>
       </Panel>
       {saving && <AstroLoader variant="overlay" label="Salvando alterações do fórum…" />}
     </Shell>

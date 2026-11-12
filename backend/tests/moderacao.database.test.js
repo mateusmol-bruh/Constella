@@ -338,6 +338,47 @@ test(
                 409,
               );
               assert.ok(await db.forum.findUnique({ where: { id_for: f.id_for } }));
+              const justificativa =
+                'Comportamento inadequado e descumprimento das regras de convivência.';
+              const removal = await request(
+                '/api/moderacao/foruns/' +
+                  f.id_for +
+                  '/usuarias/' +
+                  account.id_usr,
+                {
+                  method: 'DELETE',
+                  cookie,
+                  csrf,
+                  body: { justificativa },
+                },
+              );
+              assert.equal(removal.status, 200);
+              assert.equal(
+                await db.usuaria_forum.count({
+                  where: { id_for: f.id_for, id_usr: account.id_usr },
+                }),
+                0,
+              );
+              const audit = await db.relatorio_moderacao.findFirst({
+                where: {
+                  id_mod: m.id_mod,
+                  acao: 'REMOVER_USUARIA_FORUM',
+                  desc: { contains: 'Justificativa: ' + justificativa },
+                },
+              });
+              assert.ok(audit);
+              assert.equal(audit.desc.split('\n')[0], `Usuária ${account.id_usr} removida do fórum ${f.id_for}.`);
+              assert.equal(audit.desc.split('\n')[2], 'Justificativa: ' + justificativa);
+              const history = await request('/api/moderacao/relatorios', { cookie });
+              const displayed = history.body.relatorios.find(
+                (item) => item.id === String(audit.id_relat),
+              );
+              assert.equal(
+                displayed.descricao,
+                `${account.nome_usr} (@${suffix}) foi removida do fórum "TESTE título atualizado".\n` +
+                  'Justificativa: ' +
+                  justificativa,
+              );
             },
           );
           await t.test(

@@ -13,7 +13,7 @@ Versões consultadas nos projetos: Expo 58.0.19, React Native 0.88, React 19.3 e
 - Dashboard obtém contagens reais: usuárias, fóruns, gratuitos/PRO publicados, denúncias totais, pendentes, em análise e resolvidas. Atualiza a cada 30 segundos e ao recuperar foco.
 - Gestão de conteúdos: listagem, busca, filtros de tipo/status, criação, edição, publicação/despublicação e exclusão quando não existe histórico de acesso. Título, descrição, texto, categoria, duração e capa persistem no PostgreSQL.
 - Denúncias: listagem paginada por status, contexto do item, descrição opcional, análise, decisão e histórico. Status e auditoria são gravados na mesma transação. Finalização/rejeição exige justificativa.
-- Fóruns: consulta paginada e contexto das últimas 100 postagens, edição com auditoria. Exclusão administrativa só aceita fórum sem participantes nem postagens. Não há conversas sociais no painel.
+- Fóruns: consulta paginada e contexto das últimas 100 postagens, edição com auditoria, listagem paginada de participantes e remoção auditada de participante sem banir a conta ou apagar postagens. A usuária removida pode entrar novamente. Exclusão administrativa só aceita fórum sem participantes nem postagens.
 - Usuárias: consulta paginada por nome; somente ID, nome, foto e verificação. CPF, senha, JWT e dados privados de conta não fazem parte desta projeção.
 - Relatórios: criação de texto e histórico próprio real. A interface não oferece anexo sem suporte. Não há botão de banimento sem regra de suspensão administrativa implementada.
 - Layout preserva a identidade existente, com navegação administrativa, tabelas com rolagem, formulários e estados de erro/carregamento/vazio.
@@ -43,7 +43,7 @@ Novos/completados sob /api/moderacao (todos protegidos, exceto login):
 | Denúncias | GET /denuncias e /denuncias/:id; PATCH /denuncias/:id/status com status e decisao |
 | Relatórios | GET e POST /relatorios |
 | Usuárias | GET /usuarias?q=&pagina=&limite= |
-| Fóruns | GET /foruns e /foruns/:id; PATCH e DELETE /foruns/:id |
+| Fóruns | GET /foruns, /foruns/:id e /foruns/:id/usuarias; DELETE /foruns/:id/usuarias/:usuariaId; PATCH e DELETE /foruns/:id |
 | Conteúdos | GET /conteudos?tipo=normal ou pro&pagina=&limite=&q=&publicado=; POST /conteudos ou /conteudos/pro; GET/PUT/DELETE /conteudos/:id ou /conteudos/pro/:id; PATCH .../:id/publicacao |
 | Capas | POST /capas, autenticado antes de ler o corpo de até 3 MB; imagem JPG/PNG até 2 MB |
 | Imagens de contexto | GET /anexos/:nome, somente imagem de postagem de fórum ou mensagem denunciada; nenhuma listagem de chats privados |

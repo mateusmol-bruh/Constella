@@ -82,6 +82,8 @@ router.patch('/denuncias/:id/status', c.atualizarStatus);
 router.get('/relatorios', c.relatorios);
 router.post('/relatorios', c.criarRelatorio);
 router.get('/foruns', c.foruns);
+router.get('/foruns/:id/usuarias', c.usuariasForum);
+router.delete('/foruns/:id/usuarias/:usuariaId', c.removerUsuariaForum);
 router.get('/foruns/:id', c.forum);
 router.patch('/foruns/:id', c.editarForum);
 router.delete('/foruns/:id', c.excluirForum);
