@@ -283,7 +283,7 @@ test('falha ao trocar de conta não mantém identidade nem JWT da conta anterior
 
 test('banimento invalida a sessão local, remove SecureStore e preserva a mensagem do servidor',async()=>{
  const app=mount();await tick();await app.state().login('teste','teste');
- app.expire('Sua conta está banida. Entre em contato com a moderação.');await tick();
+ app.expire('Sua conta está banida.');await tick();
  assert.equal(app.state().user,null);assert.equal(app.token(),null);assert.equal(app.stored(),null);
  assert.match(app.state().notice,/conta está banida/);app.unmount();
 });

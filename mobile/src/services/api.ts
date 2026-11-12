@@ -28,7 +28,7 @@ api.interceptors.request.use(config => {
 });
 api.interceptors.response.use(response => response, (error: unknown) => {
   if (axios.isAxiosError(error) && (error.response?.status === 401 || (error.response?.status === 403 && error.response.data?.codigo === 'CONTA_BANIDA')) && currentToken &&
-      error.config?.headers.Authorization === `Bearer ${currentToken}`) onExpired?.(error.response?.data?.codigo === 'CONTA_BANIDA' ? 'Sua conta está banida. Entre em contato com a moderação.' : undefined);
+      error.config?.headers.Authorization === `Bearer ${currentToken}`) onExpired?.(error.response?.data?.codigo === 'CONTA_BANIDA' ? 'Sua conta está banida.' : undefined);
   return Promise.reject(error);
 });
 export function errorMessage(error: unknown): string {

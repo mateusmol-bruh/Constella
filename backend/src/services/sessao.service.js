@@ -47,7 +47,7 @@ async function emitirSessao(tipo, titular, db = prisma) {
         data: { revogada_em: new Date() },
       });
       throw Object.assign(
-        erro(403, 'Sua conta está banida. Entre em contato com a moderação.'),
+        erro(403, 'Sua conta está banida.'),
         { codigo: 'CONTA_BANIDA' },
       );
     }
@@ -74,7 +74,7 @@ async function validarSessao(payload) {
     session.usuaria?.banida
   )
     throw Object.assign(
-      erro(403, 'Sua conta está banida. Entre em contato com a moderação.'),
+      erro(403, 'Sua conta está banida.'),
       { codigo: 'CONTA_BANIDA' },
     );
   const now = new Date();

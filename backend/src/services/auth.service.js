@@ -27,7 +27,7 @@ async function autenticarUsuaria(email, senha) {
     return null;
   }
 
-  if (usuaria.banida) throw Object.assign(new Error('Sua conta está banida. Entre em contato com a moderação.'), { statusCode:403, codigo:'CONTA_BANIDA' });
+  if (usuaria.banida) throw Object.assign(new Error('Sua conta está banida.'), { statusCode:403, codigo:'CONTA_BANIDA' });
   const token = await emitirSessao("usuaria", usuaria.id_usr);
 
   // Uma comparação antiga não pode criar uma sessão válida após um reset concorrente.
